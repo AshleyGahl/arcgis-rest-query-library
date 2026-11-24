@@ -37,7 +37,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Configure Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
 
       # Stage only what the site serves. Uploading the repository root would also
       # ship .git and the Node-only parts, which the browser never asks for.
@@ -56,10 +56,10 @@ jobs:
           echo "staged $(find _site -type f | wc -l) files, $(du -sh _site | cut -f1)"
 
       - name: Upload the site
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: _site
 
       - name: Deploy
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
