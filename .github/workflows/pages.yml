@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deployment.outputs.page_url || steps.deployment_retry.outputs.page_url }}
     steps:
       - name: Check out
         uses: actions/checkout@v7
@@ -60,6 +60,22 @@ jobs:
         with:
           path: _site
 
+      # `deploy-pages` asks the Actions API for the artifact the previous step just
+      # uploaded, and intermittently is told it does not exist yet ("Found 0
+      # artifact(s)") — the artifact index is eventually consistent. That is a coin
+      # flip, not a problem with the site, so take the failure and try once more.
       - name: Deploy
         id: deployment
+        continue-on-error: true
+        uses: actions/deploy-pages@v5
+
+      - name: Wait for the artifact to be visible
+        if: steps.deployment.outcome == 'failure'
+        run: |
+          echo "::warning::Pages deploy failed on the first attempt; retrying after a pause."
+          sleep 20
+
+      - name: Deploy (retry)
+        id: deployment_retry
+        if: steps.deployment.outcome == 'failure'
         uses: actions/deploy-pages@v5
