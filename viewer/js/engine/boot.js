@@ -108,12 +108,33 @@ async function startStaticService() {
 }
 
 /**
+ * Live mode with our service worker still in charge would be the worst of both:
+ * the worker would relay requests to a page that is not running an engine. This
+ * happens on 127.0.0.1 after trying `?mode=static`, so `?mode=live` undoes it.
+ * An active worker keeps serving the pages it already controls, hence the reload.
+ */
+async function releaseServiceWorker() {
+  const registration = await navigator.serviceWorker?.getRegistration(SW_SCOPE);
+  if (!registration) return;
+  await registration.unregister();
+  if (navigator.serviceWorker.controller && !sessionStorage.getItem(RELOADED_FLAG)) {
+    sessionStorage.setItem(RELOADED_FLAG, '1');
+    location.reload();
+    await new Promise(() => {});
+  }
+}
+
+/**
  * Must be awaited before the map or any panel issues a query.
  * @returns `{ mode, count, asOf, error }`
  */
 export async function bootMockService() {
   const mode = await detectMode();
-  if (mode === 'live') return { mode };
+  if (mode === 'live') {
+    await releaseServiceWorker();
+    sessionStorage.removeItem(RELOADED_FLAG);
+    return { mode };
+  }
   if (mode === 'unavailable') {
     return { mode, error: new Error('Opened from the filesystem. Serve the folder over http:// (npm start) or use the published demo.') };
   }
