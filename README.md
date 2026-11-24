@@ -111,6 +111,7 @@ a claim you can check rather than assert.
 
 | | |
 |---|---|
+| [`docs/architecture.md`](docs/architecture.md) | The component map: what references what, layer 1's table schema, and how the library is set up in each database |
 | [`docs/query-catalog.md`](docs/query-catalog.md) | The architecture: the catalog table, why it stores parameters rather than statements, the three limits |
 | [`docs/data-model.md`](docs/data-model.md) | Fields, categories and sub-categories, how the generated data behaves, the planted defects |
 | [`docs/framework.md`](docs/framework.md) | How the 70 questions are organised: 5W+H dimensions, layers L1–L5, coverage, roadmap |

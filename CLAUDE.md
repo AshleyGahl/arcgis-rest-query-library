@@ -44,6 +44,7 @@ Don't add packages without asking. The only vendored third-party code is `viewer
 ## Layout
 ```
 data/service_requests.geojson   the "service" (epoch-ms dates, WGS84 points, metadata.asOf)
+docs/architecture.md            component map, layer 1's table schema, the library in both databases
 docs/data-model.md              fields, categories, how the generated data behaves
 docs/framework.md               5W+H dimensions, analytical layers, roadmap
 docs/query-catalog.md           the catalog-as-a-table architecture, and its three real limits

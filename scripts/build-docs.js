@@ -21,6 +21,7 @@ const docsDir = path.join(root, 'docs');
 
 /** Order on the nav bar and the docs index. `blurb` is shown on the index only. */
 const PAGES = [
+  { file: 'architecture.md', nav: 'Architecture', blurb: 'The components and how they reference one another: one library source, three derivations, one engine on two runtimes — and the query library as table 1 of the service and as a view in SQL Server.' },
   { file: 'data-model.md', nav: 'Data model', blurb: 'The fields, the categories and sub-categories, how the generated data behaves, and the defects planted for the data-quality queries.' },
   { file: 'framework.md', nav: 'Analytics framework', blurb: 'How the 70 questions are organised: the 5W+H dimensions, the five analytical layers, the coverage checklist and what comes next.' },
   { file: 'query-catalog.md', nav: 'Query catalog', blurb: 'The architecture: the query library published as a FeatureServer table, why it stores parameters rather than statements, and the three places the pattern does not hold.' },
