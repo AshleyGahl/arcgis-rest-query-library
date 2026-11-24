@@ -159,7 +159,7 @@ The published demo is a static site, but it is not a cut-down version: the mock 
 **inside the viewer page** on [SQLite Wasm](https://sqlite.org/wasm), and a service worker answers
 the `/arcgis/rest/…` requests the ArcGIS Maps SDK makes. Open DevTools and you will see real
 `FeatureServer/0/query` and `FeatureServer/1/query` requests returning real Esri JSON. The
-dashboard, all 70 library queries and the T-SQL tab work exactly as they do locally.
+dashboard, all 70 library queries and their T-SQL work exactly as they do locally.
 
 It is the same engine either way. `server/featureService.js`, `server/sqlDialect.js`,
 `server/catalogSchema.js`, `server/schema.js` and `server/restRouter.js` take no platform
@@ -249,9 +249,8 @@ on 127.0.0.1.
 Five tabs:
 - **Filter:** builds a where clause and applies it to the map. Colour by theme, status or channel, or switch to a heatmap; clustering and a time slider.
 - **Dashboard:** KPI tiles and six charts, all driven by REST statistics queries. Click a bar or a month to add that value to the map filter.
-- **Library:** the 70 questions, **fetched from table 1 rather than built into the page**. Run any as REST, or compare its REST result with its T-SQL result side by side.
+- **Library:** the 70 questions, **fetched from table 1 rather than built into the page**. Run any as REST, run its T-SQL against the same data, or compare the two side by side. The statement is editable, so this is also the T-SQL console.
 - **REST:** a query console, including drawn-polygon queries.
-- **T-SQL:** run T-SQL against the same data.
 - **MCP:** the service's MCP tool contract, driven in the page — the JSON-RPC traffic an AI client normally hides. No model, no key.
 
 Every result switches between **Table** and **Chart**; a single-value result shows as a large

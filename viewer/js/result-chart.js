@@ -1,5 +1,5 @@
 /**
- * Builds a chart from ANY query result in the results drawer (library, console, T-SQL).
+ * Builds a chart from ANY query result in the results drawer (library, console).
  * It guesses dimensions vs measures, picks a sensible default, and lets the user change
  * X axis, split-by series, measure and chart type. Clicking a bar filters the map when
  * the X dimension is a real layer field.

@@ -6,7 +6,6 @@ import { initFilterPanel } from './filter-panel.js';
 import { initLibraryPanel } from './library-panel.js';
 import { initMcpPanel } from './mcp-panel.js';
 import { initConsolePanel } from './console-panel.js';
-import { initSqlPanel } from './sql-panel.js';
 import { initDashboard } from './dashboard.js';
 
 let dashboard = null;
@@ -35,8 +34,6 @@ if (boot.error) {
     document.getElementById('serviceMode').title = 'No server: the mock FeatureServer runs in this page and a service worker answers the REST requests.';
   }
 }
-
-initSqlPanel();
 
 // If the ArcGIS SDK can't load (offline, CDN blocked) the panels still work against the REST service.
 const noMap = {

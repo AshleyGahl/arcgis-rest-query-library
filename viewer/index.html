@@ -28,7 +28,6 @@
       <button class="tab" data-tab="dash">Dashboard</button>
       <button class="tab" data-tab="library">Library</button>
       <button class="tab" data-tab="console">REST</button>
-      <button class="tab" data-tab="sql">T-SQL</button>
       <button class="tab" data-tab="mcp">MCP</button>
     </nav>
 
@@ -145,18 +144,6 @@
         <button id="cApply">Apply where to map</button>
         <a id="cUrl" target="_blank" class="hint">open URL ↗</a>
       </div>
-    </section>
-
-    <!-- T-SQL -->
-    <section class="pane" id="pane-sql">
-      <p class="hint">Mock extension (<code>…/FeatureServer/0/sql</code>, not part of ArcGIS REST): runs read-only T-SQL against the same data so you can check a REST port against the original statement.</p>
-      <textarea id="sqlText" rows="10" spellcheck="false">SELECT TOP 10 Suburb, COUNT(*) AS Requests,
-       SUM(CASE WHEN Status <> 'Closed' THEN 1 ELSE 0 END) AS StillOpen
-FROM ServiceRequest
-GROUP BY Suburb
-ORDER BY Requests DESC;</textarea>
-      <div class="buttons"><button id="sqlRun" class="primary">Run T-SQL</button></div>
-      <pre id="sqlTranslated" class="code small"></pre>
     </section>
 
     <!-- MCP -->

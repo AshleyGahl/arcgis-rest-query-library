@@ -9,7 +9,7 @@
  * In static mode the page runs the very same modules the Node host runs —
  * `server/featureService.js`, `server/sqlDialect.js`, `server/restRouter.js` — over
  * SQLite Wasm instead of `node:sqlite`. So the viewer, the REST console, the 70
- * library queries and the T-SQL panel all behave as they do locally, and the
+ * library queries and their T-SQL all behave as they do locally, and the
  * requests are genuine HTTP requests that a service worker happens to answer.
  *
  * `?mode=live` or `?mode=static` in the viewer URL overrides the detection.
