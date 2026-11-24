@@ -1,5 +1,10 @@
 # Service Request GIS: Mock FeatureServer, Viewer, Dashboard & REST Query Library
 
+> **A proof-of-concept demo.** The service is a mock and the data is synthetic. It exists to show
+> the technique — ArcGIS REST query semantics, and the same 70 questions expressed in both REST
+> and T-SQL — not to be deployed or depended on. There is no authentication, no rate limiting and
+> no persistence, by design.
+
 This project takes a GeoJSON of about 850 synthetic **public service requests** and serves it as an **ArcGIS REST FeatureServer layer**. The records follow the generic "report a problem" model that councils publish (see `docs/data-model.md`), and the points are placed in and around Cape Town. On top of the layer it provides:
 - a GIS viewer
 - a cross-filtering dashboard

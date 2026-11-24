@@ -20,6 +20,11 @@
   main { max-width: 52rem; margin: 0 auto; padding: 4rem 1.5rem 5rem; }
   h1 { font-size: 2rem; line-height: 1.2; margin: 0 0 .5rem; letter-spacing: -0.015em; }
   .lede { font-size: 1.125rem; color: var(--ink-2); margin: 0 0 2rem; }
+  .poc {
+    display: inline-block; margin: 0 0 1rem; padding: .125rem .5rem;
+    border: 1px solid var(--rule); border-radius: 10px;
+    font-size: .75rem; letter-spacing: .03em; color: var(--muted);
+  }
   h2 { font-size: .8125rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 2.5rem 0 .875rem; font-weight: 600; }
   p { margin: 0 0 1rem; }
   a { color: var(--accent); }
@@ -47,6 +52,7 @@
 <body>
 <main>
   <h1>Service Request GIS</h1>
+  <p class="poc">Proof-of-concept demo · mock service, synthetic data</p>
   <p class="lede">
     A mock ArcGIS REST FeatureServer over ~850 synthetic public service requests in and around
     Cape Town, with a Maps SDK viewer, a cross-filtering dashboard, and 70 analytical questions
@@ -95,7 +101,8 @@
   </p>
 
   <footer>
-    Synthetic data, generated for development and testing. No real people, addresses or records.
+    A proof-of-concept demo. The data is synthetic — generated from a seed, with no real people,
+    addresses or records — and the FeatureServer is a mock, not an Esri product.
   </footer>
 </main>
 </body>
