@@ -39,10 +39,23 @@ jobs:
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
-      - name: Upload the repository as the site
+      # Stage only what the site serves. Uploading the repository root would also
+      # ship .git and the Node-only parts, which the browser never asks for.
+      - name: Stage the site
+        run: |
+          mkdir -p _site
+          cp index.html .nojekyll sw.js _site/
+          cp -r viewer sql-library data docs _site/
+          # The viewer imports the engine itself; these are the platform-free modules.
+          mkdir -p _site/server
+          cp server/featureService.js server/restRouter.js server/schema.js \
+             server/serviceConfig.js server/sqlDialect.js _site/server/
+          echo "staged $(find _site -type f | wc -l) files, $(du -sh _site | cut -f1)"
+
+      - name: Upload the site
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: _site
 
       - name: Deploy
         id: deployment
