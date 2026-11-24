@@ -62,9 +62,10 @@ function renderDetail(q) {
       <details open><summary>REST request${reqs.length > 1 ? ` · ${esc(r.name)}` : ''} · <a href="${esc(toQueryUrl(layerUrl, { ...r.params, f: 'pjson' }))}" target="_blank">open ↗</a></summary>
       <pre class="code">${esc(JSON.stringify(r.params, null, 2))}</pre></details>`).join('')}
     <label>T-SQL <textarea id="libSql" rows="8" spellcheck="false">${esc(q.tsql)}</textarea></label>
-    <p class="hint">The entry's original statement, editable. <strong>Run T-SQL</strong> and <strong>Compare</strong>
-    send whatever is in the box to <code>…/FeatureServer/0/sql</code> — a read-only mock extension, not part of
-    ArcGIS REST. Re-select the question to get the original back.</p>
+    <p class="hint">The entry's original statement, editable. <strong>Run T-SQL</strong> sends whatever is in the
+    box to <code>…/FeatureServer/0/sql</code> — a read-only mock extension, not part of ArcGIS REST.
+    <strong>Compare</strong> ignores your edits and always runs the catalogued statement, so it stays a parity
+    check. Re-select the question to get the original back.</p>
     <pre id="libSqlTranslated" class="code small hidden"></pre>`;
 }
 
@@ -105,13 +106,13 @@ export async function initLibraryPanel(map, filters) {
 
   async function compare(q) {
     const left = { label: 'REST (+ client transform)', rows: [], columns: [] };
-    const right = { label: 'T-SQL (mock /sql)', rows: [], columns: [] };
+    const right = { label: 'Original T-SQL (mock /sql)', rows: [], columns: [] };
     try {
       const r = await runEntry(q, fetcher);
       Object.assign(left, { rows: r.rows, columns: r.columns, dateColumns: r.requests.flatMap((x) => dateColumnsOf(x.response)) });
     } catch (e) { left.error = e.message; }
     try {
-      const t = await tsql($('libSql').value);
+      const t = await tsql(q.tsql);
       Object.assign(right, { rows: t.rows, columns: t.columns });
     } catch (e) { right.error = e.message; }
     showCompare({ title: `Q${q.id}. ${q.question}`, left, right });
