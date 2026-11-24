@@ -39,7 +39,7 @@ initSqlPanel();
 
 // If the ArcGIS SDK can't load (offline, CDN blocked) the panels still work against the REST service.
 const noMap = {
-  basemaps: [], view: null, sketchLayer: null,
+  basemaps: [], view: null, sketchLayer: null, activeBasemapId: null,
   setBasemap() {}, setRenderer() {}, highlightIds() {}, timeSlider() {},
   setDefinitionExpression(w) { window.dispatchEvent(new CustomEvent('filterchange', { detail: w || '1=1' })); },
   sketch() { throw new Error('Map not available'); },

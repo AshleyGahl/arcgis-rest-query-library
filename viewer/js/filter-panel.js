@@ -38,6 +38,8 @@ export function initFilterPanel(map) {
   fillDistinct('fCategory', 'Category');
   fillDistinct('fSuburb', 'Suburb');
   for (const b of map.basemaps) $('basemap').add(new Option(b.title, b.id));
+  // Reflect the basemap that actually loaded, which may not be the first one offered.
+  if (map.activeBasemapId) $('basemap').value = map.activeBasemapId;
 
   let timer;
   const refreshCount = () => {

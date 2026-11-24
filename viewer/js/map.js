@@ -23,25 +23,65 @@ export async function createMap() {
       copyright: '© OpenStreetMap contributors © CARTO',
     })],
   });
+  // Ordered: the first that loads becomes the default. Each is built explicitly rather than
+  // with Basemap.fromId(), whose well-known ids resolve through the web-map JSON layer factory.
   const basemaps = [
-    { id: 'light', title: 'Light (CARTO)', make: carto('light_all', 'Light') },
-    { id: 'dark', title: 'Dark (CARTO)', make: carto('dark_all', 'Dark') },
     { id: 'osm', title: 'OpenStreetMap', make: () => new Basemap({
       title: 'OpenStreetMap',
-      // Built explicitly rather than with Basemap.fromId('osm'): the well-known id resolves
-      // through the web-map JSON layer factory, which does not reliably produce a drawable
-      // layer here. A WebTileLayer on the OSM standard tile URL is the same tiles, directly.
       baseLayers: [new WebTileLayer({
         urlTemplate: 'https://tile.openstreetmap.org/{level}/{col}/{row}.png',
         copyright: '© OpenStreetMap contributors',
       })],
     }) },
+    { id: 'light', title: 'Light (CARTO)', make: carto('light_all', 'Light') },
+    { id: 'dark', title: 'Dark (CARTO)', make: carto('dark_all', 'Dark') },
     { id: 'imagery', title: 'Esri World Imagery', make: () => new Basemap({ title: 'Imagery', baseLayers: [new TileLayer({ url: 'https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer' })] }) },
     ...(CONFIG.apiKey ? [
       { id: 'gray-vector', title: 'Esri Light Gray', make: () => Basemap.fromId('gray-vector') },
       { id: 'streets-navigation-vector', title: 'Esri Navigation', make: () => Basemap.fromId('streets-navigation-vector') },
     ] : []),
   ];
+
+  /**
+   * A basemap whose tiles never arrive leaves the view blank, with nothing in the UI to say
+   * why — so load it explicitly and report what failed. `Basemap.load()` resolves once its
+   * base layers have loaded their metadata; a tile request that is blocked downstream (an
+   * extension, a proxy, a filtered network) surfaces here as a layer load error.
+   */
+  async function loadBasemap(entry) {
+    const basemap = entry.make();
+    await basemap.load();
+    const broken = basemap.baseLayers.find((l) => l.loadStatus === 'failed');
+    if (broken) throw broken.loadError ?? new Error(`${entry.title} failed to load`);
+    return basemap;
+  }
+
+  function notify(message) {
+    const el = document.getElementById('mapNotice');
+    if (!el) return;
+    el.textContent = message ?? '';
+    el.classList.toggle('hidden', !message);
+  }
+
+  /** The first basemap that loads, so one blocked tile host does not leave a blank map. */
+  async function firstWorkingBasemap() {
+    const failures = [];
+    for (const entry of basemaps) {
+      try {
+        const basemap = await loadBasemap(entry);
+        if (failures.length) {
+          notify(`${failures[0].title} did not load (${failures[0].message}). Showing ${entry.title} instead.`);
+        }
+        return { basemap, entry };
+      } catch (e) {
+        const message = e?.message ?? String(e);
+        console.error(`Basemap "${entry.title}" failed to load:`, e);
+        failures.push({ title: entry.title, message });
+      }
+    }
+    notify(`No basemap could be loaded, so the map shows the request points only. Tried: ${failures.map((f) => f.title).join(', ')}. See the console for details.`);
+    return { basemap: null, entry: null };
+  }
 
   const layer = new FeatureLayer({
     url: CONFIG.layerUrl,
@@ -52,7 +92,8 @@ export async function createMap() {
   });
   const sketchLayer = new GraphicsLayer({ title: 'Query geometry', listMode: 'hide' });
 
-  const map = new Map({ basemap: basemaps[0].make(), layers: [layer, sketchLayer] });
+  const { basemap, entry: activeEntry } = await firstWorkingBasemap();
+  const map = new Map({ basemap, layers: [layer, sketchLayer] });
   const view = new MapView({ container: 'viewDiv', map, center: CONFIG.center, zoom: CONFIG.zoom, timeZone: CONFIG.timeZone });
 
   view.ui.add(new Home({ view }), 'top-left');
@@ -64,7 +105,19 @@ export async function createMap() {
 
   return {
     view, layer, layerView, sketchLayer, basemaps,
-    setBasemap: (id) => { map.basemap = basemaps.find((b) => b.id === id).make(); },
+    /** The basemap actually in use, which is not always the first one when a tile host is blocked. */
+    activeBasemapId: activeEntry?.id ?? null,
+    async setBasemap(id) {
+      const entry = basemaps.find((b) => b.id === id);
+      if (!entry) return;
+      try {
+        map.basemap = await loadBasemap(entry);
+        notify(null);
+      } catch (e) {
+        console.error(`Basemap "${entry.title}" failed to load:`, e);
+        notify(`${entry.title} did not load: ${e?.message ?? e}`);
+      }
+    },
     setRenderer(key, cluster) {
       layer.renderer = RENDERERS[key]();
       layer.featureReduction = cluster && key !== 'heatmap' ? CLUSTER : null;
