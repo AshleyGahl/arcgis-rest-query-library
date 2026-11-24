@@ -65,7 +65,7 @@ function renderDetail(q) {
     <p class="hint">The entry's original statement, editable. <strong>Run T-SQL</strong> and <strong>Compare</strong>
     send whatever is in the box to <code>…/FeatureServer/0/sql</code> — a read-only mock extension, not part of
     ArcGIS REST. Re-select the question to get the original back.</p>
-    <pre id="libSqlTranslated" class="code small"></pre>`;
+    <pre id="libSqlTranslated" class="code small hidden"></pre>`;
 }
 
 export async function initLibraryPanel(map, filters) {
@@ -94,9 +94,11 @@ export async function initLibraryPanel(map, filters) {
     try {
       const r = await tsql($('libSql').value);
       $('libSqlTranslated').textContent = `SQLite: ${r.sqlite}`;
+      $('libSqlTranslated').classList.remove('hidden');
       showResults({ title: `Q${q.id} · T-SQL`, rows: r.rows, columns: r.columns });
     } catch (e) {
       $('libSqlTranslated').textContent = '';
+      $('libSqlTranslated').classList.add('hidden');
       showError(`Q${q.id} T-SQL failed`, e);
     }
   }
