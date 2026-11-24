@@ -32,7 +32,7 @@ function defaults(a, rows) {
   const distinct = (c) => new Set(rows.map((r) => r[c])).size;
   if (a.isFeatureSet || !a.measures.length) {
     const varied = (c) => distinct(c) > 1;
-    const x = ['Category', 'RequestType', 'Status', 'Suburb', 'Channel'].find((c) => a.groupable.includes(c) && varied(c)) ?? a.groupable.find(varied) ?? a.groupable[0];
+    const x = ['Category', 'CategorySub', 'Status', 'Suburb', 'Channel'].find((c) => a.groupable.includes(c) && varied(c)) ?? a.groupable.find(varied) ?? a.groupable[0];
     return { x, series: '', measure: COUNT };
   }
   const g = a.groupable;

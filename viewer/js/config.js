@@ -29,7 +29,7 @@ export const THEMES = {
 
 export const STATUSES = ['Open', 'In Progress', 'Closed'];
 export const CHANNELS = ['App', 'Online form', 'Phone', 'Email', 'In person'];
-export const DATE_FIELDS = ['DateLogged', 'DateCompleted'];
+export const DATE_FIELDS = ['DtLogged', 'DtCompleted'];
 
 // Chart palette (validated: adjacent CVD ΔE ≥ 9.1, normal-vision ΔE ≥ 19.6 on #fcfcfb).
 // Slots are assigned in fixed order and follow the entity, never its rank.
@@ -55,4 +55,4 @@ export const STATUS_GROUP_COLORS = {
 export const CHANNEL_COLORS = Object.fromEntries(CHANNELS.map((c, i) => [c, SERIES[i]]));
 
 // Fields a chart click can turn into a map filter
-export const FILTERABLE = ['Category', 'RequestType', 'Status', 'Channel', 'Suburb'];
+export const FILTERABLE = ['Category', 'CategorySub', 'Status', 'Channel', 'Suburb'];

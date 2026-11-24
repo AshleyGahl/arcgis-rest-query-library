@@ -14,7 +14,7 @@ const q = (list) => list.map(sqlValue).join(', ');
 // SQL mirror of the map's Arcade theme expression so chart groups == map classes
 const THEME_CASE = `CASE ${Object.entries(THEMES).filter(([, c]) => c).map(([t, c]) => `WHEN Category IN (${q(c)}) THEN ${sqlValue(t)}`).join(' ')} ELSE 'Other' END`;
 const OPEN = "Status <> 'Closed'";
-const RES = 'DATEDIFF(day, DateLogged, DateCompleted)';
+const RES = 'DATEDIFF(day, DtLogged, DtCompleted)';
 const count = (out) => ({ statisticType: 'count', onStatisticField: 'ObjectID', outStatisticFieldName: out });
 const sum = (expr, out) => ({ statisticType: 'sum', onStatisticField: expr, outStatisticFieldName: out });
 const themeWhere = (t) => (THEMES[t] ? `Category IN (${q(THEMES[t])})` : `Category NOT IN (${q(Object.values(THEMES).filter(Boolean).flat())})`);
@@ -53,17 +53,17 @@ export function initDashboard(map, filters) {
         stats({ outStatistics: [
           count('Total'),
           sum(`CASE WHEN ${OPEN} THEN 1 ELSE 0 END`, 'OpenCount'),
-          sum('CASE WHEN DateCompleted IS NOT NULL THEN 1 ELSE 0 END', 'Closed'),
-          sum(`CASE WHEN DateCompleted IS NOT NULL AND ${RES} > 5 THEN 1 ELSE 0 END`, 'Breached'),
-          { statisticType: 'percentile_cont', onStatisticField: `CASE WHEN DateCompleted >= DateLogged THEN ${RES} END`, statisticParameters: { value: 0.5 }, outStatisticFieldName: 'MedianDays' },
+          sum('CASE WHEN DtCompleted IS NOT NULL THEN 1 ELSE 0 END', 'Closed'),
+          sum(`CASE WHEN DtCompleted IS NOT NULL AND ${RES} > 5 THEN 1 ELSE 0 END`, 'Breached'),
+          { statisticType: 'percentile_cont', onStatisticField: `CASE WHEN DtCompleted >= DtLogged THEN ${RES} END`, statisticParameters: { value: 0.5 }, outStatisticFieldName: 'MedianDays' },
         ], sqlFormat: 'native' }),
-        stats({ groupByFieldsForStatistics: "FORMAT(DateLogged, 'yyyy-MM') AS YM", outStatistics: [count('n')], orderByFields: 'YM', sqlFormat: 'native' }),
-        stats({ where: 'DateCompleted IS NOT NULL', groupByFieldsForStatistics: "FORMAT(DateCompleted, 'yyyy-MM') AS YM", outStatistics: [count('n')], orderByFields: 'YM', sqlFormat: 'native' }),
+        stats({ groupByFieldsForStatistics: "FORMAT(DtLogged, 'yyyy-MM') AS YM", outStatistics: [count('n')], orderByFields: 'YM', sqlFormat: 'native' }),
+        stats({ where: 'DtCompleted IS NOT NULL', groupByFieldsForStatistics: "FORMAT(DtCompleted, 'yyyy-MM') AS YM", outStatistics: [count('n')], orderByFields: 'YM', sqlFormat: 'native' }),
         stats({ groupByFieldsForStatistics: `${THEME_CASE} AS Theme`, outStatistics: [count('n')], orderByFields: 'n DESC' }),
         stats({ groupByFieldsForStatistics: 'Status', outStatistics: [count('n')] }),
         stats({ groupByFieldsForStatistics: 'Channel', outStatistics: [count('n')] }),
         stats({ where: `Suburb IS NOT NULL AND ${OPEN}`, groupByFieldsForStatistics: 'Suburb', outStatistics: [count('n')], orderByFields: 'n DESC, Suburb', resultRecordCount: 10 }),
-        stats({ groupByFieldsForStatistics: 'EXTRACT(HOUR FROM DateLogged) AS Hr', outStatistics: [count('n')], orderByFields: 'Hr' }),
+        stats({ groupByFieldsForStatistics: 'EXTRACT(HOUR FROM DtLogged) AS Hr', outStatistics: [count('n')], orderByFields: 'Hr' }),
       ]);
       if (my !== seq) return; // a newer refresh superseded this one
       for (const r of [kpi, logged, done, theme, status, channel, suburbs, hours]) if (r.json.error) throw new Error(r.json.error.message);
@@ -89,7 +89,7 @@ export function initDashboard(map, filters) {
         onClick: (ym) => {
           const [y, m] = ym.split('-').map(Number);
           const next = m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, '0')}`;
-          drill(`DateLogged >= DATE '${ym}-01' AND DateLogged < DATE '${next}-01'`);
+          drill(`DtLogged >= DATE '${ym}-01' AND DtLogged < DATE '${next}-01'`);
         },
       });
 

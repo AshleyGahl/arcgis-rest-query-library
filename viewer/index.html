@@ -121,7 +121,7 @@
     <section class="pane" id="pane-console">
       <p class="hint">Builds a <code>…/FeatureServer/0/query</code> request exactly as you would against ArcGIS.</p>
       <label>where <input id="cWhere" type="text" value="1=1" spellcheck="false"></label>
-      <label>outFields <input id="cOutFields" type="text" value="RequestID,Category,RequestType,Status,Suburb,DateLogged" spellcheck="false"></label>
+      <label>outFields <input id="cOutFields" type="text" value="RequestID,Category,CategorySub,Status,Suburb,DtLogged" spellcheck="false"></label>
       <label>orderByFields <input id="cOrderBy" type="text" value="ObjectID DESC" spellcheck="false"></label>
       <label>groupByFieldsForStatistics <input id="cGroupBy" type="text" spellcheck="false" placeholder="e.g. Category"></label>
       <label>outStatistics <textarea id="cStats" rows="3" spellcheck="false" placeholder='[{"statisticType":"count","onStatisticField":"ObjectID","outStatisticFieldName":"Count"}]'></textarea></label>
@@ -151,7 +151,7 @@
       <p class="hint">Mock extension (<code>…/FeatureServer/0/sql</code>, not part of ArcGIS REST): runs read-only T-SQL against the same data so you can check a REST port against the original statement.</p>
       <textarea id="sqlText" rows="10" spellcheck="false">SELECT TOP 10 Suburb, COUNT(*) AS Requests,
        SUM(CASE WHEN Status <> 'Closed' THEN 1 ELSE 0 END) AS StillOpen
-FROM ServiceRequests
+FROM ServiceRequest
 GROUP BY Suburb
 ORDER BY Requests DESC;</textarea>
       <div class="buttons"><button id="sqlRun" class="primary">Run T-SQL</button></div>

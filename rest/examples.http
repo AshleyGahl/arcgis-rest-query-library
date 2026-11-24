@@ -10,10 +10,10 @@ GET http://127.0.0.1:3000/arcgis/rest/services?f=pjson
 GET {{layer}}?f=pjson
 
 ### Ten newest open requests in Khayelitsha, lon/lat output
-GET {{layer}}/query?f=pjson&where=Suburb='Khayelitsha' AND Status <> 'Closed'&outFields=RequestID,Category,RequestType,Status,DateLogged&orderByFields=ObjectID DESC&resultRecordCount=10&outSR=4326
+GET {{layer}}/query?f=pjson&where=Suburb='Khayelitsha' AND Status <> 'Closed'&outFields=RequestID,Category,CategorySub,Status,DtLogged&orderByFields=ObjectID DESC&resultRecordCount=10&outSR=4326
 
 ### Same, as GeoJSON
-GET {{layer}}/query?f=geojson&where=Suburb='Khayelitsha' AND Status <> 'Closed'&outFields=RequestID,Category,RequestType,Status&resultRecordCount=10
+GET {{layer}}/query?f=geojson&where=Suburb='Khayelitsha' AND Status <> 'Closed'&outFields=RequestID,Category,CategorySub,Status&resultRecordCount=10
 
 ### Envelope (city centre) in WGS84 — count only
 GET {{layer}}/query?f=pjson&geometry=18.40,-33.94,18.45,-33.90&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&returnCountOnly=true
@@ -38,10 +38,10 @@ POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
 f=pjson
-&where=DateCompleted IS NOT NULL
+&where=DtCompleted IS NOT NULL
 &sqlFormat=native
 &groupByFieldsForStatistics=Category
-&outStatistics=[{"statisticType":"percentile_cont","onStatisticField":"DATEDIFF(day, DateLogged, DateCompleted)","statisticParameters":{"value":0.5},"outStatisticFieldName":"MedianDays"},{"statisticType":"percentile_cont","onStatisticField":"DATEDIFF(day, DateLogged, DateCompleted)","statisticParameters":{"value":0.9},"outStatisticFieldName":"P90Days"},{"statisticType":"count","onStatisticField":"ObjectID","outStatisticFieldName":"n"}]
+&outStatistics=[{"statisticType":"percentile_cont","onStatisticField":"DATEDIFF(day, DtLogged, DtCompleted)","statisticParameters":{"value":0.5},"outStatisticFieldName":"MedianDays"},{"statisticType":"percentile_cont","onStatisticField":"DATEDIFF(day, DtLogged, DtCompleted)","statisticParameters":{"value":0.9},"outStatisticFieldName":"P90Days"},{"statisticType":"count","onStatisticField":"ObjectID","outStatisticFieldName":"n"}]
 &having=COUNT(ObjectID) > 15
 &orderByFields=P90Days DESC
 
@@ -56,4 +56,4 @@ POST {{layer}}/sql
 Content-Type: application/x-www-form-urlencoded
 
 f=pjson
-&q=SELECT TOP 5 Suburb, COUNT(*) AS Requests FROM ServiceRequests GROUP BY Suburb ORDER BY Requests DESC
+&q=SELECT TOP 5 Suburb, COUNT(*) AS Requests FROM ServiceRequest GROUP BY Suburb ORDER BY Requests DESC

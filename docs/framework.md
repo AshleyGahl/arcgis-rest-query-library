@@ -8,7 +8,7 @@ into `sql/03_vw_QueryLibrary.sql`.
 | Dimension | Core questions | Primary techniques |
 |---|---|---|
 | **WHO** | Which channels do people use to report? | `GROUP BY Channel`, `COUNT`, window functions |
-| **WHAT** | What types of request arrive? Which categories dominate? | `GROUP BY Category/RequestType`, `DISTINCT`, `LIKE` |
+| **WHAT** | What types of request arrive? Which categories dominate? | `GROUP BY Category/CategorySub`, `DISTINCT`, `LIKE` |
 | **WHEN** | When are requests logged and completed? What are the trends? | date functions, time grouping, time series |
 | **WHERE** | Where do requests come from? Which have no suburb? | `GROUP BY Suburb`, `NULL` handling, spatial filters |
 | **WHY** | Why do requests stay open? What is stuck? | `CASE`, ageing, status distribution |
@@ -33,7 +33,7 @@ rolling aggregates · ranking · cross-dimension dominance · text analysis · t
 ## 4. Enhancement roadmap
 
 1. **Service-level matrix:** replace the flat 5-day threshold with a lookup table keyed by `Category`
-   and `RequestType`, and support business days as well as calendar days.
+   and `CategorySub`, and support business days as well as calendar days.
 2. **Seasonal baselines:** compare against multi-year seasonal norms so predictable winter-storm or
    summer peaks aren't flagged as anomalies.
 3. **Auto-triage:** classify free-text descriptions into categories and spot urgency words at intake.

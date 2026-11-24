@@ -7,7 +7,7 @@
  *   npm run query -- 41 --compare               run REST and T-SQL side by side
  *   npm run query -- 41 --url <layerUrl>        run against any FeatureServer layer over HTTP
  *   npm run query -- --where "Suburb = 'Sea Point'" --outFields "RequestID,Category,Status" --resultRecordCount 5
- *   npm run query -- --sql "SELECT TOP 5 Suburb, COUNT(*) AS n FROM ServiceRequests GROUP BY Suburb ORDER BY n DESC"
+ *   npm run query -- --sql "SELECT TOP 5 Suburb, COUNT(*) AS n FROM ServiceRequest GROUP BY Suburb ORDER BY n DESC"
  */
 import { createFeatureService } from '../server/nodeRuntime.js';
 import { config } from '../server/config.js';

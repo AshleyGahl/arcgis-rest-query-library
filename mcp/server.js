@@ -33,17 +33,17 @@ const TOOLS = [
     description: 'Schema and value domains of the ServiceRequests mock FeatureServer layer (generic public service requests, Cape Town coordinates). Call this before writing where clauses.',
     inputSchema: { type: 'object', properties: {} },
     handler: () => {
-      const distinct = (f) => svc.sql(`SELECT ${f} AS v, COUNT(*) AS n FROM ServiceRequests GROUP BY ${f} ORDER BY n DESC`).rows;
+      const distinct = (f) => svc.sql(`SELECT ${f} AS v, COUNT(*) AS n FROM ServiceRequest GROUP BY ${f} ORDER BY n DESC`).rows;
       return {
         layerUrl: LAYER,
         featureCount: svc.count,
         asOf: svc.metadata.asOf,
         clock: config.clock,
         spatialReference: 'layer 102100 (Web Mercator); pass outSR=4326 for lon/lat',
-        dateHandling: 'Dates are epoch ms (UTC) in responses; where-clause date literals are SAST local time, e.g. DateLogged >= DATE \'2026-01-01\'',
+        dateHandling: 'Dates are epoch ms (UTC) in responses; where-clause date literals are SAST local time, e.g. DtLogged >= DATE \'2026-01-01\'',
         fields: FIELDS.map((f) => ({ name: f.name, type: f.type, alias: f.alias })),
-        values: { Category: distinct('Category'), RequestType: distinct('RequestType'), Status: distinct('Status'), Channel: distinct('Channel') },
-        dataModel: 'docs/data-model.md — generic council report-a-problem model; core facts are DateLogged, DateCompleted, Category',
+        values: { Category: distinct('Category'), CategorySub: distinct('CategorySub'), Status: distinct('Status'), Channel: distinct('Channel') },
+        dataModel: 'docs/data-model.md — generic council report-a-problem model; core facts are DtLogged, DtCompleted, Category',
         sql: 'where/groupBy/outStatistics accept ArcGIS standard SQL (EXTRACT, CAST, CASE, CURRENT_TIMESTAMP - INTERVAL \'7\' DAY) and T-SQL functions (DATEDIFF, DATEPART, DATEADD, FORMAT, LEN, GETDATE).',
       };
     },
@@ -104,7 +104,7 @@ const TOOLS = [
   },
   {
     name: 'run_tsql',
-    description: 'Mock extension (not ArcGIS REST): run a read-only T-SQL SELECT/WITH against the ServiceRequests table to validate REST ports.',
+    description: 'Mock extension (not ArcGIS REST): run a read-only T-SQL SELECT/WITH against the ServiceRequest table to validate REST ports.',
     inputSchema: { type: 'object', properties: { sql: { type: 'string' } }, required: ['sql'] },
     handler: ({ sql }) => { const r = svc.sql(sql); if (r.error) throw new Error(`${r.error.message} ${r.error.details.join(' ')}`); return { sqlite: r.sqlite, ...clip(r.rows) }; },
   },

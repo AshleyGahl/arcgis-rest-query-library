@@ -61,13 +61,13 @@ test('user-defined T-SQL functions are registered', () => {
 });
 
 test('percentile aggregates work as window functions', () => {
-  const r = wasmSvc.sql('SELECT TOP 1 PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY DATEDIFF(day, DateLogged, DateCompleted)) OVER () AS med FROM ServiceRequests WHERE DateCompleted IS NOT NULL');
+  const r = wasmSvc.sql('SELECT TOP 1 PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY DATEDIFF(day, DtLogged, DtCompleted)) OVER () AS med FROM ServiceRequest WHERE DtCompleted IS NOT NULL');
   assert.ok(!r.error, r.error && r.error.message);
   assert.equal(typeof r.rows[0].med, 'number');
 });
 
 test('the engine stays read-only', () => {
-  const r = wasmSvc.sql("UPDATE ServiceRequests SET Status = 'Closed'");
+  const r = wasmSvc.sql("UPDATE ServiceRequest SET Status = 'Closed'");
   assert.ok(r.error, 'a write should be rejected');
 });
 

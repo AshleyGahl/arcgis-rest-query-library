@@ -75,10 +75,10 @@ viewer derives its own base URL from the module it is loaded as.
 
 | Field | Notes |
 |---|---|
-| **DateLogged** | When the request was received (core fact) |
-| **DateCompleted** | When it was closed off. NULL while open (core fact) |
+| **DtLogged** | When the request was received (core fact) |
+| **DtCompleted** | When it was closed off. NULL while open (core fact) |
 | **Category** | Top-level group, e.g. *Water Supply*, *Roads & Footpaths* (core fact) |
-| RequestType | Sub-type, e.g. *Water leak*, *Pothole* |
+| CategorySub | Sub-type, e.g. *Water leak*, *Pothole* |
 | Status | `Open` · `In Progress` · `Closed` |
 | Channel | `App` · `Online form` · `Phone` · `Email` · `In person` |
 | Suburb | Cape Town suburb, or NULL when only a map pin was given |
@@ -167,8 +167,8 @@ Every result can switch between **Table** and **Chart**. A single-value result s
 ## SQL Server
 
 Run these in order:
-1. `sql/01_ServiceRequests_table.sql`: creates the table.
-2. `sql/02_import_geojson.sql`: creates the **view** `vw_ServiceRequests_GeoJson` and the **stored procedure** `usp_ImportServiceRequestsGeoJson @GeoJson`.
+1. `sql/01_ServiceRequest_table.sql`: creates the table.
+2. `sql/02_import_geojson.sql`: creates the **view** `vw_ServiceRequest_GeoJson` and the **stored procedure** `usp_ImportServiceRequestGeoJson @GeoJson`.
 3. `sql/03_vw_QueryLibrary.sql`: creates the generated catalogue of all 70 T-SQL statements.
 
 ## Pointing it at a real service

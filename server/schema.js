@@ -1,22 +1,22 @@
 /**
  * Esri field schema for the ServiceRequests layer — a generic council "report a problem"
- * model (see docs/data-model.md). The facts that matter: DateLogged, DateCompleted, Category.
+ * model (see docs/data-model.md). The facts that matter: DtLogged, DtCompleted, Category.
  */
 export const FIELDS = [
   { name: 'ObjectID', type: 'esriFieldTypeOID', alias: 'ObjectID', sql: 'INTEGER PRIMARY KEY' },
   { name: 'RequestID', type: 'esriFieldTypeString', alias: 'Request ID', length: 20 },
   { name: 'Category', type: 'esriFieldTypeString', alias: 'Category', length: 50 },
-  { name: 'RequestType', type: 'esriFieldTypeString', alias: 'Request Type', length: 60 },
+  { name: 'CategorySub', type: 'esriFieldTypeString', alias: 'Sub-category', length: 60 },
   { name: 'Status', type: 'esriFieldTypeString', alias: 'Status', length: 20 },
   { name: 'Channel', type: 'esriFieldTypeString', alias: 'Channel', length: 20 },
   { name: 'Suburb', type: 'esriFieldTypeString', alias: 'Suburb', length: 60 },
   { name: 'Description', type: 'esriFieldTypeString', alias: 'Description', length: 600 },
-  { name: 'DateLogged', type: 'esriFieldTypeDate', alias: 'Date Logged', length: 8 },
-  { name: 'DateCompleted', type: 'esriFieldTypeDate', alias: 'Date Completed', length: 8 },
+  { name: 'DtLogged', type: 'esriFieldTypeDate', alias: 'Date Logged', length: 8 },
+  { name: 'DtCompleted', type: 'esriFieldTypeDate', alias: 'Date Completed', length: 8 },
 ];
 
 export const OID_FIELD = 'ObjectID';
-export const TIME_FIELD = 'DateLogged';      // layer timeInfo + `time=` parameter
+export const TIME_FIELD = 'DtLogged';      // layer timeInfo + `time=` parameter
 export const DISPLAY_FIELD = 'RequestID';
 export const DATE_FIELDS = FIELDS.filter((f) => f.type === 'esriFieldTypeDate').map((f) => f.name);
 export const FIELD_BY_LOWER = Object.fromEntries(FIELDS.map((f) => [f.name.toLowerCase(), f]));

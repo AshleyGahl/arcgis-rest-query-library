@@ -78,10 +78,10 @@ export class FeatureService {
 
     const db = this.runtime.openDatabase();
     registerFunctions(db, this.dates, this.nowLocal);
-    db.exec(`CREATE TABLE _ServiceRequests (${FIELDS.map((f) => `"${f.name}" ${sqlTypeOf(f)}`).join(', ')}, _lon REAL, _lat REAL, _x REAL, _y REAL)`);
-    // Public view for the raw-SQL extension: same columns as the T-SQL ServiceRequests table.
-    db.exec(`CREATE VIEW ServiceRequests AS SELECT ${FIELDS.map((f) => `"${f.name}"`).join(', ')} FROM _ServiceRequests`);
-    const ins = db.prepare(`INSERT INTO _ServiceRequests VALUES (${Array(FIELDS.length + 4).fill('?').join(', ')})`);
+    db.exec(`CREATE TABLE _ServiceRequest (${FIELDS.map((f) => `"${f.name}" ${sqlTypeOf(f)}`).join(', ')}, _lon REAL, _lat REAL, _x REAL, _y REAL)`);
+    // Public view for the raw-SQL extension: same columns as the T-SQL ServiceRequest table.
+    db.exec(`CREATE VIEW ServiceRequest AS SELECT ${FIELDS.map((f) => `"${f.name}"`).join(', ')} FROM _ServiceRequest`);
+    const ins = db.prepare(`INSERT INTO _ServiceRequest VALUES (${Array(FIELDS.length + 4).fill('?').join(', ')})`);
 
     this.points = [];
     let xmin = Infinity, ymin = Infinity, xmax = -Infinity, ymax = -Infinity, tmin = Infinity, tmax = -Infinity;
@@ -233,15 +233,15 @@ export class FeatureService {
 
   queryIds(p, where) {
     const order = p.orderByFields ? translate(p.orderByFields) : '"ObjectID"';
-    const rows = this.run(`SELECT "ObjectID" FROM _ServiceRequests WHERE ${where} ORDER BY ${order}`);
+    const rows = this.run(`SELECT "ObjectID" FROM _ServiceRequest WHERE ${where} ORDER BY ${order}`);
     return { objectIdFieldName: OID_FIELD, objectIds: rows.map((r) => r.ObjectID) };
   }
 
   queryCountExtent(p, where, outSR) {
     const out = {};
-    if (bool(p.returnCountOnly)) out.count = this.run(`SELECT COUNT(*) AS n FROM _ServiceRequests WHERE ${where}`)[0].n;
+    if (bool(p.returnCountOnly)) out.count = this.run(`SELECT COUNT(*) AS n FROM _ServiceRequest WHERE ${where}`)[0].n;
     if (bool(p.returnExtentOnly)) {
-      const e = this.run(`SELECT MIN(_lon) a, MIN(_lat) b, MAX(_lon) c, MAX(_lat) d, COUNT(*) n FROM _ServiceRequests WHERE ${where}`)[0];
+      const e = this.run(`SELECT MIN(_lon) a, MIN(_lat) b, MAX(_lon) c, MAX(_lat) d, COUNT(*) n FROM _ServiceRequest WHERE ${where}`)[0];
       if (e.n === 0) out.extent = { xmin: 'NaN', ymin: 'NaN', xmax: 'NaN', ymax: 'NaN', spatialReference: srJson(outSR) };
       else {
         const [xmin, ymin] = this.projectOut(e.a, e.b, outSR), [xmax, ymax] = this.projectOut(e.c, e.d, outSR);
@@ -255,11 +255,11 @@ export class FeatureService {
     const items = this.outItems(p, false);
     const cols = items.map((i) => `${i.expr} AS "${i.alias}"`).join(', ');
     if (bool(p.returnCountOnly)) {
-      return { count: this.run(`SELECT COUNT(*) AS n FROM (SELECT DISTINCT ${cols} FROM _ServiceRequests WHERE ${where})`)[0].n };
+      return { count: this.run(`SELECT COUNT(*) AS n FROM (SELECT DISTINCT ${cols} FROM _ServiceRequest WHERE ${where})`)[0].n };
     }
     const order = p.orderByFields ? ` ORDER BY ${translate(p.orderByFields)}` : '';
     const { rc, off } = this.limits(p);
-    const rows = this.run(`SELECT DISTINCT ${cols} FROM _ServiceRequests WHERE ${where}${order} LIMIT ${rc + 1} OFFSET ${off}`);
+    const rows = this.run(`SELECT DISTINCT ${cols} FROM _ServiceRequest WHERE ${where}${order} LIMIT ${rc + 1} OFFSET ${off}`);
     return this.featureSet(items, rows, rc, null);
   }
 
@@ -277,7 +277,7 @@ export class FeatureService {
     const cols = items.map((i) => `${i.expr} AS "${i.alias}"`).join(', ');
     const order = p.orderByFields ? translate(p.orderByFields) : '"ObjectID"';
     const { rc, off } = this.limits(p);
-    const rows = this.run(`SELECT ${cols}, _lon AS __lon, _lat AS __lat FROM _ServiceRequests WHERE ${where} ORDER BY ${order} LIMIT ${rc + 1} OFFSET ${off}`);
+    const rows = this.run(`SELECT ${cols}, _lon AS __lon, _lat AS __lat FROM _ServiceRequest WHERE ${where} ORDER BY ${order} LIMIT ${rc + 1} OFFSET ${off}`);
     return this.featureSet(items, rows, rc, withGeom ? outSR : null);
   }
 
@@ -344,7 +344,7 @@ export class FeatureService {
       return { sql, alias, esriType, isDate, infer };
     });
 
-    let sql = `SELECT ${[...groups.map((g) => `${g.expr} AS "${g.alias}"`), ...statCols.map((c) => `${c.sql} AS "${c.alias}"`)].join(', ')} FROM _ServiceRequests WHERE ${where}`;
+    let sql = `SELECT ${[...groups.map((g) => `${g.expr} AS "${g.alias}"`), ...statCols.map((c) => `${c.sql} AS "${c.alias}"`)].join(', ')} FROM _ServiceRequest WHERE ${where}`;
     if (groups.length) sql += ` GROUP BY ${groups.map((g) => g.expr).join(', ')}`;
     if (p.having) sql += ` HAVING ${translate(p.having)}`;
     if (p.orderByFields) sql += ` ORDER BY ${translate(p.orderByFields)}`;
@@ -382,7 +382,7 @@ export class FeatureService {
   // ------------------------------------------------------------------ raw SQL (mock extension)
   /**
    * NOT part of the ArcGIS REST API. Runs a read-only T-SQL SELECT against the
-   * `ServiceRequests` view so the original vw_QueryLibrary statements can be compared
+   * `ServiceRequest` view so the original vw_QueryLibrary statements can be compared
    * with their REST equivalents.
    */
   sql(statement, maxRows = 5000) {

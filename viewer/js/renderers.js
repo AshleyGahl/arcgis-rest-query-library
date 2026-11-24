@@ -52,11 +52,11 @@ export const CLUSTER = {
 };
 
 export const POPUP = {
-  title: '{RequestID} · {RequestType}',
+  title: '{RequestID} · {CategorySub}',
   outFields: ['*'],
   expressionInfos: [
     { name: 'theme', title: 'Theme', expression: THEME_ARCADE },
-    { name: 'resolution', title: 'Resolution', expression: "IIf(IsEmpty($feature.DateCompleted), 'Not completed', Text(DateDiff($feature.DateCompleted, $feature.DateLogged, 'days'), '#.#') + ' days to complete')" },
+    { name: 'resolution', title: 'Resolution', expression: "IIf(IsEmpty($feature.DtCompleted), 'Not completed', Text(DateDiff($feature.DtCompleted, $feature.DtLogged, 'days'), '#.#') + ' days to complete')" },
   ],
   content: [
     { type: 'text', text: '<b>{Description}</b>' },
@@ -64,14 +64,14 @@ export const POPUP = {
       type: 'fields',
       fieldInfos: [
         { fieldName: 'Category' },
-        { fieldName: 'RequestType', label: 'Request type' },
+        { fieldName: 'CategorySub', label: 'Sub-category' },
         { fieldName: 'Status' },
         { fieldName: 'expression/resolution' },
         { fieldName: 'expression/theme' },
         { fieldName: 'Channel' },
         { fieldName: 'Suburb' },
-        { fieldName: 'DateLogged', label: 'Logged', format: { dateFormat: 'short-date-short-time' } },
-        { fieldName: 'DateCompleted', label: 'Completed', format: { dateFormat: 'short-date-short-time' } },
+        { fieldName: 'DtLogged', label: 'Logged', format: { dateFormat: 'short-date-short-time' } },
+        { fieldName: 'DtCompleted', label: 'Completed', format: { dateFormat: 'short-date-short-time' } },
         { fieldName: 'ObjectID' },
       ],
     },

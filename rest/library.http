@@ -22,13 +22,13 @@ f=pjson
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Count%22%7D%5D
 &orderByFields=Count%20DESC
 
-### Q3 — Count by RequestType  [standard]
+### Q3 — Count by CategorySub  [standard]
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
 f=pjson
 &where=1%3D1
-&groupByFieldsForStatistics=RequestType
+&groupByFieldsForStatistics=CategorySub
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Count%22%7D%5D
 &orderByFields=Count%20DESC
 
@@ -82,13 +82,13 @@ f=pjson
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Count%22%7D%5D
 &orderByFields=Channel%2C%20Category
 
-### Q9 — Count of distinct request types overall  [standard]
+### Q9 — Count of distinct sub-categories overall  [standard]
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
 f=pjson
 &where=1%3D1
-&outFields=RequestType
+&outFields=CategorySub
 &returnDistinctValues=true
 &returnCountOnly=true
 &returnGeometry=false
@@ -107,7 +107,7 @@ Content-Type: application/x-www-form-urlencoded
 
 f=pjson
 &where=1%3D1
-&groupByFieldsForStatistics=CAST(DateLogged%20AS%20DATE)%20AS%20LogDate
+&groupByFieldsForStatistics=CAST(DtLogged%20AS%20DATE)%20AS%20LogDate
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Count%22%7D%5D
 &orderByFields=LogDate
 
@@ -117,7 +117,7 @@ Content-Type: application/x-www-form-urlencoded
 
 f=pjson
 &where=1%3D1
-&groupByFieldsForStatistics=EXTRACT(YEAR%20FROM%20DateLogged)%20AS%20LogYear%2C%20EXTRACT(MONTH%20FROM%20DateLogged)%20AS%20LogMonth
+&groupByFieldsForStatistics=EXTRACT(YEAR%20FROM%20DtLogged)%20AS%20LogYear%2C%20EXTRACT(MONTH%20FROM%20DtLogged)%20AS%20LogMonth
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Count%22%7D%5D
 &orderByFields=LogYear%2C%20LogMonth
 
@@ -127,7 +127,7 @@ Content-Type: application/x-www-form-urlencoded
 
 f=pjson
 &where=1%3D1
-&groupByFieldsForStatistics=DATEPART(weekday%2C%20DateLogged)%20AS%20WeekDay
+&groupByFieldsForStatistics=DATEPART(weekday%2C%20DtLogged)%20AS%20WeekDay
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Count%22%7D%5D
 &orderByFields=WeekDay
 &sqlFormat=native
@@ -138,7 +138,7 @@ Content-Type: application/x-www-form-urlencoded
 
 f=pjson
 &where=1%3D1
-&groupByFieldsForStatistics=EXTRACT(HOUR%20FROM%20DateLogged)%20AS%20LogHour
+&groupByFieldsForStatistics=EXTRACT(HOUR%20FROM%20DtLogged)%20AS%20LogHour
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Count%22%7D%5D
 &orderByFields=LogHour
 
@@ -147,8 +147,8 @@ POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
 f=pjson
-&where=DateCompleted%20IS%20NOT%20NULL
-&groupByFieldsForStatistics=CAST(DateCompleted%20AS%20DATE)%20AS%20CompleteDate
+&where=DtCompleted%20IS%20NOT%20NULL
+&groupByFieldsForStatistics=CAST(DtCompleted%20AS%20DATE)%20AS%20CompleteDate
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Count%22%7D%5D
 &orderByFields=CompleteDate
 
@@ -158,7 +158,7 @@ Content-Type: application/x-www-form-urlencoded
 
 f=pjson
 &where=1%3D1
-&groupByFieldsForStatistics=FORMAT(DateLogged%2C%20'yyyy-MM')%20AS%20YearMonth
+&groupByFieldsForStatistics=FORMAT(DtLogged%2C%20'yyyy-MM')%20AS%20YearMonth
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Count%22%7D%5D
 &orderByFields=YearMonth
 &sqlFormat=native
@@ -169,7 +169,7 @@ Content-Type: application/x-www-form-urlencoded
 
 f=pjson
 &where=1%3D1
-&groupByFieldsForStatistics=DATEPART(iso_week%2C%20DateLogged)%20AS%20ISOWeek%2C%20YEAR(DATEADD(day%2C%2026%20-%20DATEPART(iso_week%2C%20DateLogged)%2C%20DateLogged))%20AS%20ISOYear
+&groupByFieldsForStatistics=DATEPART(iso_week%2C%20DtLogged)%20AS%20ISOWeek%2C%20YEAR(DATEADD(day%2C%2026%20-%20DATEPART(iso_week%2C%20DtLogged)%2C%20DtLogged))%20AS%20ISOYear
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Count%22%7D%5D
 &orderByFields=ISOYear%2C%20ISOWeek
 &sqlFormat=native
@@ -179,7 +179,7 @@ POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
 f=pjson
-&where=DateLogged%20%3E%3D%20CURRENT_TIMESTAMP%20-%20INTERVAL%20'7'%20DAY
+&where=DtLogged%20%3E%3D%20CURRENT_TIMESTAMP%20-%20INTERVAL%20'7'%20DAY
 &returnCountOnly=true
 
 ### Q19 — Count requests logged in the current month  [standard]
@@ -187,7 +187,7 @@ POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
 f=pjson
-&where=EXTRACT(YEAR%20FROM%20DateLogged)%20%3D%20EXTRACT(YEAR%20FROM%20CURRENT_DATE)%20AND%20EXTRACT(MONTH%20FROM%20DateLogged)%20%3D%20EXTRACT(MONTH%20FROM%20CURRENT_DATE)
+&where=EXTRACT(YEAR%20FROM%20DtLogged)%20%3D%20EXTRACT(YEAR%20FROM%20CURRENT_DATE)%20AND%20EXTRACT(MONTH%20FROM%20DtLogged)%20%3D%20EXTRACT(MONTH%20FROM%20CURRENT_DATE)
 &returnCountOnly=true
 
 ### Q20 — Count requests logged per day of week (with day names)  [native]
@@ -197,8 +197,8 @@ Content-Type: application/x-www-form-urlencoded
 f=pjson
 &where=1%3D1
 &sqlFormat=native
-&groupByFieldsForStatistics=DATENAME(weekday%2C%20DateLogged)%20AS%20WeekDayName
-&outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Count%22%7D%2C%7B%22statisticType%22%3A%22min%22%2C%22onStatisticField%22%3A%22DATEPART(weekday%2C%20DateLogged)%22%2C%22outStatisticFieldName%22%3A%22WeekDayNo%22%7D%5D
+&groupByFieldsForStatistics=DATENAME(weekday%2C%20DtLogged)%20AS%20WeekDayName
+&outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Count%22%7D%2C%7B%22statisticType%22%3A%22min%22%2C%22onStatisticField%22%3A%22DATEPART(weekday%2C%20DtLogged)%22%2C%22outStatisticFieldName%22%3A%22WeekDayNo%22%7D%5D
 &orderByFields=WeekDayNo
 
 ### Q21 — Average resolution time (days) overall  [native]
@@ -206,19 +206,19 @@ POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
 f=pjson
-&where=DateCompleted%20IS%20NOT%20NULL
+&where=DtCompleted%20IS%20NOT%20NULL
 &sqlFormat=native
-&outStatistics=%5B%7B%22statisticType%22%3A%22avg%22%2C%22onStatisticField%22%3A%22DATEDIFF(day%2C%20DateLogged%2C%20DateCompleted)%22%2C%22outStatisticFieldName%22%3A%22AvgDaysToComplete%22%7D%5D
+&outStatistics=%5B%7B%22statisticType%22%3A%22avg%22%2C%22onStatisticField%22%3A%22DATEDIFF(day%2C%20DtLogged%2C%20DtCompleted)%22%2C%22outStatisticFieldName%22%3A%22AvgDaysToComplete%22%7D%5D
 
 ### Q22 — Average resolution time by Category  [native]
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
 f=pjson
-&where=DateCompleted%20IS%20NOT%20NULL
+&where=DtCompleted%20IS%20NOT%20NULL
 &sqlFormat=native
 &groupByFieldsForStatistics=Category
-&outStatistics=%5B%7B%22statisticType%22%3A%22avg%22%2C%22onStatisticField%22%3A%22DATEDIFF(day%2C%20DateLogged%2C%20DateCompleted)%22%2C%22outStatisticFieldName%22%3A%22AvgDays%22%7D%5D
+&outStatistics=%5B%7B%22statisticType%22%3A%22avg%22%2C%22onStatisticField%22%3A%22DATEDIFF(day%2C%20DtLogged%2C%20DtCompleted)%22%2C%22outStatisticFieldName%22%3A%22AvgDays%22%7D%5D
 &orderByFields=AvgDays
 
 ### Q23 — Average resolution time by Channel  [native]
@@ -226,10 +226,10 @@ POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
 f=pjson
-&where=DateCompleted%20IS%20NOT%20NULL
+&where=DtCompleted%20IS%20NOT%20NULL
 &sqlFormat=native
 &groupByFieldsForStatistics=Channel
-&outStatistics=%5B%7B%22statisticType%22%3A%22avg%22%2C%22onStatisticField%22%3A%22DATEDIFF(day%2C%20DateLogged%2C%20DateCompleted)%22%2C%22outStatisticFieldName%22%3A%22AvgDays%22%7D%5D
+&outStatistics=%5B%7B%22statisticType%22%3A%22avg%22%2C%22onStatisticField%22%3A%22DATEDIFF(day%2C%20DtLogged%2C%20DtCompleted)%22%2C%22outStatisticFieldName%22%3A%22AvgDays%22%7D%5D
 &orderByFields=AvgDays
 
 ### Q24 — Minimum and maximum resolution time overall  [native]
@@ -237,19 +237,19 @@ POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
 f=pjson
-&where=DateCompleted%20IS%20NOT%20NULL
+&where=DtCompleted%20IS%20NOT%20NULL
 &sqlFormat=native
-&outStatistics=%5B%7B%22statisticType%22%3A%22min%22%2C%22onStatisticField%22%3A%22DATEDIFF(day%2C%20DateLogged%2C%20DateCompleted)%22%2C%22outStatisticFieldName%22%3A%22MinDays%22%7D%2C%7B%22statisticType%22%3A%22max%22%2C%22onStatisticField%22%3A%22DATEDIFF(day%2C%20DateLogged%2C%20DateCompleted)%22%2C%22outStatisticFieldName%22%3A%22MaxDays%22%7D%5D
+&outStatistics=%5B%7B%22statisticType%22%3A%22min%22%2C%22onStatisticField%22%3A%22DATEDIFF(day%2C%20DtLogged%2C%20DtCompleted)%22%2C%22outStatisticFieldName%22%3A%22MinDays%22%7D%2C%7B%22statisticType%22%3A%22max%22%2C%22onStatisticField%22%3A%22DATEDIFF(day%2C%20DtLogged%2C%20DtCompleted)%22%2C%22outStatisticFieldName%22%3A%22MaxDays%22%7D%5D
 
-### Q25 — Ten slowest request types (average days to close, min 10 closed)  [native]
+### Q25 — Ten slowest sub-categories (average days to close, min 10 closed)  [native]
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
 f=pjson
-&where=Status%20%3D%20'Closed'%20AND%20DateCompleted%20IS%20NOT%20NULL
+&where=Status%20%3D%20'Closed'%20AND%20DtCompleted%20IS%20NOT%20NULL
 &sqlFormat=native
-&groupByFieldsForStatistics=RequestType
-&outStatistics=%5B%7B%22statisticType%22%3A%22avg%22%2C%22onStatisticField%22%3A%22DATEDIFF(day%2C%20DateLogged%2C%20DateCompleted)%22%2C%22outStatisticFieldName%22%3A%22AvgDays%22%7D%2C%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Closed%22%7D%5D
+&groupByFieldsForStatistics=CategorySub
+&outStatistics=%5B%7B%22statisticType%22%3A%22avg%22%2C%22onStatisticField%22%3A%22DATEDIFF(day%2C%20DtLogged%2C%20DtCompleted)%22%2C%22outStatisticFieldName%22%3A%22AvgDays%22%7D%2C%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Closed%22%7D%5D
 &having=COUNT(ObjectID)%20%3E%3D%2010
 &orderByFields=AvgDays%20DESC
 &resultRecordCount=10
@@ -259,16 +259,16 @@ POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
 f=pjson
-&where=DateCompleted%20IS%20NOT%20NULL
+&where=DtCompleted%20IS%20NOT%20NULL
 &sqlFormat=native
-&outStatistics=%5B%7B%22statisticType%22%3A%22percentile_cont%22%2C%22onStatisticField%22%3A%22DATEDIFF(day%2C%20DateLogged%2C%20DateCompleted)%22%2C%22outStatisticFieldName%22%3A%22MedianDays%22%2C%22statisticParameters%22%3A%7B%22value%22%3A0.5%7D%7D%5D
+&outStatistics=%5B%7B%22statisticType%22%3A%22percentile_cont%22%2C%22onStatisticField%22%3A%22DATEDIFF(day%2C%20DtLogged%2C%20DtCompleted)%22%2C%22outStatisticFieldName%22%3A%22MedianDays%22%2C%22statisticParameters%22%3A%7B%22value%22%3A0.5%7D%7D%5D
 
 ### Q27 — Count of requests that took more than 7 days to complete  [native]
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
 f=pjson
-&where=DateCompleted%20IS%20NOT%20NULL%20AND%20DATEDIFF(day%2C%20DateLogged%2C%20DateCompleted)%20%3E%207
+&where=DtCompleted%20IS%20NOT%20NULL%20AND%20DATEDIFF(day%2C%20DtLogged%2C%20DtCompleted)%20%3E%207
 &sqlFormat=native
 &returnCountOnly=true
 
@@ -280,7 +280,7 @@ f=pjson
 &where=Status%20%3C%3E%20'Closed'
 &sqlFormat=native
 &groupByFieldsForStatistics=Category
-&outStatistics=%5B%7B%22statisticType%22%3A%22avg%22%2C%22onStatisticField%22%3A%22DATEDIFF(day%2C%20DateLogged%2C%20GETDATE())%22%2C%22outStatisticFieldName%22%3A%22AvgAgeDays%22%7D%2C%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22OpenCount%22%7D%5D
+&outStatistics=%5B%7B%22statisticType%22%3A%22avg%22%2C%22onStatisticField%22%3A%22DATEDIFF(day%2C%20DtLogged%2C%20GETDATE())%22%2C%22outStatisticFieldName%22%3A%22AvgAgeDays%22%7D%2C%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22OpenCount%22%7D%5D
 &orderByFields=AvgAgeDays%20DESC
 
 ### Q29 — Mean vs median resolution days by Category (skew check)  [native]
@@ -288,10 +288,10 @@ POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
 f=pjson
-&where=DateCompleted%20IS%20NOT%20NULL
+&where=DtCompleted%20IS%20NOT%20NULL
 &sqlFormat=native
 &groupByFieldsForStatistics=Category
-&outStatistics=%5B%7B%22statisticType%22%3A%22avg%22%2C%22onStatisticField%22%3A%22DATEDIFF(day%2C%20DateLogged%2C%20DateCompleted)%22%2C%22outStatisticFieldName%22%3A%22MeanDays%22%7D%2C%7B%22statisticType%22%3A%22percentile_cont%22%2C%22onStatisticField%22%3A%22DATEDIFF(day%2C%20DateLogged%2C%20DateCompleted)%22%2C%22outStatisticFieldName%22%3A%22MedianDays%22%2C%22statisticParameters%22%3A%7B%22value%22%3A0.5%7D%7D%5D
+&outStatistics=%5B%7B%22statisticType%22%3A%22avg%22%2C%22onStatisticField%22%3A%22DATEDIFF(day%2C%20DtLogged%2C%20DtCompleted)%22%2C%22outStatisticFieldName%22%3A%22MeanDays%22%7D%2C%7B%22statisticType%22%3A%22percentile_cont%22%2C%22onStatisticField%22%3A%22DATEDIFF(day%2C%20DtLogged%2C%20DtCompleted)%22%2C%22outStatisticFieldName%22%3A%22MedianDays%22%2C%22statisticParameters%22%3A%7B%22value%22%3A0.5%7D%7D%5D
 &orderByFields=Category
 
 ### Q30 — Requests completed on the same day they were logged  [standard]
@@ -299,7 +299,7 @@ POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
 f=pjson
-&where=DateCompleted%20IS%20NOT%20NULL%20AND%20CAST(DateLogged%20AS%20DATE)%20%3D%20CAST(DateCompleted%20AS%20DATE)
+&where=DtCompleted%20IS%20NOT%20NULL%20AND%20CAST(DtLogged%20AS%20DATE)%20%3D%20CAST(DtCompleted%20AS%20DATE)
 &returnCountOnly=true
 
 ### Q31 — All requests with Status = 'In Progress'  [standard]
@@ -334,7 +334,7 @@ POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
 f=pjson
-&where=DateCompleted%20IS%20NOT%20NULL%20AND%20DateCompleted%20%3E%3D%20CURRENT_TIMESTAMP%20-%20INTERVAL%20'30'%20DAY
+&where=DtCompleted%20IS%20NOT%20NULL%20AND%20DtCompleted%20%3E%3D%20CURRENT_TIMESTAMP%20-%20INTERVAL%20'30'%20DAY
 &outFields=*
 &orderByFields=ObjectID%20DESC
 
@@ -356,24 +356,24 @@ f=pjson
 &outFields=*
 &orderByFields=ObjectID%20DESC
 
-### Q37 — All distinct request types reported in Sea Point  [standard]
+### Q37 — All distinct sub-categories reported in Sea Point  [standard]
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
 f=pjson
 &where=Suburb%20%3D%20'Sea%20Point'
-&outFields=RequestType
+&outFields=CategorySub
 &returnDistinctValues=true
 &returnGeometry=false
-&orderByFields=RequestType
+&orderByFields=CategorySub
 
-### Q38 — Count per RequestType within 'Rubbish & Recycling'  [standard]
+### Q38 — Count per CategorySub within 'Rubbish & Recycling'  [standard]
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
 f=pjson
 &where=Category%20%3D%20'Rubbish%20%26%20Recycling'
-&groupByFieldsForStatistics=RequestType
+&groupByFieldsForStatistics=CategorySub
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Count%22%7D%5D
 &orderByFields=Count%20DESC
 
@@ -424,7 +424,7 @@ Content-Type: application/x-www-form-urlencoded
 
 f=pjson
 &where=1%3D1
-&groupByFieldsForStatistics=CAST(DateLogged%20AS%20DATE)%20AS%20LogDate
+&groupByFieldsForStatistics=CAST(DtLogged%20AS%20DATE)%20AS%20LogDate
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22DailyCount%22%7D%5D
 &orderByFields=LogDate
 
@@ -435,7 +435,7 @@ Content-Type: application/x-www-form-urlencoded
 
 f=pjson
 &where=1%3D1
-&groupByFieldsForStatistics=EXTRACT(YEAR%20FROM%20DateLogged)%20AS%20Yr%2C%20EXTRACT(MONTH%20FROM%20DateLogged)%20AS%20Mo
+&groupByFieldsForStatistics=EXTRACT(YEAR%20FROM%20DtLogged)%20AS%20Yr%2C%20EXTRACT(MONTH%20FROM%20DtLogged)%20AS%20Mo
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Cnt%22%7D%5D
 &orderByFields=Yr%2C%20Mo
 
@@ -445,10 +445,10 @@ POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
 f=pjson
-&where=DateCompleted%20IS%20NOT%20NULL
+&where=DtCompleted%20IS%20NOT%20NULL
 &sqlFormat=native
 &groupByFieldsForStatistics=Category
-&outStatistics=%5B%7B%22statisticType%22%3A%22avg%22%2C%22onStatisticField%22%3A%22DATEDIFF(day%2C%20DateLogged%2C%20DateCompleted)%22%2C%22outStatisticFieldName%22%3A%22AvgDays%22%7D%5D
+&outStatistics=%5B%7B%22statisticType%22%3A%22avg%22%2C%22onStatisticField%22%3A%22DATEDIFF(day%2C%20DtLogged%2C%20DtCompleted)%22%2C%22outStatisticFieldName%22%3A%22AvgDays%22%7D%5D
 &orderByFields=AvgDays
 
 ### Q46 — For each Channel, count of distinct categories reported  [standard]
@@ -462,13 +462,13 @@ f=pjson
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Count%22%7D%5D
 &orderByFields=Channel%2C%20Category
 
-### Q47 — Likely duplicate reports (same suburb, request type and day)  [sql-expression]
+### Q47 — Likely duplicate reports (same suburb, sub-category and day)  [sql-expression]
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
 f=pjson
 &where=Suburb%20IS%20NOT%20NULL
-&groupByFieldsForStatistics=Suburb%2C%20RequestType%2C%20CAST(DateLogged%20AS%20DATE)%20AS%20LogDate
+&groupByFieldsForStatistics=Suburb%2C%20CategorySub%2C%20CAST(DtLogged%20AS%20DATE)%20AS%20LogDate
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Reports%22%7D%5D
 &having=COUNT(ObjectID)%20%3E%201
 &orderByFields=Reports%20DESC%2C%20LogDate%20DESC
@@ -478,9 +478,9 @@ POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
 f=pjson
-&where=DateCompleted%20IS%20NOT%20NULL%20AND%20DateCompleted%20%3E%3D%20DateLogged
+&where=DtCompleted%20IS%20NOT%20NULL%20AND%20DtCompleted%20%3E%3D%20DtLogged
 &sqlFormat=native
-&groupByFieldsForStatistics=FLOOR(DATEDIFF(day%2C%20DateLogged%2C%20DateCompleted)%20%2F%205)%20*%205%20AS%20BucketStart%2C%20FLOOR(DATEDIFF(day%2C%20DateLogged%2C%20DateCompleted)%20%2F%205)%20*%205%20%2B%204%20AS%20BucketEnd
+&groupByFieldsForStatistics=FLOOR(DATEDIFF(day%2C%20DtLogged%2C%20DtCompleted)%20%2F%205)%20*%205%20AS%20BucketStart%2C%20FLOOR(DATEDIFF(day%2C%20DtLogged%2C%20DtCompleted)%20%2F%205)%20*%205%20%2B%204%20AS%20BucketEnd
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Count%22%7D%5D
 &orderByFields=BucketStart
 
@@ -489,7 +489,7 @@ POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
 f=pjson
-&where=DATEPART(weekday%2C%20DateLogged)%20IN%20(1%2C%207)
+&where=DATEPART(weekday%2C%20DtLogged)%20IN%20(1%2C%207)
 &sqlFormat=native
 &outFields=*
 &orderByFields=ObjectID%20DESC
@@ -510,8 +510,8 @@ Content-Type: application/x-www-form-urlencoded
 f=pjson
 &where=Status%20%3C%3E%20'Closed'
 &sqlFormat=native
-&groupByFieldsForStatistics=CASE%20WHEN%20DATEDIFF(day%2C%20DateLogged%2C%20GETDATE())%20%3C%3D%202%20THEN%20'0-2%20Days'%20WHEN%20DATEDIFF(day%2C%20DateLogged%2C%20GETDATE())%20%3C%3D%207%20THEN%20'3-7%20Days'%20WHEN%20DATEDIFF(day%2C%20DateLogged%2C%20GETDATE())%20%3C%3D%2030%20THEN%20'8-30%20Days'%20ELSE%20'30%2B%20Days'%20END%20AS%20AgeBucket
-&outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22RequestCount%22%7D%2C%7B%22statisticType%22%3A%22min%22%2C%22onStatisticField%22%3A%22DATEDIFF(day%2C%20DateLogged%2C%20GETDATE())%22%2C%22outStatisticFieldName%22%3A%22MinAgeDays%22%7D%5D
+&groupByFieldsForStatistics=CASE%20WHEN%20DATEDIFF(day%2C%20DtLogged%2C%20GETDATE())%20%3C%3D%202%20THEN%20'0-2%20Days'%20WHEN%20DATEDIFF(day%2C%20DtLogged%2C%20GETDATE())%20%3C%3D%207%20THEN%20'3-7%20Days'%20WHEN%20DATEDIFF(day%2C%20DtLogged%2C%20GETDATE())%20%3C%3D%2030%20THEN%20'8-30%20Days'%20ELSE%20'30%2B%20Days'%20END%20AS%20AgeBucket
+&outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22RequestCount%22%7D%2C%7B%22statisticType%22%3A%22min%22%2C%22onStatisticField%22%3A%22DATEDIFF(day%2C%20DtLogged%2C%20GETDATE())%22%2C%22outStatisticFieldName%22%3A%22MinAgeDays%22%7D%5D
 &orderByFields=MinAgeDays
 
 ### Q52 — Share of completed requests that took longer than 5 days  [native]
@@ -520,18 +520,18 @@ POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
 f=pjson
-&where=DateCompleted%20IS%20NOT%20NULL
+&where=DtCompleted%20IS%20NOT%20NULL
 &sqlFormat=native
-&outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22TotalCompleted%22%7D%2C%7B%22statisticType%22%3A%22sum%22%2C%22onStatisticField%22%3A%22CASE%20WHEN%20DATEDIFF(day%2C%20DateLogged%2C%20DateCompleted)%20%3E%205%20THEN%201%20ELSE%200%20END%22%2C%22outStatisticFieldName%22%3A%22Over5Days%22%7D%5D
+&outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22TotalCompleted%22%7D%2C%7B%22statisticType%22%3A%22sum%22%2C%22onStatisticField%22%3A%22CASE%20WHEN%20DATEDIFF(day%2C%20DtLogged%2C%20DtCompleted)%20%3E%205%20THEN%201%20ELSE%200%20END%22%2C%22outStatisticFieldName%22%3A%22Over5Days%22%7D%5D
 
 ### Q53 — 90th percentile resolution time  [native]
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
 f=pjson
-&where=DateCompleted%20IS%20NOT%20NULL
+&where=DtCompleted%20IS%20NOT%20NULL
 &sqlFormat=native
-&outStatistics=%5B%7B%22statisticType%22%3A%22percentile_cont%22%2C%22onStatisticField%22%3A%22DATEDIFF(day%2C%20DateLogged%2C%20DateCompleted)%22%2C%22outStatisticFieldName%22%3A%22P90_Days%22%2C%22statisticParameters%22%3A%7B%22value%22%3A0.9%7D%7D%5D
+&outStatistics=%5B%7B%22statisticType%22%3A%22percentile_cont%22%2C%22onStatisticField%22%3A%22DATEDIFF(day%2C%20DtLogged%2C%20DtCompleted)%22%2C%22outStatisticFieldName%22%3A%22P90_Days%22%2C%22statisticParameters%22%3A%7B%22value%22%3A0.9%7D%7D%5D
 
 ### Q54 — Thematic grouping of categories (Three Waters, Transport, Waste, …)  [native]
 POST {{layer}}/query
@@ -541,7 +541,7 @@ f=pjson
 &where=1%3D1
 &sqlFormat=native
 &groupByFieldsForStatistics=CASE%20WHEN%20Category%20IN%20('Water%20Supply'%2C%20'Wastewater%20%26%20Stormwater'%2C%20'Flooding')%20THEN%20'Three%20Waters'%20WHEN%20Category%20IN%20('Roads%20%26%20Footpaths'%2C%20'Streetlights'%2C%20'Abandoned%20Vehicles')%20THEN%20'Transport'%20WHEN%20Category%20IN%20('Rubbish%20%26%20Recycling'%2C%20'Illegal%20Dumping')%20THEN%20'Waste'%20WHEN%20Category%20IN%20('Parks%20%26%20Reserves'%2C%20'Trees')%20THEN%20'Parks%20%26%20Open%20Space'%20WHEN%20Category%20IN%20('Noise'%2C%20'Animals'%2C%20'Graffiti')%20THEN%20'Community%20%26%20Regulatory'%20ELSE%20'Other'%20END%20AS%20Theme
-&outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Count%22%7D%2C%7B%22statisticType%22%3A%22avg%22%2C%22onStatisticField%22%3A%22DATEDIFF(day%2C%20DateLogged%2C%20DateCompleted)%22%2C%22outStatisticFieldName%22%3A%22AvgResolutionDays%22%7D%5D
+&outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Count%22%7D%2C%7B%22statisticType%22%3A%22avg%22%2C%22onStatisticField%22%3A%22DATEDIFF(day%2C%20DtLogged%2C%20DtCompleted)%22%2C%22outStatisticFieldName%22%3A%22AvgResolutionDays%22%7D%5D
 &orderByFields=Count%20DESC
 
 ### Q55 — Top 10 suburb hotspots (volume, variety, first and last report)  [extension]
@@ -551,7 +551,7 @@ Content-Type: application/x-www-form-urlencoded
 f=pjson
 &where=Suburb%20IS%20NOT%20NULL
 &groupByFieldsForStatistics=Suburb
-&outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22RequestCount%22%7D%2C%7B%22statisticType%22%3A%22countdistinct%22%2C%22onStatisticField%22%3A%22RequestType%22%2C%22outStatisticFieldName%22%3A%22DistinctTypes%22%7D%2C%7B%22statisticType%22%3A%22min%22%2C%22onStatisticField%22%3A%22DateLogged%22%2C%22outStatisticFieldName%22%3A%22FirstRequest%22%7D%2C%7B%22statisticType%22%3A%22max%22%2C%22onStatisticField%22%3A%22DateLogged%22%2C%22outStatisticFieldName%22%3A%22LastRequest%22%7D%5D
+&outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22RequestCount%22%7D%2C%7B%22statisticType%22%3A%22countdistinct%22%2C%22onStatisticField%22%3A%22CategorySub%22%2C%22outStatisticFieldName%22%3A%22DistinctTypes%22%7D%2C%7B%22statisticType%22%3A%22min%22%2C%22onStatisticField%22%3A%22DtLogged%22%2C%22outStatisticFieldName%22%3A%22FirstRequest%22%7D%2C%7B%22statisticType%22%3A%22max%22%2C%22onStatisticField%22%3A%22DtLogged%22%2C%22outStatisticFieldName%22%3A%22LastRequest%22%7D%5D
 &orderByFields=RequestCount%20DESC
 &resultRecordCount=10
 
@@ -563,7 +563,7 @@ f=pjson
 &where=1%3D1
 &sqlFormat=native
 &groupByFieldsForStatistics=Channel
-&outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Total%22%7D%2C%7B%22statisticType%22%3A%22avg%22%2C%22onStatisticField%22%3A%22DATEDIFF(day%2C%20DateLogged%2C%20DateCompleted)%22%2C%22outStatisticFieldName%22%3A%22AvgCloseDays%22%7D%2C%7B%22statisticType%22%3A%22sum%22%2C%22onStatisticField%22%3A%22CASE%20WHEN%20Status%20%3C%3E%20'Closed'%20THEN%201%20ELSE%200%20END%22%2C%22outStatisticFieldName%22%3A%22StillOpen%22%7D%5D
+&outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Total%22%7D%2C%7B%22statisticType%22%3A%22avg%22%2C%22onStatisticField%22%3A%22DATEDIFF(day%2C%20DtLogged%2C%20DtCompleted)%22%2C%22outStatisticFieldName%22%3A%22AvgCloseDays%22%7D%2C%7B%22statisticType%22%3A%22sum%22%2C%22onStatisticField%22%3A%22CASE%20WHEN%20Status%20%3C%3E%20'Closed'%20THEN%201%20ELSE%200%20END%22%2C%22outStatisticFieldName%22%3A%22StillOpen%22%7D%5D
 &orderByFields=AvgCloseDays
 
 ### Q57 — Invalid dates (completed before logged)  [standard]
@@ -571,32 +571,32 @@ POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
 f=pjson
-&where=DateCompleted%20IS%20NOT%20NULL%20AND%20DateCompleted%20%3C%20DateLogged
+&where=DtCompleted%20IS%20NOT%20NULL%20AND%20DtCompleted%20%3C%20DtLogged
 &returnCountOnly=true
 
-### Q58 — Closed requests with no DateCompleted  [standard]
+### Q58 — Closed requests with no DtCompleted  [standard]
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
 f=pjson
-&where=Status%20%3D%20'Closed'%20AND%20DateCompleted%20IS%20NULL
+&where=Status%20%3D%20'Closed'%20AND%20DtCompleted%20IS%20NULL
 &outFields=*
 &orderByFields=ObjectID%20DESC
 
-### Q59 — Requests with missing fields (Suburb, RequestType, Description)  [sql-expression]
+### Q59 — Requests with missing fields (Suburb, CategorySub, Description)  [sql-expression]
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
 f=pjson
 &where=1%3D1
-&outStatistics=%5B%7B%22statisticType%22%3A%22sum%22%2C%22onStatisticField%22%3A%22CASE%20WHEN%20Suburb%20IS%20NULL%20THEN%201%20ELSE%200%20END%22%2C%22outStatisticFieldName%22%3A%22MissingSuburb%22%7D%2C%7B%22statisticType%22%3A%22sum%22%2C%22onStatisticField%22%3A%22CASE%20WHEN%20RequestType%20IS%20NULL%20OR%20RequestType%20%3D%20''%20THEN%201%20ELSE%200%20END%22%2C%22outStatisticFieldName%22%3A%22MissingRequestType%22%7D%2C%7B%22statisticType%22%3A%22sum%22%2C%22onStatisticField%22%3A%22CASE%20WHEN%20Description%20IS%20NULL%20OR%20Description%20%3D%20''%20THEN%201%20ELSE%200%20END%22%2C%22outStatisticFieldName%22%3A%22MissingDescription%22%7D%5D
+&outStatistics=%5B%7B%22statisticType%22%3A%22sum%22%2C%22onStatisticField%22%3A%22CASE%20WHEN%20Suburb%20IS%20NULL%20THEN%201%20ELSE%200%20END%22%2C%22outStatisticFieldName%22%3A%22MissingSuburb%22%7D%2C%7B%22statisticType%22%3A%22sum%22%2C%22onStatisticField%22%3A%22CASE%20WHEN%20CategorySub%20IS%20NULL%20OR%20CategorySub%20%3D%20''%20THEN%201%20ELSE%200%20END%22%2C%22outStatisticFieldName%22%3A%22MissingCategorySub%22%7D%2C%7B%22statisticType%22%3A%22sum%22%2C%22onStatisticField%22%3A%22CASE%20WHEN%20Description%20IS%20NULL%20OR%20Description%20%3D%20''%20THEN%201%20ELSE%200%20END%22%2C%22outStatisticFieldName%22%3A%22MissingDescription%22%7D%5D
 
-### Q60 — Status / date mismatch (DateCompleted set but not Closed)  [standard]
+### Q60 — Status / date mismatch (DtCompleted set but not Closed)  [standard]
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
 f=pjson
-&where=DateCompleted%20IS%20NOT%20NULL%20AND%20Status%20%3C%3E%20'Closed'
+&where=DtCompleted%20IS%20NOT%20NULL%20AND%20Status%20%3C%3E%20'Closed'
 &returnCountOnly=true
 
 ### Q61 — Suburbs with the highest open load  [standard]
@@ -617,7 +617,7 @@ Content-Type: application/x-www-form-urlencoded
 
 f=pjson
 &where=1%3D1
-&groupByFieldsForStatistics=EXTRACT(YEAR%20FROM%20DateLogged)%20AS%20Year%2C%20EXTRACT(MONTH%20FROM%20DateLogged)%20AS%20Month
+&groupByFieldsForStatistics=EXTRACT(YEAR%20FROM%20DtLogged)%20AS%20Year%2C%20EXTRACT(MONTH%20FROM%20DtLogged)%20AS%20Month
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Logged%22%7D%5D
 &orderByFields=Year%2C%20Month
 
@@ -627,8 +627,8 @@ POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
 f=pjson
-&where=DateCompleted%20IS%20NOT%20NULL
-&groupByFieldsForStatistics=EXTRACT(YEAR%20FROM%20DateCompleted)%20AS%20Year%2C%20EXTRACT(MONTH%20FROM%20DateCompleted)%20AS%20Month
+&where=DtCompleted%20IS%20NOT%20NULL
+&groupByFieldsForStatistics=EXTRACT(YEAR%20FROM%20DtCompleted)%20AS%20Year%2C%20EXTRACT(MONTH%20FROM%20DtCompleted)%20AS%20Month
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Completed%22%7D%5D
 &orderByFields=Year%2C%20Month
 
@@ -638,7 +638,7 @@ Content-Type: application/x-www-form-urlencoded
 
 f=pjson
 &where=1%3D1
-&groupByFieldsForStatistics=EXTRACT(DAY%20FROM%20DateLogged)%20AS%20DayOfMonth
+&groupByFieldsForStatistics=EXTRACT(DAY%20FROM%20DtLogged)%20AS%20DayOfMonth
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22LogCount%22%7D%5D
 &orderByFields=LogCount%20DESC
 
@@ -657,7 +657,7 @@ POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
 f=pjson
-&where=Status%20%3C%3E%20'Closed'%20AND%20DATEDIFF(day%2C%20DateLogged%2C%20GETDATE())%20%3E%2030
+&where=Status%20%3C%3E%20'Closed'%20AND%20DATEDIFF(day%2C%20DtLogged%2C%20GETDATE())%20%3E%2030
 &sqlFormat=native
 &groupByFieldsForStatistics=Category
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22StuckCount%22%7D%5D
@@ -682,7 +682,7 @@ Content-Type: application/x-www-form-urlencoded
 f=pjson
 &where=(UPPER(Description)%20LIKE%20'%25URGENT%25'%20OR%20UPPER(Description)%20LIKE%20'%25HAZARD%25'%20OR%20UPPER(Description)%20LIKE%20'%25BURST%25'%20OR%20UPPER(Description)%20LIKE%20'%25FLOOD%25')
 &sqlFormat=native
-&outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22FlaggedRequests%22%7D%2C%7B%22statisticType%22%3A%22avg%22%2C%22onStatisticField%22%3A%22DATEDIFF(day%2C%20DateLogged%2C%20DateCompleted)%22%2C%22outStatisticFieldName%22%3A%22AvgResolutionDays%22%7D%5D
+&outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22FlaggedRequests%22%7D%2C%7B%22statisticType%22%3A%22avg%22%2C%22onStatisticField%22%3A%22DATEDIFF(day%2C%20DtLogged%2C%20DtCompleted)%22%2C%22outStatisticFieldName%22%3A%22AvgResolutionDays%22%7D%5D
 
 ### Q68 — Average description length per Category  [sql-expression]
 POST {{layer}}/query
@@ -702,7 +702,7 @@ Content-Type: application/x-www-form-urlencoded
 
 f=pjson
 &where=1%3D1
-&groupByFieldsForStatistics=EXTRACT(YEAR%20FROM%20DateLogged)%20AS%20LogYear%2C%20EXTRACT(MONTH%20FROM%20DateLogged)%20AS%20LogMonth
+&groupByFieldsForStatistics=EXTRACT(YEAR%20FROM%20DtLogged)%20AS%20LogYear%2C%20EXTRACT(MONTH%20FROM%20DtLogged)%20AS%20LogMonth
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Cnt%22%7D%5D
 &orderByFields=LogYear%2C%20LogMonth
 
@@ -713,6 +713,6 @@ Content-Type: application/x-www-form-urlencoded
 
 f=pjson
 &where=1%3D1
-&groupByFieldsForStatistics=CAST(DateLogged%20AS%20DATE)%20AS%20LogDate
+&groupByFieldsForStatistics=CAST(DtLogged%20AS%20DATE)%20AS%20LogDate
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22DailyTotal%22%7D%5D
 &orderByFields=LogDate

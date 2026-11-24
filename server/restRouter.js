@@ -142,7 +142,7 @@ export function createRestRouter(svc, cfg, hooks = {}) {
       const q = params.get('q') ?? params.get('sql');
       if (f === 'html' && !q) {
         return html(htmlPage('SQL', crumbs([['Home', `${prefix}/arcgis/rest/services`], ['sql (mock extension)', null]]),
-          `<h2>Raw T-SQL (mock extension, not part of ArcGIS REST)</h2><form method="get"><textarea name="q" style="width:100%;height:160px">SELECT TOP 5 Category, COUNT(*) AS Count FROM ServiceRequests GROUP BY Category ORDER BY Count DESC;</textarea><input type="hidden" name="f" value="pjson"><br><button>Run</button></form>`));
+          `<h2>Raw T-SQL (mock extension, not part of ArcGIS REST)</h2><form method="get"><textarea name="q" style="width:100%;height:160px">SELECT TOP 5 Category, COUNT(*) AS Count FROM ServiceRequest GROUP BY Category ORDER BY Count DESC;</textarea><input type="hidden" name="f" value="pjson"><br><button>Run</button></form>`));
       }
       return json(q ? svc.sql(q) : { error: { code: 400, message: "Missing 'q' parameter", details: [] } }, f === 'html' ? 'pjson' : f);
     }

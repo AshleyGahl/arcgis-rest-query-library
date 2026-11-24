@@ -2,7 +2,7 @@
 /**
  * Synthetic public service-request generator.
  *
- * Categories, request types, statuses and channels follow the generic "report a problem"
+ * Categories, sub-categories, statuses and channels follow the generic "report a problem"
  * model that councils collect: see docs/data-model.md. Coordinates are placed in and
  * around Cape Town.
  *
@@ -69,8 +69,8 @@ const PLACES = [
   ['Strand', -34.1080, 18.8300, 0.0040, 2, 'coastal'], ["Gordon's Bay", -34.1560, 18.8700, 0.0030, 1, 'coastal'],
 ].map(([name, lat, lon, sd, w, profile]) => ({ name, lat, lon, sd, w, profile }));
 
-// ---------------------------------------------------------------- categories → request types
-// [request type, weight, median days to close, description templates]
+// ---------------------------------------------------------------- categories → sub-categories
+// [sub-category, weight, median days to close, description templates]
 const CATS = [
   { cat: 'Roads & Footpaths', season: 'winter', types: [
     ['Pothole', 5, 8, ['Pothole on {st}, {sub}. Damaging tyres.', 'Large pothole near {n} {st}. Safety hazard for cyclists.', 'Several potholes along {st} after the rain.']],
@@ -201,7 +201,7 @@ for (let i = 0; i < COUNT; i++) {
   if (chance(channel === 'App' ? 0.08 : 0.03)) suburb = null;                         // pin only, no address match
   if (chance(0.02)) description = null; else if (chance(0.01)) description = '';
 
-  rows.push({ lat, lon, logged, completed, props: { Category: t.cat, RequestType: t.type, Status: status, Channel: channel, Suburb: suburb, Description: description } });
+  rows.push({ lat, lon, logged, completed, props: { Category: t.cat, CategorySub: t.type, Status: status, Channel: channel, Suburb: suburb, Description: description } });
 }
 
 rows.sort((a, b) => a.logged - b.logged);
@@ -217,8 +217,8 @@ const features = rows.map((r, i) => {
       ObjectID: i + 1,
       RequestID: `SR-${yr}-${String(seq[yr]).padStart(5, '0')}`,
       ...r.props,
-      DateLogged: toEpoch(r.logged),
-      DateCompleted: r.completed == null ? null : toEpoch(r.completed),
+      DtLogged: toEpoch(r.logged),
+      DtCompleted: r.completed == null ? null : toEpoch(r.completed),
     },
   };
 });

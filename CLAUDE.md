@@ -10,7 +10,7 @@ council "report a problem" app collects. The points sit in and around Cape Town.
 - a **query library**: 70 analytical questions written as ArcGIS REST `query` requests, with T-SQL alongside
 - SQL Server scripts that load the same GeoJSON so the T-SQL can be compared against identical data
 
-The data model is deliberately generic (`docs/data-model.md`). **Core facts: `DateLogged`, `DateCompleted`, `Category`.**
+The data model is deliberately generic (`docs/data-model.md`). **Core facts: `DtLogged`, `DtCompleted`, `Category`.**
 Keep it that way: no internal system names, staff/contractor fields, ward/administrative codes or complainant contact data.
 
 ## Run (VS Code first)
@@ -24,7 +24,7 @@ Keep it that way: no internal system names, staff/contractor fields, ward/admini
 | Tests (70 REST + 69 T-SQL + parity + both runtimes) | `npm test` |
 | List / run a library query | `npm run query -- list` · `npm run query -- 44 --compare` |
 | Ad-hoc REST | `npm run query -- --where "Suburb = 'Sea Point'" --outFields "RequestID,Category,Status" --resultRecordCount 5` |
-| Ad-hoc T-SQL (mock) | `npm run query -- --sql "SELECT TOP 5 Suburb, COUNT(*) n FROM ServiceRequests GROUP BY Suburb ORDER BY n DESC"` |
+| Ad-hoc T-SQL (mock) | `npm run query -- --sql "SELECT TOP 5 Suburb, COUNT(*) n FROM ServiceRequest GROUP BY Suburb ORDER BY n DESC"` |
 | Same against a real layer | `npm run query -- 41 --url https://<host>/server/rest/services/<svc>/FeatureServer/0` |
 | Regenerate data | `npm run generate -- --count 900 --seed 42` |
 | Rebuild generated artifacts | `npm run build` (after editing the library) |
@@ -44,7 +44,7 @@ Don't add packages without asking. The only vendored third-party code is `viewer
 data/service_requests.geojson   the "service" (epoch-ms dates, WGS84 points, metadata.asOf)
 docs/data-model.md              fields, categories, how the generated data behaves
 docs/framework.md               5W+H dimensions, analytical layers, roadmap
-scripts/generate-data.js        seeded generator (categories → request types, seasonality, data defects)
+scripts/generate-data.js        seeded generator (categories → sub-categories, seasonality, data defects)
 index.html                      landing page (the GitHub Pages front door)
 sw.js                           service worker for the static demo; MUST stay at the repo root
 server/start.js                 entry point (Node version check) → server/index.js

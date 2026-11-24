@@ -18,7 +18,7 @@ function buildWhere() {
   else if (status) c.push(`Status = ${sql(status)}`);
   if ($('fChannel').value) c.push(`Channel = ${sql($('fChannel').value)}`);
   if ($('fSuburb').value) c.push(`Suburb = ${sql($('fSuburb').value)}`);
-  if ($('fSince').value) c.push(`DateLogged >= DATE '${$('fSince').value}'`);
+  if ($('fSince').value) c.push(`DtLogged >= DATE '${$('fSince').value}'`);
   const text = $('fText').value.trim();
   if (text) c.push(`UPPER(Description) LIKE ${sql('%' + text.toUpperCase() + '%')}`);
   return c.join(' AND ') || '1=1';

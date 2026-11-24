@@ -52,7 +52,7 @@ test('Q26 median matches', async () => {
 });
 test('rejects writes and multiple statements', () => {
   assert.ok(svc.query({ where: '1=1; DROP TABLE x' }).error);
-  assert.ok(svc.sql('DELETE FROM ServiceRequests').error);
+  assert.ok(svc.sql('DELETE FROM ServiceRequest').error);
   assert.ok(svc.query({ where: "1=1 AND (SELECT 1)=1" }).error);
 });
 test('spatial envelope filter (4326)', () => {

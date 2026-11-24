@@ -1,32 +1,32 @@
 -- ============================================================================
--- 01  ServiceRequests table (SQL Server 2019+)
+-- 01  ServiceRequest table (SQL Server 2019+)
 -- Same shape as the GeoJSON / mock FeatureServer layer (generic council
 -- "report a problem" model — see docs/data-model.md), so the T-SQL in
 -- vw_QueryLibrary can be run against identical data for comparison.
--- DateLogged / DateCompleted hold SAST local time (UTC+2), as the mock does.
+-- DtLogged / DtCompleted hold SAST local time (UTC+2), as the mock does.
 -- ============================================================================
-IF OBJECT_ID(N'dbo.ServiceRequests', N'U') IS NULL
+IF OBJECT_ID(N'dbo.ServiceRequest', N'U') IS NULL
 BEGIN
-    CREATE TABLE dbo.ServiceRequests
+    CREATE TABLE dbo.ServiceRequest
     (
-        ObjectID       INT            NOT NULL CONSTRAINT PK_ServiceRequests PRIMARY KEY,
+        ObjectID       INT            NOT NULL CONSTRAINT PK_ServiceRequest PRIMARY KEY,
         RequestID      NVARCHAR(20)   NULL,
         Category       NVARCHAR(50)   NULL,
-        RequestType    NVARCHAR(60)   NULL,
+        CategorySub    NVARCHAR(60)   NULL,
         Status         NVARCHAR(20)   NULL,     -- Open | In Progress | Closed
         Channel        NVARCHAR(20)   NULL,     -- App | Online form | Phone | Email | In person
         Suburb         NVARCHAR(60)   NULL,
         Description    NVARCHAR(600)  NULL,
-        DateLogged     DATETIME2(0)   NULL,
-        DateCompleted  DATETIME2(0)   NULL,
+        DtLogged     DATETIME2(0)   NULL,
+        DtCompleted  DATETIME2(0)   NULL,
         Longitude      FLOAT          NULL,
         Latitude       FLOAT          NULL,
         Shape AS (CASE WHEN Latitude IS NOT NULL AND Longitude IS NOT NULL THEN GEOGRAPHY::Point(Latitude, Longitude, 4326) END)
     );
 
-    CREATE INDEX IX_ServiceRequests_DateLogged ON dbo.ServiceRequests (DateLogged) INCLUDE (Category, Status, DateCompleted);
-    CREATE INDEX IX_ServiceRequests_Category   ON dbo.ServiceRequests (Category, RequestType) INCLUDE (Status);
-    CREATE INDEX IX_ServiceRequests_Suburb     ON dbo.ServiceRequests (Suburb) INCLUDE (Status);
+    CREATE INDEX IX_ServiceRequest_DtLogged ON dbo.ServiceRequest (DtLogged) INCLUDE (Category, Status, DtCompleted);
+    CREATE INDEX IX_ServiceRequest_Category   ON dbo.ServiceRequest (Category, CategorySub) INCLUDE (Status);
+    CREATE INDEX IX_ServiceRequest_Suburb     ON dbo.ServiceRequest (Suburb) INCLUDE (Status);
 END
 GO
 
