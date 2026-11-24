@@ -28,7 +28,9 @@ const route = createRestRouter(svc, config, {
 });
 
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.geojson': 'application/geo+json; charset=utf-8', '.wasm': 'application/wasm', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon', '.md': 'text/markdown; charset=utf-8' };
-const STATIC = { '/viewer/': 'viewer', '/sql-library/': 'sql-library', '/data/': 'data', '/server/': 'server', '/docs/': 'docs' };
+// `/mcp/` is here because the viewer's MCP tab imports the tool contract
+// (`mcp/tools.js`) directly; `mcp/server.js` is never fetched by the browser.
+const STATIC = { '/viewer/': 'viewer', '/sql-library/': 'sql-library', '/data/': 'data', '/server/': 'server', '/docs/': 'docs', '/mcp/': 'mcp' };
 // Files served from the repository root, so a local run matches the published static site:
 // the landing page, and the service worker the static demo registers (?mode=static).
 const ROOT_FILES = new Set(['/', '/index.html', '/sw.js']);

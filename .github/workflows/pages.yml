@@ -46,6 +46,9 @@ jobs:
           mkdir -p _site
           cp index.html .nojekyll sw.js _site/
           cp -r viewer sql-library data docs _site/
+          # The MCP tab imports the tool contract itself; mcp/server.js stays behind (Node only).
+          mkdir -p _site/mcp
+          cp mcp/tools.js _site/mcp/
           # The viewer imports the engine itself; these are the platform-free modules.
           mkdir -p _site/server
           cp server/featureService.js server/restRouter.js server/schema.js \

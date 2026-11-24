@@ -252,6 +252,7 @@ Five tabs:
 - **Library:** the 70 questions, **fetched from table 1 rather than built into the page**. Run any as REST, or compare its REST result with its T-SQL result side by side.
 - **REST:** a query console, including drawn-polygon queries.
 - **T-SQL:** run T-SQL against the same data.
+- **MCP:** the service's MCP tool contract, driven in the page — the JSON-RPC traffic an AI client normally hides. No model, no key.
 
 Every result switches between **Table** and **Chart**; a single-value result shows as a large
 figure, with the REST and T-SQL values side by side when comparing.
@@ -269,9 +270,27 @@ no second copy to keep in step, and `scripts/build-*.js` generate `rest/library.
 
 ### MCP tools
 
-`.mcp.json` registers a zero-dependency MCP server (`mcp/server.js`): `describe_layer`,
-`query_layer`, `list_library`, `run_library_query` (with `compare: true` for the T-SQL result) and
-`run_tsql`.
+`.mcp.json` registers a zero-dependency MCP server: `describe_layer`, `query_layer`,
+`list_library`, `run_library_query` (with `compare: true` for the T-SQL result) and `run_tsql`.
+
+The tools and the JSON-RPC dispatch live in `mcp/tools.js`, which has no transport and no platform
+dependency. Two things drive it:
+
+| | |
+|---|---|
+| `mcp/server.js` | newline-delimited JSON-RPC over stdin/stdout, for Claude Code |
+| `viewer/js/mcp-panel.js` | the viewer's **MCP tab**, which runs the same dispatcher in the page |
+
+So the tool surface the viewer shows is not a description of the MCP server — it is the same
+contract, with a function call where the pipe would be. The tab sends `initialize`, `tools/list`
+and `tools/call`, shows both JSON-RPC envelopes, and renders the result like any other query.
+
+**It involves no language model and no API key**, so it costs nothing to run and works on the
+published static demo. Worth being explicit about the billing question it raises: an MCP server
+contains no model and no account. Tokens are billed to whoever runs the *conversation*, so if
+someone points their own AI client at their own copy of this server, that is their subscription,
+not yours. `mcp/server.js` has no network listener at all — it is spawned as a local child
+process — so publishing this repository exposes the source, not a running endpoint.
 
 ## SQL Server
 

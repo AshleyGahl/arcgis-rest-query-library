@@ -4,6 +4,7 @@ import { createMap } from './map.js';
 import { initResults } from './results.js';
 import { initFilterPanel } from './filter-panel.js';
 import { initLibraryPanel } from './library-panel.js';
+import { initMcpPanel } from './mcp-panel.js';
 import { initConsolePanel } from './console-panel.js';
 import { initSqlPanel } from './sql-panel.js';
 import { initDashboard } from './dashboard.js';
@@ -64,4 +65,5 @@ initResults({
 });
 dashboard = initDashboard(map, filters);
 initLibraryPanel(map, filters);
+initMcpPanel();
 initConsolePanel(map, filters);

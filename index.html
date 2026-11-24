@@ -187,6 +187,9 @@ POST …/FeatureServer/0/query  &lt;the RestParams of one row&gt;  <span class="
       service. Run each question as REST, or compare it against the original T-SQL side by side.</td></tr>
     <tr><td><strong>REST</strong></td><td>A query console: the raw ArcGIS parameters, and the URL they produce.</td></tr>
     <tr><td><strong>T-SQL</strong></td><td>Read-only T-SQL against the same data, so a REST port can be checked against the statement it came from.</td></tr>
+    <tr><td><strong>MCP</strong></td><td>The same MCP tool contract an AI assistant connects to, driven in the page: send
+      <code>initialize</code>, <code>tools/list</code> and <code>tools/call</code> and read both JSON-RPC envelopes.
+      No language model and no API key are involved &mdash; it is the protocol made visible, not a chatbot.</td></tr>
   </table>
 
   <h2>The data</h2>
