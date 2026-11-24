@@ -86,10 +86,11 @@ mcp/server.js                   stdio transport over it, for Claude Code (Node o
 - **Docs are Markdown-first.** Edit `docs/*.md`, never the generated `docs/*.html`; run `npm run build`.
   `test/docs.test.js` fails if the committed HTML is stale. A new `docs/*.md` must be added to `PAGES`
   in `scripts/build-docs.js`, or that test fails too.
-- **The Pages workflow stages a hand-written file list.** A new module that the browser imports must be
-  added to `.github/workflows/pages.yml`, or the published demo 404s on it. `test/deploy.test.js`
-  resolves the browser's import closure and fails if anything is missing, so run `npm test` after
-  adding an import to the engine or the viewer.
+- **Pages publishes the branch root.** There is no build step and no staged file list: a module the
+  browser imports is published because it is committed. So the whole repository is served, including
+  the Node-only parts — which is harmless, but the browser must never *import* one.
+  `test/deploy.test.js` resolves the browser's import closure and enforces that, plus that
+  `server/index.js` serves the same files locally. Run `npm test` after adding an import.
 - **Library entries:** `tsql` is the reference statement and `rest` must reproduce its result. Use `transform` only
   for what REST can't do. Add parity assertions in `test/` when the two are exact equivalents. Run `npm run build` afterwards.
 - **The portability tag is mandatory and must be honest:**

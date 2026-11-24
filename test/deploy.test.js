@@ -1,11 +1,10 @@
 /**
- * The static deployment stages a hand-written list of platform-free engine modules
- * (`.github/workflows/pages.yml`), because the Node-only parts of `server/` must
- * not ship. A new engine import is therefore easy to add and easy to forget, and
- * the failure is silent until the published demo 404s on the module.
+ * GitHub Pages serves the repository branch as it is, so there is no staged file
+ * list to keep in step: whatever the browser imports is published because it is
+ * committed. Two things still have to hold, and both fail silently.
  *
- * This test resolves what the browser actually imports and requires every file to
- * be staged.
+ * This test resolves what the browser actually imports, then asserts that none of
+ * it reaches for a Node-only API, and that `npm start` serves all of it too.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -14,13 +13,6 @@ import path from 'node:path';
 import { config } from '../server/config.js';
 
 const root = config.root;
-const workflowSource = fs.readFileSync(path.join(root, '.github', 'workflows', 'pages.yml'), 'utf8');
-
-/**
- * The workflow with its comment lines removed. A path named only in a comment is
- * documentation, not a copy, so every check below reasons about the commands.
- */
-const workflow = workflowSource.split('\n').filter((l) => !/^\s*#/.test(l)).join('\n');
 
 /** Every local module reachable from the browser's entry points. */
 function importClosure(entries) {
@@ -42,25 +34,18 @@ function importClosure(entries) {
 
 const closure = importClosure(['viewer/js/main.js', 'viewer/js/engine/boot.js', 'sw.js']);
 
-// Directories the workflow copies wholesale, plus the files it copies by name.
-const WHOLESALE = ['viewer/', 'sql-library/', 'data/', 'docs/'];
-const BY_NAME = ['index.html', 'sw.js', '.nojekyll'];
-
-/** True when the workflow copies this exact repo-relative path, one way or another. */
-const staged = (f) => WHOLESALE.some((d) => f.startsWith(d)) || BY_NAME.includes(f) || workflow.includes(f);
-
 test('the browser import closure is non-trivial (the walker actually found things)', () => {
   assert.ok(closure.length > 20, `only found ${closure.length} modules`);
   assert.ok(closure.includes('viewer/js/main.js'));
   assert.ok(closure.includes('server/featureService.js'));
 });
 
-test('every module the browser imports is staged for GitHub Pages', () => {
-  const missing = closure.filter((f) => !staged(f));
-  assert.deepEqual(missing, [], `not staged in .github/workflows/pages.yml: ${missing.join(', ')}`);
+test('every module the browser imports is committed, so Pages serves it', () => {
+  const missing = closure.filter((f) => !fs.existsSync(path.join(root, f)));
+  assert.deepEqual(missing, [], `imported but not present in the repository: ${missing.join(', ')}`);
 });
 
-test('the staged engine modules stay platform-free', () => {
+test('the engine modules the browser loads stay platform-free', () => {
   for (const f of closure.filter((x) => x.startsWith('server/') || x.startsWith('mcp/'))) {
     const src = fs.readFileSync(path.join(root, f), 'utf8');
     assert.doesNotMatch(src, /from\s+['"]node:/, `${f} imports a node: built-in but is loaded by the browser`);
@@ -68,13 +53,15 @@ test('the staged engine modules stay platform-free', () => {
   }
 });
 
-test('the workflow does not stage a Node-only module by accident', () => {
-  for (const f of ['nodeRuntime.js', 'index.js', 'start.js', 'config.js']) {
-    assert.ok(!workflow.includes(`server/${f}`), `pages.yml stages Node-only server/${f}`);
-  }
-  // mcp/server.js is the stdio transport: Node-only, and nothing in the page imports it.
-  assert.ok(!workflow.includes('mcp/server.js'), 'pages.yml stages Node-only mcp/server.js');
-  assert.ok(!closure.includes('mcp/server.js'), 'the browser imports mcp/server.js, which is Node-only');
+/**
+ * Publishing the branch means the Node-only modules are served as well. Harmless in
+ * itself — they are public source either way — but the browser must never *import*
+ * one, because in the static demo there is no Node to run it.
+ */
+test('the browser imports no Node-only module', () => {
+  const nodeOnly = ['server/nodeRuntime.js', 'server/index.js', 'server/start.js', 'server/config.js', 'mcp/server.js'];
+  const imported = nodeOnly.filter((f) => closure.includes(f));
+  assert.deepEqual(imported, [], `the browser imports Node-only module(s): ${imported.join(', ')}`);
 });
 
 /**

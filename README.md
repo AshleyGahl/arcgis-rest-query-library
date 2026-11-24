@@ -175,15 +175,18 @@ otherwise it starts the in-page one. Force either with `?mode=live` or `?mode=st
 URL — `?mode=static` is how you try the published path locally.
 
 `test/browser-engine.test.js` runs every library entry on both runtimes and asserts the results are
-identical; `test/deploy.test.js` resolves what the browser imports and fails if the Pages workflow
-does not stage it.
+identical; `test/deploy.test.js` resolves what the browser imports and fails if any of it is missing
+from the repository, reaches for a Node-only API, or is not served by `npm start` as well.
 
 ### Publishing it
 
-GitHub Actions (`.github/workflows/pages.yml`) stages the site into `_site` and deploys it. It
-needs Settings › Pages › Source = **GitHub Actions**, set once by hand. The site works from any
-path, so a project page at `…/<repo>/` needs no configuration: the viewer derives its own base URL
-from the module it is loaded as.
+GitHub Pages serves `main` at its root (Settings › Pages › Source = **Deploy from a branch**,
+branch `main`, folder `/`), so publishing is just pushing: there is no build step, no staged file
+list and no artifact handshake to race. `.nojekyll` at the root keeps Pages from filtering paths.
+The whole repository is served, the Node-only parts included — they are public source either way,
+and `test/deploy.test.js` asserts the browser never imports one. The site works from any path, so a
+project page at `…/<repo>/` needs no configuration: the viewer derives its own base URL from the
+module it is loaded as.
 
 ## The data
 
