@@ -42,7 +42,7 @@ Don't add packages without asking. The only vendored third-party code is `viewer
 ## Layout
 ```
 data/service_requests.geojson   the "service" (epoch-ms dates, WGS84 points, metadata.asOf)
-docs/data-model.md              fields, categories, NZ council references
+docs/data-model.md              fields, categories, how the generated data behaves
 docs/framework.md               5W+H dimensions, analytical layers, roadmap
 scripts/generate-data.js        seeded generator (categories → request types, seasonality, data defects)
 index.html                      landing page (the GitHub Pages front door)

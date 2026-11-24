@@ -38,27 +38,24 @@ details, or complainant contact data. Coordinates are synthetic points in and ar
 | Animals | Roaming dog · Barking dog |
 | Abandoned Vehicles | Abandoned vehicle |
 
-Query 54 rolls these up into themes: **Three Waters**, **Transport**, **Waste**, **Parks & Open Space**
-and **Community & Regulatory**. "Three Waters" is the common New Zealand term for drinking water,
-wastewater and stormwater.
+Query 54 rolls these up into themes: **Three Waters** (drinking water, wastewater and stormwater),
+**Transport**, **Waste**, **Parks & Open Space** and **Community & Regulatory**.
 
-## Where this comes from (New Zealand councils, public sources)
+## How the data behaves
 
-- **Christchurch City Council** groups its public Snap Send Solve reports as Roading/Streets, Water Supply,
-  Wastewater/Stormwater, Flooding, Rubbish/Recycling, Parks, Graffiti and Other (its ArcGIS service legend).
-  It also publishes Request for Service tickets located in public spaces as open data.
-- **Auckland Council "Report a problem"** covers bins and missed collections, public spaces, litter, noise,
-  wandering or barking dogs, flooding, graffiti, dumped rubbish, manhole and catchpit covers, and abandoned vehicles.
-- **Wellington City Council FIXiT** asks for a problem category, a description (600 characters) and optional
-  photos. Hazards, noise and major leaks go to the phone line, which is why this data sends urgent types to `Phone` more often.
-- **Antenno** (Waitaki, Waikato, Nelson, Whakatāne and others) lists potholes and road damage, streetlights,
-  graffiti and vandalism, blocked drains, fallen trees, and rubbish and recycling as typical reports.
-- **Status and dates.** Open council service-request datasets commonly publish service type, date opened,
-  date closed and status (for example City of Melbourne's customer service requests data dictionary).
-  Received date, closed date and status are the backbone here too.
+Everything is synthetic and generated from a seed, so a given seed always produces the same file.
+The generator shapes it so the query library has something real to find:
 
-Volumes and timings are synthetic. Seasonality follows the southern hemisphere: winter peaks for drains,
-flooding, roads, trees and streetlights, and summer peaks for water, parks and noise.
+- **Seasonality** follows the southern hemisphere: winter peaks for drains, flooding, roads, trees
+  and streetlights; summer peaks for water, parks and noise.
+- **Channel correlates with urgency.** Hazards, noise and major leaks arrive by `Phone` more often
+  than routine requests, which skew towards `App` and `Online form`.
+- **Resolution time varies by request type**: each type has a median, scattered log-normally, and
+  requests whose description reads as urgent close faster. Anything that would still be open at the
+  snapshot time stays `Open` or `In Progress`, which is what gives the backlog and ageing queries
+  a realistic spread.
+- **Suburb is sometimes NULL**, standing in for a report that gave only a map pin — more often on
+  `App` reports (8%) than on other channels (3%).
 
 ## Deliberate data defects (exercised by queries 57–60)
 

@@ -2,10 +2,9 @@
 /**
  * Synthetic public service-request generator.
  *
- * Categories, request types, statuses and channels follow what New Zealand councils
- * expose in their public "report a problem" apps and open data (Snap Send Solve,
- * Antenno, Auckland "Report a problem", Wellington FIXiT, Christchurch
- * RFS tickets). See docs/data-model.md. Coordinates are placed in and around Cape Town.
+ * Categories, request types, statuses and channels follow the generic "report a problem"
+ * model that councils collect: see docs/data-model.md. Coordinates are placed in and
+ * around Cape Town.
  *
  *   node scripts/generate-data.js [--count 850] [--seed 20261123] [--asof "2026-11-23 17:00"]
  *
