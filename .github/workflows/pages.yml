@@ -49,7 +49,7 @@ jobs:
           # The viewer imports the engine itself; these are the platform-free modules.
           mkdir -p _site/server
           cp server/featureService.js server/restRouter.js server/schema.js \
-             server/serviceConfig.js server/sqlDialect.js _site/server/
+             server/catalogSchema.js server/serviceConfig.js server/sqlDialect.js _site/server/
           echo "staged $(find _site -type f | wc -l) files, $(du -sh _site | cut -f1)"
 
       - name: Upload the site

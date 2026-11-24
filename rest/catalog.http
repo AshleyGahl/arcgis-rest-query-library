@@ -1,0 +1,107 @@
+# The query library published as a FeatureServer table (layer 1).
+#
+# This file is the architecture in miniature: the service exposes exactly two
+# generic operations, and both of them are the standard ArcGIS `query`.
+#
+#   1. Discover  -> FeatureServer/1/query   "what can I ask?"
+#   2. Execute   -> FeatureServer/0/query   "answer this, using the parameters row 1 gave me"
+#
+# Adding an analytical question adds a row to table 1. No new endpoint, no new DTO,
+# no deployment of the client.
+#
+# Start the server first: `npm start`.
+
+@svc   = http://127.0.0.1:3000/arcgis/rest/services/ServiceRequests/FeatureServer
+@cat   = {{svc}}/1
+@layer = {{svc}}/0
+
+### The service advertises one layer and one table
+GET {{svc}}?f=pjson
+
+### Table 1 definition — type "Table", no geometry, no extent, no timeInfo
+GET {{cat}}?f=pjson
+
+# ---------------------------------------------------------------------------
+# 1. DISCOVER — the catalog is an ordinary queryable table
+# ---------------------------------------------------------------------------
+
+### The whole catalog (what a dashboard loads on start-up)
+GET {{cat}}/query?f=pjson&where=1=1&outFields=QueryNumber,Category,Question,Portability,Transforms&orderByFields=QueryNumber
+
+### Only the questions that run unchanged on any FeatureServer
+GET {{cat}}/query?f=pjson&where=Portability = 'standard'&outFields=QueryNumber,Question&orderByFields=QueryNumber
+
+### Only the performance metrics (a category dropdown, server-side)
+GET {{cat}}/query?f=pjson&where=Category LIKE '%Duration%'&outFields=QueryNumber,Question,Portability&orderByFields=QueryNumber
+
+### Free-text search across questions and their SQL — no search endpoint needed
+GET {{cat}}/query?f=pjson&where=Question LIKE '%percentile%' OR SqlText LIKE '%PERCENTILE_CONT%'&outFields=QueryNumber,Question
+
+### The distinct categories, for a dropdown
+GET {{cat}}/query?f=pjson&where=1=1&outFields=Category&returnDistinctValues=true&orderByFields=Category
+
+### The catalog describing itself: how portable is the library?
+GET {{cat}}/query?f=pjson&where=1=1&groupByFieldsForStatistics=Portability&outStatistics=[{"statisticType":"count","onStatisticField":"ObjectID","outStatisticFieldName":"Count"}]&orderByFields=Count DESC
+
+### Coverage by 5W+H dimension and analytical layer
+GET {{cat}}/query?f=pjson&where=1=1&groupByFieldsForStatistics=AnalyticLayer,Dimension&outStatistics=[{"statisticType":"count","onStatisticField":"ObjectID","outStatisticFieldName":"Count"}]&orderByFields=AnalyticLayer,Count DESC
+
+### How many questions REST cannot finish on its own (they carry a client transform)
+GET {{cat}}/query?f=pjson&where=Transforms IS NOT NULL&outFields=QueryNumber,Question,Transforms&orderByFields=QueryNumber
+
+### One row in full — this is everything a client needs to run Q22
+GET {{cat}}/query?f=pjson&where=QueryNumber = 22&outFields=*
+
+# ---------------------------------------------------------------------------
+# 2. EXECUTE — replay the RestParams the catalog just handed over
+# ---------------------------------------------------------------------------
+# The request below was not written by hand: every parameter is copied verbatim
+# out of the RestParams column of Q22 above. That is the whole claim.
+
+### Q22 "Average resolution time by Category", executed from its catalog row
+POST {{layer}}/query
+Content-Type: application/x-www-form-urlencoded
+
+f=pjson
+&where=DtCompleted IS NOT NULL
+&sqlFormat=native
+&groupByFieldsForStatistics=Category
+&outStatistics=[{"statisticType":"avg","onStatisticField":"DATEDIFF(day, DtLogged, DtCompleted)","outStatisticFieldName":"AvgDays"}]
+&orderByFields=AvgDays
+
+### Q53 "90th percentile resolution time" — the metric that usually needs a new endpoint
+POST {{layer}}/query
+Content-Type: application/x-www-form-urlencoded
+
+f=pjson
+&where=DtCompleted IS NOT NULL
+&sqlFormat=native
+&outStatistics=[{"statisticType":"percentile_cont","onStatisticField":"DATEDIFF(day, DtLogged, DtCompleted)","outStatisticFieldName":"P90_Days","statisticParameters":{"value":0.9}}]
+
+# ---------------------------------------------------------------------------
+# 3. The audit trail
+# ---------------------------------------------------------------------------
+
+### The reference T-SQL for the same question, served from the same table
+GET {{cat}}/query?f=pjson&where=QueryNumber = 22&outFields=QueryNumber,Question,SqlText
+
+### And run it, via the mock's raw-SQL extension (NOT part of ArcGIS REST)
+POST {{layer}}/sql
+Content-Type: application/x-www-form-urlencoded
+
+f=pjson
+&q=SELECT Category, AVG(CAST(DATEDIFF(day, DtLogged, DtCompleted) AS FLOAT)) AS AvgDays FROM ServiceRequest WHERE DtCompleted IS NOT NULL GROUP BY Category ORDER BY AvgDays;
+
+### The catalog is also a view for the raw-SQL extension, mirroring vw_QueryLibrary
+POST {{layer}}/sql
+Content-Type: application/x-www-form-urlencoded
+
+f=pjson
+&q=SELECT Portability, COUNT(*) AS Count FROM QueryLibrary GROUP BY Portability ORDER BY Count DESC;
+
+### Read-only: the catalog cannot be edited over the wire
+POST {{layer}}/sql
+Content-Type: application/x-www-form-urlencoded
+
+f=pjson
+&q=UPDATE QueryLibrary SET Question = 'nope' WHERE QueryNumber = 1;

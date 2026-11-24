@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The query catalog as a FeatureServer table · Service Request GIS</title>
+<meta name="description" content="The architecture: the query library published as a FeatureServer table, why it stores parameters rather than statements, and the three places the pattern does not hold.">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="docs.css">
+</head>
+<body>
+<header class="site">
+  <a class="brand" href="../index.html">Service Request GIS</a>
+  <nav aria-label="Documentation">
+      <a href="../index.html">Overview</a>
+      <a href="index.html">Docs</a>
+      <a href="data-model.html">Data model</a>
+      <a href="framework.html">Analytics framework</a>
+      <a href="query-catalog.html" aria-current="page">Query catalog</a>
+      <a href="../viewer/">Viewer</a>
+  </nav>
+</header>
+<main>
+<nav class="toc" aria-label="On this page"><h2>On this page</h2><ol><li><a href="#why-the-catalog-stores-parameters-not-statements">Why the catalog stores parameters, not statements</a></li><li><a href="#what-this-buys-and-what-it-does-not">What this buys, and what it does not</a></li><li><a href="#adding-a-question">Adding a question</a></li></ol></nav>
+<article>
+<h1>The query catalog as a FeatureServer table</h1>
+<p><em>For developers evaluating this pattern, and for anyone maintaining the library.</em></p>
+<p>The service publishes two things over one REST surface:</p>
+<div class="table-wrap"><table><thead><tr><th>Id</th><th>Name</th><th>Type</th><th>What it is</th></tr></thead><tbody><tr><td>0</td><td><code>ServiceRequests</code></td><td>Feature Layer</td><td>the ~850 service request points</td></tr><tr><td>1</td><td><code>QueryLibrary</code></td><td>Table</td><td>the 70 analytical questions, as data</td></tr></tbody></table></div>
+<p>A client needs exactly two requests, and both are the standard ArcGIS <code>query</code> operation:</p>
+<pre><code>1. discover   GET  …/FeatureServer/1/query?where=1=1&amp;outFields=*
+2. execute    POST …/FeatureServer/0/query   &lt;the RestParams from a row of step 1&gt;</code></pre>
+<p>Nothing about any individual question is compiled into the client. <code>viewer/js/catalog.js</code> does step 1 at start-up and the Library panel renders whatever comes back; add a query to <code>sql-library/queryLibrary.js</code>, restart the service, and it appears in the UI with no change to the viewer. <code>test/catalog.test.js</code> asserts this for all 70: it reads each row over REST, replays its <code>RestParams</code>, and requires the result to equal the library run exactly.</p>
+<h2 id="why-the-catalog-stores-parameters-not-statements">Why the catalog stores parameters, not statements</h2>
+<p>The obvious design is to store the <code>SELECT</code> statement and POST it to the service. <strong>A real FeatureServer has no endpoint that accepts a SQL statement.</strong> There is no <code>?sql=</code>; the <code>/0/sql</code> route in this repo is labelled a mock extension for exactly that reason.</p>
+<p>What the <code>query</code> operation <em>does</em> accept is SQL in pieces — <code>where</code>, <code>groupByFieldsForStatistics</code>, <code>outStatistics.onStatisticField</code>, <code>having</code>, <code>orderByFields</code> — and the service transforms and executes those server-side in its own engine. So the catalog's <code>RestParams</code> column holds the decomposed query:</p>
+<pre data-lang="json"><code>{
+  "where": "DtCompleted IS NOT NULL",
+  "sqlFormat": "native",
+  "groupByFieldsForStatistics": "Category",
+  "outStatistics": [{ "statisticType": "avg",
+                      "onStatisticField": "DATEDIFF(day, DtLogged, DtCompleted)",
+                      "outStatisticFieldName": "AvgDays" }],
+  "orderByFields": "AvgDays"
+}</code></pre>
+<p><code>SqlText</code> carries the equivalent T-SQL in the same row. It is not dead weight: it is the reference definition the REST request must reproduce, the audit record of what a metric means, and what you execute if you point the same catalog at SQL Server instead (<code>sql/03_vw_QueryLibrary.sql</code> is generated from the same source).</p>
+<h2 id="what-this-buys-and-what-it-does-not">What this buys, and what it does not</h2>
+<p>Measured against the library as it stands — run <code>npm test</code> to re-check every number here.</p>
+<p><strong>Holds.</strong> Adding a metric is a data change, not a deployment. One generic pipeline serves 70 questions or 700. The catalog is self-documenting by construction: every row carries its category, its business question and its portability. And because the catalog is a normal table, it answers questions about itself with the same <code>query</code> operation — <em>"how portable is this library?"</em> is one <code>outStatistics</code> call, no reporting code:</p>
+<div class="table-wrap"><table><thead><tr><th><code>Portability</code></th><th>Count</th><th>Runs on</th></tr></thead><tbody><tr><td><code>standard</code></td><td>32</td><td>any FeatureServer</td></tr><tr><td><code>sql-expression</code></td><td>14</td><td>ArcGIS Online hosted, Enterprise 10.9+</td></tr><tr><td><code>native</code></td><td>23</td><td>SQL Server-backed Enterprise, <code>sqlFormat=native</code></td></tr><tr><td><code>extension</code></td><td>1</td><td>this mock only</td></tr></tbody></table></div>
+<p><strong>Does not hold.</strong> Three limits are real and worth stating before anyone builds on this:</p>
+<ol><li><strong>The <code>query</code> operation has no window functions.</strong> Nine entries come back as raw groups and are finished on the client by <code>sql-library/runner.js</code> — <code>lag</code>, <code>runningTotal</code>, <code>movingAverage</code> and <code>rank</code> stand in for the SQL window functions of the same name, and <code>topPerGroup</code>, <code>fullOuterJoin</code>, <code>groupCount</code>, <code>ratio</code> and <code>sort</code> for the rest. The catalog is honest about it — the <code>Transforms</code> and <code>TransformSpec</code> columns name the step, so a client knows what it must apply — but the compute has moved to the client, which is the very failure mode this architecture is meant to avoid. There is no <code>ROLLUP</code> either, so subtotals cost a second request. One entry (Q62) needs two requests and a client-side full outer join.</li><li><strong>Date arithmetic is not portable.</strong> 23 of 70 are tagged <code>native</code> almost entirely because standardized SQL has no date-difference function, so every duration and SLA metric needs <code>sqlFormat=native</code> against a SQL Server-backed service. The descriptive half of the library travels anywhere; the performance half — the half management asks for — does not.</li><li><strong>The catalog is a convention, not an access control.</strong> <code>FeatureServer/0/query</code> still accepts an arbitrary <code>where</code> from anyone who can reach it. Publishing the catalog does not stop a client sending its own predicate and scanning an unindexed column. If you want the whitelist property — clients may pass only a query number — you need a tier in front that refuses to forward a client-supplied <code>where</code>, because the FeatureServer will not refuse it for you. What the catalog gives you here is governance of <em>definitions</em>, not of <em>access</em>.</li></ol>
+<h2 id="adding-a-question">Adding a question</h2>
+<p>Add the entry to <code>sql-library/queryLibrary.js</code> with an honest <code>portability</code> tag, then <code>npm run build</code> (regenerates <code>rest/library.http</code> and <code>sql/03_vw_QueryLibrary.sql</code>) and <code>npm test</code>. <code>server/catalogSchema.js</code> derives the table from the library at load time, so there is no separate catalog to keep in step.</p>
+<p>See also: <code>rest/catalog.http</code> (the two-hop flow as runnable requests), <code>docs/framework.md</code> (the 5W+H dimensions and analytical layers the catalog columns expose).</p>
+</article>
+</main>
+<footer>
+  <p>Synthetic data, a mock service, and a proof of concept &mdash; not a deployable product.
+  Generated from the Markdown in <code>docs/</code> by <code>npm run build</code>.</p>
+</footer>
+</body>
+</html>

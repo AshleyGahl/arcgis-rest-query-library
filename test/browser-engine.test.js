@@ -53,6 +53,17 @@ test('the Wasm runtime loads the same dataset', () => {
   assert.equal(wasmSvc.metadata.asOf, nodeSvc.metadata.asOf);
 });
 
+test('the catalog table loads on the Wasm runtime too, so the static demo has one', () => {
+  assert.equal(wasmSvc.catalogCount, nodeSvc.catalogCount);
+  assert.deepEqual(wasmSvc.layerIds(), nodeSvc.layerIds());
+  assert.equal(wasmSvc.layerInfo(1).type, 'Table');
+  const q = { where: '1=1', outFields: 'QueryNumber,Portability,RestParams', orderByFields: 'QueryNumber' };
+  assert.deepEqual(
+    wasmSvc.query(q, 1).features.map((f) => ({ ...f.attributes })),
+    nodeSvc.query(q, 1).features.map((f) => ({ ...f.attributes })),
+  );
+});
+
 test('user-defined T-SQL functions are registered', () => {
   const r = wasmSvc.sql("SELECT DATEDIFF(day, '2024-01-01', '2024-03-01') AS d, FORMAT(CAST('2024-03-05' AS DATETIME), 'yyyy-MM') AS ym, LEN('abc  ') AS n, DATALENGTH('abc') AS b");
   assert.ok(!r.error, r.error && r.error.message);

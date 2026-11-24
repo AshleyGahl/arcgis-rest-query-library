@@ -1,0 +1,126 @@
+/* Shared styling for the generated documentation pages (scripts/build-docs.js).
+   Same editorial palette and type scale as the landing page. */
+
+:root {
+  --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781;
+  --surface: #fcfcfb; --rule: #e1e0d9; --accent: #2a78d6;
+  --code-bg: #f1f0ea; --code-rule: #e2e0d6;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0; background: var(--surface); color: var(--ink);
+  font: 16px/1.65 -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ------------------------------------------------------------------ chrome */
+header.site {
+  border-bottom: 1px solid var(--rule); background: var(--surface);
+  position: sticky; top: 0; z-index: 10;
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem 1.5rem;
+  padding: .875rem 1.5rem;
+}
+header.site .brand { font-weight: 600; color: var(--ink); text-decoration: none; letter-spacing: -0.01em; }
+header.site nav { display: flex; flex-wrap: wrap; gap: 1.125rem; font-size: .875rem; }
+header.site nav a { color: var(--ink-2); text-decoration: none; }
+header.site nav a:hover { color: var(--accent); }
+header.site nav a[aria-current="page"] { color: var(--ink); font-weight: 600; }
+
+main {
+  max-width: 64rem; margin: 0 auto; padding: 3rem 1.5rem 4rem;
+  display: grid; grid-template-columns: minmax(0, 1fr) 13rem; gap: 3rem; align-items: start;
+}
+article { max-width: 46rem; min-width: 0; }
+
+footer {
+  max-width: 64rem; margin: 0 auto; padding: 1.5rem 1.5rem 3rem;
+  border-top: 1px solid var(--rule); color: var(--muted); font-size: .875rem;
+}
+footer p { margin: 1rem 0 0; }
+
+/* ------------------------------------------------------------------ table of contents */
+.toc {
+  grid-column: 2; grid-row: 1;
+  position: sticky; top: 4.5rem;
+  font-size: .875rem; border-left: 1px solid var(--rule); padding-left: 1rem;
+}
+.toc h2 { margin: 0 0 .5rem; }
+.toc ol { list-style: none; margin: 0; padding: 0; }
+.toc li { margin-bottom: .4rem; line-height: 1.4; }
+.toc a { color: var(--ink-2); text-decoration: none; }
+.toc a:hover { color: var(--accent); text-decoration: underline; }
+
+/* ------------------------------------------------------------------ type */
+h1 { font-size: 2rem; line-height: 1.2; margin: 0 0 .75rem; letter-spacing: -0.015em; }
+h2 {
+  font-size: .8125rem; text-transform: uppercase; letter-spacing: .08em;
+  color: var(--muted); margin: 2.75rem 0 .875rem; font-weight: 600;
+}
+h3 { font-size: 1.0625rem; margin: 2rem 0 .625rem; letter-spacing: -0.01em; }
+h4 { font-size: .9375rem; margin: 1.5rem 0 .5rem; }
+p { margin: 0 0 1rem; }
+.lede { font-size: 1.125rem; color: var(--ink-2); margin: 0 0 2rem; }
+a { color: var(--accent); }
+strong { font-weight: 600; }
+
+ul, ol { margin: 0 0 1rem; padding-left: 1.25rem; }
+li { margin-bottom: .5rem; }
+li > p { margin: 0; }
+
+blockquote {
+  margin: 0 0 1.25rem; padding: .125rem 0 .125rem 1rem;
+  border-left: 3px solid var(--rule); color: var(--ink-2); font-size: .9375rem;
+}
+
+code { font: .875em ui-monospace, Consolas, monospace; background: var(--code-bg); padding: .1em .35em; border-radius: 3px; }
+pre {
+  background: var(--code-bg); border: 1px solid var(--code-rule); border-radius: 4px;
+  padding: .8rem 1rem; overflow-x: auto; line-height: 1.55; margin: 0 0 1.25rem;
+  font-size: .875rem;
+}
+pre code { background: none; padding: 0; font-size: 1em; }
+
+/* ------------------------------------------------------------------ tables */
+.table-wrap { overflow-x: auto; margin: 0 0 1.5rem; }
+table { border-collapse: collapse; width: 100%; font-size: .9375rem; }
+caption { text-align: left; color: var(--muted); font-size: .8125rem; padding-bottom: .5rem; }
+th, td { text-align: left; padding: .5rem .875rem .5rem 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th {
+  color: var(--muted); font-weight: 600; font-size: .8125rem;
+  text-transform: uppercase; letter-spacing: .04em; white-space: nowrap;
+  border-bottom-color: var(--ink-2);
+}
+tbody tr:hover { background: #f6f5f0; }
+td.c, th.c { text-align: center; }
+td.r, th.r { text-align: right; }
+/* First column of a field or category table reads as a label. */
+td:first-child code { background: none; padding: 0; font-weight: 600; }
+
+/* ------------------------------------------------------------------ docs index cards */
+ul.cards { list-style: none; padding: 0; margin: 0 0 1rem; }
+ul.cards li {
+  border-top: 1px solid var(--rule); padding: 1.125rem 0; margin: 0;
+}
+ul.cards li:last-child { border-bottom: 1px solid var(--rule); }
+ul.cards a { text-decoration: none; font-size: 1.0625rem; }
+ul.cards a:hover { text-decoration: underline; }
+ul.cards p { margin: .25rem 0 0; color: var(--ink-2); font-size: .9375rem; }
+
+/* ------------------------------------------------------------------ narrow screens */
+@media (max-width: 56rem) {
+  main { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .toc {
+    grid-column: 1; grid-row: 1; position: static;
+    border-left: 0; border-bottom: 1px solid var(--rule);
+    padding: 0 0 1rem; margin-bottom: 2rem;
+  }
+  .toc ol { columns: 2; column-gap: 1.5rem; }
+}
+
+@media print {
+  header.site, .toc { display: none; }
+  body { background: #fff; }
+  main { display: block; max-width: none; padding: 0; }
+}

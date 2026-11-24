@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Documentation · Service Request GIS</title>
+<meta name="description" content="Documentation for the Service Request GIS proof of concept: the data model, the analytics framework and the query-catalog architecture.">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="docs.css">
+</head>
+<body>
+<header class="site">
+  <a class="brand" href="../index.html">Service Request GIS</a>
+  <nav aria-label="Documentation">
+      <a href="../index.html">Overview</a>
+      <a href="index.html" aria-current="page">Docs</a>
+      <a href="data-model.html">Data model</a>
+      <a href="framework.html">Analytics framework</a>
+      <a href="query-catalog.html">Query catalog</a>
+      <a href="../viewer/">Viewer</a>
+  </nav>
+</header>
+<main>
+
+<article>
+<h1>Documentation</h1>
+<p class="lede">Three documents, written as Markdown in <code>docs/</code> and rendered here. The
+first describes the data, the second how the questions asked of it are organised, and the third the
+architecture the proof of concept is actually testing.</p>
+<ul class="cards">
+<li><a href="data-model.html"><strong>Data model</strong></a><p>The fields, the categories and sub-categories, how the generated data behaves, and the defects planted for the data-quality queries.</p></li>
+<li><a href="framework.html"><strong>Analytics framework</strong></a><p>How the 70 questions are organised: the 5W+H dimensions, the five analytical layers, the coverage checklist and what comes next.</p></li>
+<li><a href="query-catalog.html"><strong>Query catalog</strong></a><p>The architecture: the query library published as a FeatureServer table, why it stores parameters rather than statements, and the three places the pattern does not hold.</p></li>
+</ul>
+<h2 id="elsewhere">Elsewhere in the repository</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Path</th><th></th></tr></thead>
+<tbody>
+<tr><td><code>sql-library/queryLibrary.js</code></td><td>The 70 entries themselves: REST parameters, client transform, T-SQL and portability tag.</td></tr>
+<tr><td><code>rest/catalog.http</code></td><td>The discover-then-execute flow as runnable requests.</td></tr>
+<tr><td><code>rest/library.http</code></td><td>All 70 library requests, generated.</td></tr>
+<tr><td><code>sql/</code></td><td>SQL Server scripts that load the same GeoJSON, so the T-SQL can be run where it was written for.</td></tr>
+<tr><td><code>CLAUDE.md</code></td><td>Conventions and layout, for working on the repository.</td></tr>
+</tbody>
+</table></div>
+</article>
+</main>
+<footer>
+  <p>Synthetic data, a mock service, and a proof of concept &mdash; not a deployable product.
+  Generated from the Markdown in <code>docs/</code> by <code>npm run build</code>.</p>
+</footer>
+</body>
+</html>

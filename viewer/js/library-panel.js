@@ -1,19 +1,31 @@
-import { queryLibrary, CATEGORIES } from '../../sql-library/queryLibrary.js';
+/**
+ * The Query Library panel.
+ *
+ * The questions are not imported: they are read from table 1 of the FeatureServer
+ * at start-up (see catalog.js). This panel therefore knows how to *run* a
+ * catalogued query, but nothing about which queries exist — that is the service's
+ * business. Everything below works off the catalog rows alone.
+ */
 import { runEntry, httpFetcher, requestsOf, toQueryUrl } from '../../sql-library/runner.js';
 import { layerUrl, dateColumnsOf, tsql } from './rest.js';
 import { showResults, showError, showCompare } from './results.js';
+import { fetchCatalog } from './catalog.js';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 const fetcher = httpFetcher(layerUrl);
+
+// Filled in by initLibraryPanel() from the catalog request.
+let entries = [];
+let categories = [];
 
 function renderList(onSelect, activeId) {
   const term = $('libSearch').value.trim().toLowerCase();
   const port = $('libPortability').value;
   const list = $('libList');
   list.replaceChildren();
-  for (const cat of CATEGORIES) {
-    const items = queryLibrary.filter((q) => q.category === cat && (!port || q.portability === port) &&
+  for (const cat of categories) {
+    const items = entries.filter((q) => q.category === cat && (!port || q.portability === port) &&
       (!term || `${q.id} ${q.question} ${q.tsql}`.toLowerCase().includes(term)));
     if (!items.length) continue;
     list.insertAdjacentHTML('beforeend', `<div class="lib-group">${esc(cat)}</div>`);
@@ -51,7 +63,7 @@ function renderDetail(q) {
     <details><summary>Original T-SQL</summary><pre class="code">${esc(q.tsql)}</pre></details>`;
 }
 
-export function initLibraryPanel(map, filters) {
+export async function initLibraryPanel(map, filters) {
   let active = null;
   const select = (q) => { active = q; renderList(select, q.id); renderDetail(q); wire(q); };
 
@@ -94,5 +106,17 @@ export function initLibraryPanel(map, filters) {
 
   $('libSearch').oninput = () => renderList(select, active?.id);
   $('libPortability').onchange = () => renderList(select, active?.id);
-  renderList(select);
+
+  // One REST request discovers every question the service can answer.
+  try {
+    const catalog = await fetchCatalog();
+    entries = catalog.entries;
+    categories = catalog.categories;
+    $('libSearch').placeholder = `Search ${entries.length} queries…`;
+    $('libList').dataset.catalogUrl = catalog.url;
+    renderList(select);
+  } catch (e) {
+    $('libList').innerHTML = `<div class="lib-group">Query catalog unavailable</div><div class="note" style="padding:8px 10px">${esc(e.message)}</div>`;
+    showError('Could not read the query catalog (FeatureServer table 1)', e);
+  }
 }

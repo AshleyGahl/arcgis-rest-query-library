@@ -11,11 +11,12 @@
     "start": "node server/start.js",
     "dev": "node --watch server/start.js",
     "generate": "node scripts/generate-data.js",
-    "build": "node --disable-warning=ExperimentalWarning scripts/build-http.js && node --disable-warning=ExperimentalWarning scripts/build-sql.js",
+    "build": "node --disable-warning=ExperimentalWarning scripts/build-http.js && node --disable-warning=ExperimentalWarning scripts/build-sql.js && node --disable-warning=ExperimentalWarning scripts/build-docs.js",
     "build:http": "node --disable-warning=ExperimentalWarning scripts/build-http.js",
     "build:sql": "node --disable-warning=ExperimentalWarning scripts/build-sql.js",
     "query": "node --disable-warning=ExperimentalWarning scripts/run-query.js",
     "mcp": "node --disable-warning=ExperimentalWarning mcp/server.js",
-    "test": "node --disable-warning=ExperimentalWarning --test test/*.test.js"
+    "test": "node --disable-warning=ExperimentalWarning --test test/*.test.js",
+    "build:docs": "node --disable-warning=ExperimentalWarning scripts/build-docs.js"
   }
 }

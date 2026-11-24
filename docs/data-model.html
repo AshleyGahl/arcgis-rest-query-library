@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data model: generic public service request · Service Request GIS</title>
+<meta name="description" content="The fields, the categories and sub-categories, how the generated data behaves, and the defects planted for the data-quality queries.">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="docs.css">
+</head>
+<body>
+<header class="site">
+  <a class="brand" href="../index.html">Service Request GIS</a>
+  <nav aria-label="Documentation">
+      <a href="../index.html">Overview</a>
+      <a href="index.html">Docs</a>
+      <a href="data-model.html" aria-current="page">Data model</a>
+      <a href="framework.html">Analytics framework</a>
+      <a href="query-catalog.html">Query catalog</a>
+      <a href="../viewer/">Viewer</a>
+  </nav>
+</header>
+<main>
+<nav class="toc" aria-label="On this page"><h2>On this page</h2><ol><li><a href="#fields">Fields</a></li><li><a href="#categories-and-sub-categories">Categories and sub-categories</a></li><li><a href="#how-the-data-behaves">How the data behaves</a></li><li><a href="#deliberate-data-defects-exercised-by-queries-5760">Deliberate data defects (exercised by queries 57–60)</a></li></ol></nav>
+<article>
+<h1>Data model: generic public service request</h1>
+<p>The layer is a <strong>generic council "report a problem" record</strong>. It holds only what a member of the public submits plus the council's lifecycle dates. It contains no internal system names, staff or contractor details, or complainant contact data. Coordinates are synthetic points in and around Cape Town.</p>
+<h2 id="fields">Fields</h2>
+<div class="table-wrap"><table><thead><tr><th>Field</th><th>Type</th><th>Example</th><th>Notes</th></tr></thead><tbody><tr><td><code>ObjectID</code></td><td>OID</td><td>412</td><td>Layer object id, in logged order (<code>ObjectID DESC</code> = newest first)</td></tr><tr><td><code>RequestID</code></td><td>text(20)</td><td><code>SR-2026-00460</code></td><td>Public reference number given to the reporter</td></tr><tr><td><strong><code>Category</code></strong></td><td>text(50)</td><td><code>Water Supply</code></td><td><strong>Core fact.</strong> Top-level issue group the reporter picks</td></tr><tr><td><code>CategorySub</code></td><td>text(60)</td><td><code>Water leak</code></td><td>Sub-type within the category</td></tr><tr><td><code>Status</code></td><td>text(20)</td><td><code>Open</code> · <code>In Progress</code> · <code>Closed</code></td><td>Lifecycle status</td></tr><tr><td><code>Channel</code></td><td>text(20)</td><td><code>App</code> · <code>Online form</code> · <code>Phone</code> · <code>Email</code> · <code>In person</code></td><td>How the request reached the council</td></tr><tr><td><code>Suburb</code></td><td>text(60)</td><td><code>Khayelitsha</code></td><td>Address match. NULL when only a map pin was supplied</td></tr><tr><td><code>Description</code></td><td>text(600)</td><td><code>Pothole on Main Road…</code></td><td>Free text, capped like typical online forms</td></tr><tr><td><strong><code>DtLogged</code></strong></td><td>date</td><td>epoch ms</td><td><strong>Core fact.</strong> When the request was received</td></tr><tr><td><strong><code>DtCompleted</code></strong></td><td>date</td><td>epoch ms / null</td><td><strong>Core fact.</strong> When it was closed off</td></tr><tr><td><em>geometry</em></td><td>point</td><td>WGS84</td><td>Location of the issue (Cape Town)</td></tr></tbody></table></div>
+<h2 id="categories-and-sub-categories">Categories and sub-categories</h2>
+<div class="table-wrap"><table><thead><tr><th>Category</th><th>Sub-categories</th></tr></thead><tbody><tr><td>Roads &amp; Footpaths</td><td>Pothole · Damaged footpath · Road sign or marking</td></tr><tr><td>Streetlights</td><td>Streetlight not working · Damaged streetlight pole</td></tr><tr><td>Water Supply</td><td>Water leak · No water or low pressure · Water meter issue</td></tr><tr><td>Wastewater &amp; Stormwater</td><td>Blocked drain · Wastewater overflow · Manhole or catchpit cover</td></tr><tr><td>Flooding</td><td>Surface flooding · Blocked culvert</td></tr><tr><td>Rubbish &amp; Recycling</td><td>Missed collection · Bin repair or replacement · New bin request</td></tr><tr><td>Illegal Dumping</td><td>Dumped rubbish · Loose litter</td></tr><tr><td>Graffiti</td><td>Graffiti on public property</td></tr><tr><td>Parks &amp; Reserves</td><td>Broken play equipment · Grass mowing · Public toilet issue</td></tr><tr><td>Trees</td><td>Fallen tree or branch · Overhanging vegetation</td></tr><tr><td>Noise</td><td>Party or people noise · Construction noise</td></tr><tr><td>Animals</td><td>Roaming dog · Barking dog</td></tr><tr><td>Abandoned Vehicles</td><td>Abandoned vehicle</td></tr></tbody></table></div>
+<p>Query 54 rolls these up into themes: <strong>Three Waters</strong> (drinking water, wastewater and stormwater), <strong>Transport</strong>, <strong>Waste</strong>, <strong>Parks &amp; Open Space</strong> and <strong>Community &amp; Regulatory</strong>.</p>
+<h2 id="how-the-data-behaves">How the data behaves</h2>
+<p>Everything is synthetic and generated from a seed, so a given seed always produces the same file. The generator shapes it so the query library has something real to find:</p>
+<ul><li><strong>Seasonality</strong> follows the southern hemisphere: winter peaks for drains, flooding, roads, trees and streetlights; summer peaks for water, parks and noise.</li><li><strong>Channel correlates with urgency.</strong> Hazards, noise and major leaks arrive by <code>Phone</code> more often than routine requests, which skew towards <code>App</code> and <code>Online form</code>.</li><li><strong>Resolution time varies by sub-category</strong>: each one has a median, scattered log-normally, and requests whose description reads as urgent close faster. Anything that would still be open at the snapshot time stays <code>Open</code> or <code>In Progress</code>, which is what gives the backlog and ageing queries a realistic spread.</li><li><strong>Suburb is sometimes NULL</strong>, standing in for a report that gave only a map pin — more often on <code>App</code> reports (8%) than on other channels (3%).</li></ul>
+<h2 id="deliberate-data-defects-exercised-by-queries-5760">Deliberate data defects (exercised by queries 57–60)</h2>
+<ul><li><code>Closed</code> with no <code>DtCompleted</code></li><li><code>DtCompleted</code> earlier than <code>DtLogged</code></li><li><code>DtCompleted</code> set while <code>Status</code> is not <code>Closed</code></li><li><code>Suburb</code> NULL (pin-only app reports), and empty or NULL <code>Description</code></li></ul>
+</article>
+</main>
+<footer>
+  <p>Synthetic data, a mock service, and a proof of concept &mdash; not a deployable product.
+  Generated from the Markdown in <code>docs/</code> by <code>npm run build</code>.</p>
+</footer>
+</body>
+</html>

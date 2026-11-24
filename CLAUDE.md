@@ -8,6 +8,8 @@ council "report a problem" app collects. The points sit in and around Cape Town.
 - a **static deployment** of the same thing: with no server, the engine runs in the page on SQLite Wasm
   and a service worker answers the REST requests (this is what GitHub Pages serves)
 - a **query library**: 70 analytical questions written as ArcGIS REST `query` requests, with T-SQL alongside
+- the library **published as table 1 of the same FeatureServer**, so a client discovers the questions with
+  one standard REST request and executes any of them with a second (`docs/query-catalog.md`)
 - SQL Server scripts that load the same GeoJSON so the T-SQL can be compared against identical data
 
 The data model is deliberately generic (`docs/data-model.md`). **Core facts: `DtLogged`, `DtCompleted`, `Category`.**
@@ -16,18 +18,18 @@ Keep it that way: no internal system names, staff/contractor fields, ward/admini
 ## Run (VS Code first)
 - **F5** runs "▶ Run Service Request GIS". It starts `server/start.js` and opens http://127.0.0.1:3000/viewer/.
 - Ctrl+Shift+D lists the other configurations: server only, Edge or Chrome viewer debugging (compounds), run a library query, run tests, regenerate data.
-- **Terminal › Run Task** (Ctrl+Shift+B rebuilds the `.http` file and `vw_QueryLibrary.sql`).
+- **Terminal › Run Task** (Ctrl+Shift+B rebuilds the `.http` file, `vw_QueryLibrary.sql` and `docs/*.html`).
 
 | Task | Command |
 |---|---|
 | Start server | `npm start` |
-| Tests (70 REST + 69 T-SQL + parity + both runtimes) | `npm test` |
+| Tests (70 REST + 69 T-SQL + catalog round-trip + parity + both runtimes) | `npm test` |
 | List / run a library query | `npm run query -- list` · `npm run query -- 44 --compare` |
 | Ad-hoc REST | `npm run query -- --where "Suburb = 'Sea Point'" --outFields "RequestID,Category,Status" --resultRecordCount 5` |
 | Ad-hoc T-SQL (mock) | `npm run query -- --sql "SELECT TOP 5 Suburb, COUNT(*) n FROM ServiceRequest GROUP BY Suburb ORDER BY n DESC"` |
 | Same against a real layer | `npm run query -- 41 --url https://<host>/server/rest/services/<svc>/FeatureServer/0` |
 | Regenerate data | `npm run generate -- --count 900 --seed 42` |
-| Rebuild generated artifacts | `npm run build` (after editing the library) |
+| Rebuild generated artifacts | `npm run build` (after editing the library or any `docs/*.md`) |
 
 Requires Node ≥ 22.16 and has **no npm dependencies** (it uses built-in `node:sqlite`). `server/start.js` checks the version.
 Don't add packages without asking. The only vendored third-party code is `viewer/vendor/` (Chart.js, SQLite Wasm). Use `127.0.0.1`, not `localhost`: on Windows, Node can resolve `localhost` to IPv6, and the server only binds IPv4.
@@ -44,6 +46,9 @@ Don't add packages without asking. The only vendored third-party code is `viewer
 data/service_requests.geojson   the "service" (epoch-ms dates, WGS84 points, metadata.asOf)
 docs/data-model.md              fields, categories, how the generated data behaves
 docs/framework.md               5W+H dimensions, analytical layers, roadmap
+docs/query-catalog.md           the catalog-as-a-table architecture, and its three real limits
+docs/*.html + docs/docs.css     GENERATED from the .md by scripts/build-docs.js (the site's doc pages)
+scripts/build-docs.js           zero-dependency Markdown -> HTML for docs/; add a page to its PAGES list
 scripts/generate-data.js        seeded generator (categories → sub-categories, seasonality, data defects)
 index.html                      landing page (the GitHub Pages front door)
 sw.js                           service worker for the static demo; MUST stay at the repo root
@@ -54,11 +59,14 @@ server/featureService.js        query engine: GeoJSON → in-memory SQLite, ArcG
 server/nodeRuntime.js           Node runtime for the engine (fs + node:sqlite) + createFeatureService()
 server/serviceConfig.js         platform-free service defaults, shared with the browser demo
 server/sqlDialect.js            T-SQL / ArcGIS SQL → SQLite rewrites + registered T-SQL functions
-server/schema.js                field list (single source of truth for the layer schema)
+server/schema.js                field list (single source of truth for layer 0's schema)
+server/catalogSchema.js         layer 1: the query library as a non-spatial table (fields + rows)
 sql-library/queryLibrary.js     THE library (70 entries: rest params, transform, tsql, portability)
+                                also the source of layer 1, via server/catalogSchema.js
 sql-library/runner.js           runs entries anywhere + client-side transforms (LAG, running totals…)
 viewer/                         ArcGIS JS 4.x viewer, ES modules, no build step
-  js/config.js                  layer URL, themes, palette (THEME_COLORS etc.)
+  js/config.js                  layer URL, catalog URL, themes, palette (THEME_COLORS etc.)
+  js/catalog.js                 reads the query library from FeatureServer table 1 at runtime
   js/charts.js                  ALL Chart.js create/destroy logic
   js/dashboard.js               Dashboard tab (KPIs + charts from REST statistics, cross-filtering)
   js/result-chart.js            table | chart toggle for any result
@@ -68,10 +76,18 @@ viewer/                         ArcGIS JS 4.x viewer, ES modules, no build step
   vendor/sqlite-wasm/           SQLite Wasm; sqlite3.js and sqlite3.wasm must stay side by side
 sql/                            01 table · 02 OPENJSON import (view + proc) · 03 vw_QueryLibrary (GENERATED)
 rest/                           .http files for the VS Code REST Client (library.http is GENERATED)
+                                catalog.http is the discover-then-execute flow, hand-written
 mcp/server.js                   zero-dependency MCP stdio server
 ```
 
 ## Conventions
+- **Docs are Markdown-first.** Edit `docs/*.md`, never the generated `docs/*.html`; run `npm run build`.
+  `test/docs.test.js` fails if the committed HTML is stale. A new `docs/*.md` must be added to `PAGES`
+  in `scripts/build-docs.js`, or that test fails too.
+- **The Pages workflow stages a hand-written file list.** A new module that the browser imports must be
+  added to `.github/workflows/pages.yml`, or the published demo 404s on it. `test/deploy.test.js`
+  resolves the browser's import closure and fails if anything is missing, so run `npm test` after
+  adding an import to the engine or the viewer.
 - **Library entries:** `tsql` is the reference statement and `rest` must reproduce its result. Use `transform` only
   for what REST can't do. Add parity assertions in `test/` when the two are exact equivalents. Run `npm run build` afterwards.
 - **The portability tag is mandatory and must be honest:**
@@ -89,6 +105,16 @@ mcp/server.js                   zero-dependency MCP stdio server
 - SQL Server data-access objects: always provide **both** a view form and a stored-proc form.
 - **Charts:** colours come from `viewer/js/config.js`. It is a validated palette in fixed order, and a colour follows its entity. One y-axis only, more than 8 series fold into "Other", and there is a legend only when there are 2 or more series.
 - The engine is read-only (`PRAGMA query_only` plus a statement filter). Keep it that way.
+- **Two layers, one pipeline.** `svc.query(params, layerId)` serves layer 0 (features) and table 1
+  (the query catalog). Everything table-specific lives in a layer descriptor, so add a layer by
+  registering a descriptor in `load()`, never by special-casing the query methods. A non-spatial
+  table must report `type: 'Table'` with null `geometryType`, `extent` and `timeInfo`.
+- **The viewer must not import `queryLibrary.js` for its UI.** The Library panel reads the catalog
+  over REST (`viewer/js/catalog.js`); that is the whole point of publishing it. Build scripts, the
+  MCP server and the CLI may import it directly.
+- The catalog is derived from the library at load time — there is no second copy to keep in step.
+  `RestParams` holds the decomposed query parameters, never a `SELECT` statement, because that is
+  what a real FeatureServer accepts.
 - **The engine must stay platform-free.** `featureService.js`, `sqlDialect.js`, `schema.js`, `restRouter.js`
   and `serviceConfig.js` are loaded by the browser too: no `node:` imports, no `Buffer`, no `process`.
   Node-only code belongs in `nodeRuntime.js` or `index.js`. `test/browser-engine.test.js` runs the whole

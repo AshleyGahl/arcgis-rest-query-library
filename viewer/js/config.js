@@ -10,6 +10,11 @@ export const SITE_BASE = new URL('../../', import.meta.url).pathname.replace(/\/
 export const CONFIG = {
   layerUrl: `${location.origin}${SITE_BASE}/arcgis/rest/services/ServiceRequests/FeatureServer/0`,
 
+  // The query library, published as table 1 of the same FeatureServer. The viewer
+  // reads its analytical questions from here at runtime rather than importing them,
+  // so adding a query to the service adds it to the UI with no code change.
+  catalogUrl: `${location.origin}${SITE_BASE}/arcgis/rest/services/ServiceRequests/FeatureServer/1`,
+
   // Optional ArcGIS location-platform API key. Leave empty to use the keyless basemaps.
   apiKey: '',
 

@@ -4,9 +4,14 @@
  *   {prefix}/arcgis/rest/info
  *   {prefix}/arcgis/rest/services                                        services directory
  *   {prefix}/arcgis/rest/services/{service}/FeatureServer
- *   {prefix}/arcgis/rest/services/{service}/FeatureServer/0
- *   {prefix}/arcgis/rest/services/{service}/FeatureServer/0/query
+ *   {prefix}/arcgis/rest/services/{service}/FeatureServer/layers
+ *   {prefix}/arcgis/rest/services/{service}/FeatureServer/{id}            0 = features, 1 = QueryLibrary table
+ *   {prefix}/arcgis/rest/services/{service}/FeatureServer/{id}/query
  *   {prefix}/arcgis/rest/services/{service}/FeatureServer/0/sql           (mock extension)
+ *
+ * Layer 1 is the query catalog (server/catalogSchema.js): the analytical questions
+ * served as a non-spatial table over the same `query` operation, so a client
+ * discovers what to ask with one standard request and executes it with another.
  *
  * No HTTP and no platform built-ins, so the same routing, the same services
  * directory pages and the same `f=html` query form serve both the Node host
@@ -39,26 +44,28 @@ table.form td{padding:3px 6px;vertical-align:top}input[type=text],textarea,selec
 }
 const crumbs = (parts) => parts.map(([label, href]) => (href ? `<a href="${href}">${esc(label)}</a>` : esc(label))).join(' &gt; ');
 
-function queryForm(params) {
+function queryForm(params, isTable = false) {
   const v = (k, d = '') => esc(params.get(k) ?? d);
   const txt = (k, label, d = '', note = '') => `<tr><td>${label}:</td><td><input type="text" name="${k}" value="${v(k, d)}"> <span class="note">${note}</span></td></tr>`;
   const area = (k, label, note = '') => `<tr><td>${label}:</td><td><textarea name="${k}">${v(k)}</textarea><br><span class="note">${note}</span></td></tr>`;
   const tf = (k, label, d = 'false') => `<tr><td>${label}:</td><td>${['true', 'false'].map((o) => `<label><input type="radio" name="${k}" value="${o}" ${(params.get(k) ?? d) === o ? 'checked' : ''}> ${o}</label>`).join(' ')}</td></tr>`;
-  return `<form method="get"><table class="form">
-${txt('where', 'Where', '1=1', 'SQL; T-SQL functions allowed (sqlFormat=native)')}
-${txt('objectIds', 'Object IDs')}
-${txt('time', 'Time', '', 'epoch ms: start,end')}
+  const spatial = isTable ? '' : `${txt('time', 'Time', '', 'epoch ms: start,end')}
 ${area('geometry', 'Input Geometry', 'Envelope "xmin,ymin,xmax,ymax", point "x,y", or Esri geometry JSON')}
 <tr><td>Geometry Type:</td><td><select name="geometryType">${['esriGeometryEnvelope', 'esriGeometryPoint', 'esriGeometryMultipoint', 'esriGeometryPolygon'].map((o) => `<option ${params.get('geometryType') === o ? 'selected' : ''}>${o}</option>`).join('')}</select></td></tr>
 ${txt('inSR', 'Input Spatial Reference', '', '4326 or 102100')}
 ${txt('distance', 'Distance')}
-<tr><td>Units:</td><td><select name="units">${Object.keys({ esriSRUnit_Meter: 1, esriSRUnit_Kilometer: 1, esriSRUnit_Foot: 1, esriSRUnit_StatuteMile: 1 }).map((o) => `<option ${params.get('units') === o ? 'selected' : ''}>${o}</option>`).join('')}</select></td></tr>
-${txt('outFields', 'Out Fields', '*', 'fields or "expr AS Alias"')}
-${tf('returnGeometry', 'Return Geometry', 'true')}
+<tr><td>Units:</td><td><select name="units">${Object.keys({ esriSRUnit_Meter: 1, esriSRUnit_Kilometer: 1, esriSRUnit_Foot: 1, esriSRUnit_StatuteMile: 1 }).map((o) => `<option ${params.get('units') === o ? 'selected' : ''}>${o}</option>`).join('')}</select></td></tr>`;
+  const geomOut = isTable ? '' : `${tf('returnGeometry', 'Return Geometry', 'true')}
 ${txt('outSR', 'Output Spatial Reference', '', '4326 or 102100 (default)')}
+${tf('returnExtentOnly', 'Return Extent Only')}`;
+  return `<form method="get"><table class="form">
+${txt('where', 'Where', '1=1', 'SQL; T-SQL functions allowed (sqlFormat=native)')}
+${txt('objectIds', 'Object IDs')}
+${spatial}
+${txt('outFields', 'Out Fields', '*', 'fields or "expr AS Alias"')}
+${geomOut}
 ${tf('returnIdsOnly', 'Return IDs Only')}
 ${tf('returnCountOnly', 'Return Count Only')}
-${tf('returnExtentOnly', 'Return Extent Only')}
 ${tf('returnDistinctValues', 'Return Distinct Values')}
 ${txt('orderByFields', 'Order By Fields')}
 ${txt('groupByFieldsForStatistics', 'Group By Fields (for statistics)', '', 'fields or "expr AS Alias"')}
@@ -110,31 +117,44 @@ export function createRestRouter(svc, cfg, hooks = {}) {
     if (lp === lbase) {
       if (f === 'html') {
         return html(htmlPage(cfg.serviceName, crumbs([['Home', `${prefix}/arcgis/rest/services`], [cfg.serviceName, null]]),
-          `<h2>${esc(cfg.serviceName)} (FeatureServer)</h2><p>Layers:</p><ul><li><a href="${at('/0')}">${esc(cfg.layerName)}</a> (0)</li></ul><p>Supported Operations: <a href="${at('/0/query')}">Query</a></p><pre>${esc(JSON.stringify(svc.serviceInfo(), null, 2))}</pre>`));
+          `<h2>${esc(cfg.serviceName)} (FeatureServer)</h2>${['layers', 'tables'].map((kind) => {
+            const items = svc.serviceInfo()[kind];
+            return items.length ? `<p>${kind === 'layers' ? 'Layers' : 'Tables'}:</p><ul>${items.map((l) => `<li><a href="${at(`/${l.id}`)}">${esc(l.name)}</a> (${l.id})</li>`).join('')}</ul>` : '';
+          }).join('')}<p>Supported Operations: <a href="${at('/0/query')}">Query</a></p><pre>${esc(JSON.stringify(svc.serviceInfo(), null, 2))}</pre>`));
       }
       return json(svc.serviceInfo(), f);
     }
 
-    if (lp === `${lbase}/layers`) return json({ layers: [svc.layerInfo()], tables: [] }, f);
-
-    if (lp === `${lbase}/0`) {
-      if (f === 'html') {
-        return html(htmlPage(cfg.layerName, crumbs([['Home', `${prefix}/arcgis/rest/services`], [cfg.serviceName, at('')], [cfg.layerName, null]]),
-          `<h2>Layer: ${esc(cfg.layerName)} (ID: 0)</h2><p>Supported Operations: <a href="${at('/0/query')}">Query</a> | <a href="${at('/0/sql')}">SQL (mock extension)</a></p><pre>${esc(JSON.stringify(svc.layerInfo(), null, 2))}</pre>`));
-      }
-      return json(svc.layerInfo(), f);
+    if (lp === `${lbase}/layers`) {
+      const infos = svc.layerIds().map((id) => svc.layerInfo(id));
+      return json({ layers: infos.filter((l) => l.type === 'Feature Layer'), tables: infos.filter((l) => l.type === 'Table') }, f);
     }
 
-    if (lp === `${lbase}/0/query`) {
+    // /{id} and /{id}/query for every published layer and table.
+    const idMatch = /^(\d+)(\/query)?$/.exec(lp.startsWith(`${lbase}/`) ? lp.slice(lbase.length + 1) : '');
+    if (idMatch && svc.layerIds().includes(Number(idMatch[1]))) {
+      const id = Number(idMatch[1]);
+      const info = svc.layerInfo(id);
+      const name = info.name;
+
+      if (!idMatch[2]) {
+        if (f === 'html') {
+          const ops = `<a href="${at(`/${id}/query`)}">Query</a>${id === 0 ? ` | <a href="${at('/0/sql')}">SQL (mock extension)</a>` : ''}`;
+          return html(htmlPage(name, crumbs([['Home', `${prefix}/arcgis/rest/services`], [cfg.serviceName, at('')], [name, null]]),
+            `<h2>${esc(info.type)}: ${esc(name)} (ID: ${id})</h2><p>Supported Operations: ${ops}</p><pre>${esc(JSON.stringify(info, null, 2))}</pre>`));
+        }
+        return json(info, f);
+      }
+
       if (f === 'html') {
         const hasQuery = [...params.keys()].some((k) => k !== 'f');
-        const result = hasQuery ? svc.query(params) : null;
-        return html(htmlPage('Query', crumbs([['Home', `${prefix}/arcgis/rest/services`], [cfg.serviceName, at('')], [cfg.layerName, at('/0')], ['query', null]]),
-          `<h2>Query: ${esc(cfg.layerName)} (ID: 0)</h2>${queryForm(params)}${result ? `<h3>Result</h3><pre>${esc(JSON.stringify(result, null, 2))}</pre>` : ''}`));
+        const result = hasQuery ? svc.query(params, id) : null;
+        return html(htmlPage('Query', crumbs([['Home', `${prefix}/arcgis/rest/services`], [cfg.serviceName, at('')], [name, at(`/${id}`)], ['query', null]]),
+          `<h2>Query: ${esc(name)} (ID: ${id})</h2>${queryForm(params, info.type === 'Table')}${result ? `<h3>Result</h3><pre>${esc(JSON.stringify(result, null, 2))}</pre>` : ''}`));
       }
       const t0 = Date.now();
-      const result = svc.query(params);
-      hooks.onQuery?.({ ms: Date.now() - t0, params, result });
+      const result = svc.query(params, id);
+      hooks.onQuery?.({ ms: Date.now() - t0, layerId: id, params, result });
       return json(result, f);
     }
 
