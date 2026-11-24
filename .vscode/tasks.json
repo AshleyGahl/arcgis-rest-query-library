@@ -1,0 +1,17 @@
+{
+  // Terminal > Run Task…  (Ctrl+Shift+B runs the default build task, Test is the default test task)
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Start server",
+      "type": "npm",
+      "script": "start",
+      "isBackground": true,
+      "problemMatcher": { "owner": "srgis", "pattern": { "regexp": "^__never__$" }, "background": { "activeBegins": true, "beginsPattern": "Mock FeatureServer", "endsPattern": "Loaded \\d+ features" } }
+    },
+    { "label": "Test", "type": "npm", "script": "test", "group": { "kind": "test", "isDefault": true }, "problemMatcher": [] },
+    { "label": "Rebuild library artifacts (.http + vw_QueryLibrary.sql)", "type": "npm", "script": "build", "group": { "kind": "build", "isDefault": true }, "problemMatcher": [] },
+    { "label": "Generate data", "type": "npm", "script": "generate", "problemMatcher": [] },
+    { "label": "List library queries", "type": "npm", "script": "query", "args": ["--", "list"], "problemMatcher": [] }
+  ]
+}

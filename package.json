@@ -1,0 +1,21 @@
+{
+  "name": "service-request-gis",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Mock ArcGIS FeatureServer over a GeoJSON of generic public service requests (Cape Town coordinates), with a GIS viewer, dashboard and REST query library.",
+  "engines": {
+    "node": ">=22.16"
+  },
+  "scripts": {
+    "start": "node server/start.js",
+    "dev": "node --watch server/start.js",
+    "generate": "node scripts/generate-data.js",
+    "build": "node --disable-warning=ExperimentalWarning scripts/build-http.js && node --disable-warning=ExperimentalWarning scripts/build-sql.js",
+    "build:http": "node --disable-warning=ExperimentalWarning scripts/build-http.js",
+    "build:sql": "node --disable-warning=ExperimentalWarning scripts/build-sql.js",
+    "query": "node --disable-warning=ExperimentalWarning scripts/run-query.js",
+    "mcp": "node --disable-warning=ExperimentalWarning mcp/server.js",
+    "test": "node --disable-warning=ExperimentalWarning --test test/*.test.js"
+  }
+}

@@ -1,0 +1,98 @@
+import { queryLibrary, CATEGORIES } from '../../sql-library/queryLibrary.js';
+import { runEntry, httpFetcher, requestsOf, toQueryUrl } from '../../sql-library/runner.js';
+import { layerUrl, dateColumnsOf, tsql } from './rest.js';
+import { showResults, showError, showCompare } from './results.js';
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const fetcher = httpFetcher(layerUrl);
+
+function renderList(onSelect, activeId) {
+  const term = $('libSearch').value.trim().toLowerCase();
+  const port = $('libPortability').value;
+  const list = $('libList');
+  list.replaceChildren();
+  for (const cat of CATEGORIES) {
+    const items = queryLibrary.filter((q) => q.category === cat && (!port || q.portability === port) &&
+      (!term || `${q.id} ${q.question} ${q.tsql}`.toLowerCase().includes(term)));
+    if (!items.length) continue;
+    list.insertAdjacentHTML('beforeend', `<div class="lib-group">${esc(cat)}</div>`);
+    for (const q of items) {
+      const el = document.createElement('div');
+      el.className = `lib-item${q.id === activeId ? ' active' : ''}`;
+      el.innerHTML = `<span class="id">${q.id}</span><span class="q">${esc(q.question)}</span><span class="badge ${q.portability}">${q.portability}</span>`;
+      el.onclick = () => onSelect(q);
+      list.appendChild(el);
+    }
+  }
+}
+
+function renderDetail(q) {
+  const reqs = requestsOf(q);
+  const transform = q.transform ? [q.transform].flat().map((t) => t.type).join(' → ') : null;
+  $('libDetail').classList.remove('hidden');
+  $('libDetail').innerHTML = `
+    <h4>Q${q.id}. ${esc(q.question)}</h4>
+    <div class="meta">
+      <span class="badge ${q.portability}">${q.portability}</span>
+      <span class="badge plain">${q.dimension}</span>
+      <span class="badge plain">${q.layer}</span>
+      ${transform ? `<span class="badge plain">client: ${esc(transform)}</span>` : ''}
+    </div>
+    ${q.notes ? `<div class="note">${esc(q.notes)}</div>` : ''}
+    <div class="buttons">
+      <button class="primary" id="libRun">Run REST</button>
+      <button id="libCompare">Compare with T-SQL</button>
+      ${!Array.isArray(q.rest) && q.rest.where && q.rest.where !== '1=1' ? '<button id="libApply">Apply where to map</button>' : ''}
+    </div>
+    ${reqs.map((r) => `
+      <details open><summary>REST request${reqs.length > 1 ? ` · ${esc(r.name)}` : ''} · <a href="${esc(toQueryUrl(layerUrl, { ...r.params, f: 'pjson' }))}" target="_blank">open ↗</a></summary>
+      <pre class="code">${esc(JSON.stringify(r.params, null, 2))}</pre></details>`).join('')}
+    <details><summary>Original T-SQL</summary><pre class="code">${esc(q.tsql)}</pre></details>`;
+}
+
+export function initLibraryPanel(map, filters) {
+  let active = null;
+  const select = (q) => { active = q; renderList(select, q.id); renderDetail(q); wire(q); };
+
+  async function run(q) {
+    try {
+      const r = await runEntry(q, fetcher);
+      const dateColumns = r.requests.flatMap((x) => dateColumnsOf(x.response));
+      showResults({
+        title: `Q${q.id}. ${q.question}`,
+        meta: q.transform ? 'with client-side transform' : '',
+        urls: r.requests.map((x) => x.url),
+        rows: r.rows, columns: r.columns, dateColumns,
+        onRowClick: (row) => map.highlightIds([row.ObjectID]),
+      });
+      const ids = r.rows.map((x) => x.ObjectID).filter((x) => x != null);
+      if (ids.length && r.columns.includes('ObjectID')) map.highlightIds(ids);
+      return { r, dateColumns };
+    } catch (e) { showError(`Q${q.id} failed`, e); return null; }
+  }
+
+  async function compare(q) {
+    const left = { label: 'REST (+ client transform)', rows: [], columns: [] };
+    const right = { label: 'Original T-SQL (mock /sql)', rows: [], columns: [] };
+    try {
+      const r = await runEntry(q, fetcher);
+      Object.assign(left, { rows: r.rows, columns: r.columns, dateColumns: r.requests.flatMap((x) => dateColumnsOf(x.response)) });
+    } catch (e) { left.error = e.message; }
+    try {
+      const t = await tsql(q.tsql);
+      Object.assign(right, { rows: t.rows, columns: t.columns });
+    } catch (e) { right.error = e.message; }
+    showCompare({ title: `Q${q.id}. ${q.question}`, left, right });
+  }
+
+  function wire(q) {
+    $('libRun').onclick = () => run(q);
+    $('libCompare').onclick = () => compare(q);
+    if ($('libApply')) $('libApply').onclick = () => { map.setDefinitionExpression(q.rest.where); filters.setWhere(q.rest.where); };
+  }
+
+  $('libSearch').oninput = () => renderList(select, active?.id);
+  $('libPortability').onchange = () => renderList(select, active?.id);
+  renderList(select);
+}

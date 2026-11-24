@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm test)",
+      "Bash(npm run query:*)",
+      "Bash(npm run build:http)",
+      "Bash(npm run generate:*)",
+      "Bash(node --check:*)",
+      "Bash(curl -s http://127.0.0.1:3000/*)",
+      "mcp__servicerequests__describe_layer",
+      "mcp__servicerequests__query_layer",
+      "mcp__servicerequests__list_library",
+      "mcp__servicerequests__run_library_query",
+      "mcp__servicerequests__run_tsql"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)"
+    ]
+  },
+  "enabledMcpjsonServers": ["servicerequests"]
+}

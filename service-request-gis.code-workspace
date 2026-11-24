@@ -1,0 +1,11 @@
+{
+  // Open this file in VS Code (File > Open Workspace from File…), or just open the folder.
+  "folders": [{ "path": "." }],
+  "settings": {
+    "files.associations": { "*.geojson": "json" },
+    "search.exclude": { "data/*.geojson": true, "viewer/vendor/**": true }
+  },
+  "extensions": {
+    "recommendations": ["anthropic.claude-code", "humao.rest-client", "ms-mssql.mssql"]
+  }
+}

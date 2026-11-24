@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>Service Requests · GIS Viewer</title>
+  <!-- Chart.js 4.6.1, vendored. MUST load BEFORE the ArcGIS SDK: its UMD wrapper registers with any
+       AMD loader it finds (define.amd), which would break the ArcGIS loader and leave window.Chart unset. -->
+  <script src="vendor/chart.umd.min.js"></script>
+  <!-- ArcGIS Maps SDK for JavaScript. Bump the version in both URLs together. -->
+  <link rel="stylesheet" href="https://js.arcgis.com/4.32/esri/themes/light/main.css">
+  <script src="https://js.arcgis.com/4.32/"></script>
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <aside id="panel">
+    <header class="brand">
+      <div>
+        <h1>Service Requests</h1>
+        <p>Public service requests · mock ArcGIS FeatureServer<span id="serviceMode" class="mode"></span></p>
+      </div>
+      <a id="serviceLink" target="_blank" title="Open the REST services directory">REST ↗</a>
+    </header>
+
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-tab="filter">Filter</button>
+      <button class="tab" data-tab="dash">Dashboard</button>
+      <button class="tab" data-tab="library">Library</button>
+      <button class="tab" data-tab="console">REST</button>
+      <button class="tab" data-tab="sql">T-SQL</button>
+    </nav>
+
+    <!-- FILTER -->
+    <section class="pane active" id="pane-filter">
+      <div class="row">
+        <label>Theme <select id="fTheme"><option value="">All themes</option></select></label>
+        <label>Category <select id="fCategory"><option value="">All categories</option></select></label>
+      </div>
+      <div class="row">
+        <label>Status
+          <select id="fStatus">
+            <option value="">All</option>
+            <option value="notclosed">Not closed (Open + In Progress)</option>
+            <option>Open</option>
+            <option>In Progress</option>
+            <option>Closed</option>
+          </select>
+        </label>
+        <label>Channel <select id="fChannel"><option value="">All</option></select></label>
+      </div>
+      <div class="row">
+        <label>Suburb <select id="fSuburb"><option value="">All suburbs</option></select></label>
+        <label>Logged since <input id="fSince" type="date"></label>
+      </div>
+      <label>Description contains <input id="fText" type="text" placeholder="e.g. leak, hazard, pothole"></label>
+      <label>Generated where clause
+        <textarea id="fWhere" rows="3" spellcheck="false"></textarea>
+      </label>
+      <div class="buttons">
+        <button id="fApply" class="primary">Apply to map</button>
+        <button id="fClear">Clear</button>
+      </div>
+      <p class="stat"><span id="fCount">–</span> features match</p>
+
+      <h3>Map display</h3>
+      <div class="row">
+        <label>Symbolise by
+          <select id="renderer">
+            <option value="theme">Theme</option>
+            <option value="status">Status</option>
+            <option value="channel">Channel</option>
+            <option value="heatmap">Heatmap (density)</option>
+          </select>
+        </label>
+        <label>Basemap <select id="basemap"></select></label>
+      </div>
+      <label class="check"><input type="checkbox" id="cluster"> Cluster points</label>
+      <label class="check"><input type="checkbox" id="timeSliderToggle"> Time slider (sends <code>time=</code> to the service)</label>
+    </section>
+
+    <!-- DASHBOARD -->
+    <section class="pane" id="pane-dash">
+      <div class="dash-head">
+        <p class="hint scope">Scope: <span id="dScope">All requests</span></p>
+        <button id="dReset" title="Clear the map filter">Reset filter</button>
+      </div>
+      <label class="check"><input type="checkbox" id="dExtent"> Limit to current map extent</label>
+      <div class="kpis">
+        <div class="kpi"><span class="kpi-label">Requests</span><span class="kpi-value" id="kTotal">–</span></div>
+        <div class="kpi"><span class="kpi-label">Open</span><span class="kpi-value" id="kOpen">–</span><span class="kpi-sub" id="kOpenPct"></span></div>
+        <div class="kpi"><span class="kpi-label">Median days to resolve</span><span class="kpi-value" id="kMedian">–</span></div>
+        <div class="kpi"><span class="kpi-label">Took more than 5 days</span><span class="kpi-value" id="kBreach">–</span><span class="kpi-sub">share of completed, calendar days</span></div>
+      </div>
+      <figure class="chart-card"><figcaption>Logged vs completed per month</figcaption><div class="chart-box tall"><canvas id="chMonthly"></canvas></div></figure>
+      <figure class="chart-card"><figcaption>Requests by theme</figcaption><div class="chart-box"><canvas id="chTheme"></canvas></div></figure>
+      <figure class="chart-card"><figcaption>Status</figcaption><div class="chart-box short"><canvas id="chStatus"></canvas></div></figure>
+      <figure class="chart-card"><figcaption>Channel</figcaption><div class="chart-box short"><canvas id="chChannel"></canvas></div></figure>
+      <figure class="chart-card"><figcaption>Top 10 suburbs by open backlog</figcaption><div class="chart-box tall"><canvas id="chSuburbs"></canvas></div></figure>
+      <figure class="chart-card"><figcaption>Requests by hour logged (SAST)</figcaption><div class="chart-box short"><canvas id="chHour"></canvas></div></figure>
+      <p class="hint" id="dStatus"></p>
+    </section>
+
+    <!-- LIBRARY -->
+    <section class="pane" id="pane-library">
+      <div class="row">
+        <input id="libSearch" type="search" placeholder="Search 70 queries…">
+        <select id="libPortability" title="Portability">
+          <option value="">All portability</option>
+          <option value="standard">standard</option>
+          <option value="sql-expression">sql-expression</option>
+          <option value="native">native</option>
+          <option value="extension">extension</option>
+        </select>
+      </div>
+      <div id="libList" class="lib-list"></div>
+      <div id="libDetail" class="lib-detail hidden"></div>
+    </section>
+
+    <!-- REST CONSOLE -->
+    <section class="pane" id="pane-console">
+      <p class="hint">Builds a <code>…/FeatureServer/0/query</code> request exactly as you would against ArcGIS.</p>
+      <label>where <input id="cWhere" type="text" value="1=1" spellcheck="false"></label>
+      <label>outFields <input id="cOutFields" type="text" value="RequestID,Category,RequestType,Status,Suburb,DateLogged" spellcheck="false"></label>
+      <label>orderByFields <input id="cOrderBy" type="text" value="ObjectID DESC" spellcheck="false"></label>
+      <label>groupByFieldsForStatistics <input id="cGroupBy" type="text" spellcheck="false" placeholder="e.g. Category"></label>
+      <label>outStatistics <textarea id="cStats" rows="3" spellcheck="false" placeholder='[{"statisticType":"count","onStatisticField":"ObjectID","outStatisticFieldName":"Count"}]'></textarea></label>
+      <div class="row">
+        <label>having <input id="cHaving" type="text" spellcheck="false" placeholder="COUNT(ObjectID) > 5"></label>
+        <label>resultRecordCount <input id="cLimit" type="number" value="200" min="1" max="2000"></label>
+      </div>
+      <div class="checks">
+        <label class="check"><input type="checkbox" id="cCountOnly"> returnCountOnly</label>
+        <label class="check"><input type="checkbox" id="cDistinct"> returnDistinctValues</label>
+        <label class="check"><input type="checkbox" id="cExtent"> use map extent</label>
+      </div>
+      <div class="buttons">
+        <button id="cDraw">Draw polygon</button>
+        <button id="cClearGeom">Clear geometry</button>
+        <span id="cGeomState" class="hint"></span>
+      </div>
+      <div class="buttons">
+        <button id="cRun" class="primary">Run query</button>
+        <button id="cApply">Apply where to map</button>
+        <a id="cUrl" target="_blank" class="hint">open URL ↗</a>
+      </div>
+    </section>
+
+    <!-- T-SQL -->
+    <section class="pane" id="pane-sql">
+      <p class="hint">Mock extension (<code>…/FeatureServer/0/sql</code>, not part of ArcGIS REST): runs read-only T-SQL against the same data so you can check a REST port against the original statement.</p>
+      <textarea id="sqlText" rows="10" spellcheck="false">SELECT TOP 10 Suburb, COUNT(*) AS Requests,
+       SUM(CASE WHEN Status <> 'Closed' THEN 1 ELSE 0 END) AS StillOpen
+FROM ServiceRequests
+GROUP BY Suburb
+ORDER BY Requests DESC;</textarea>
+      <div class="buttons"><button id="sqlRun" class="primary">Run T-SQL</button></div>
+      <pre id="sqlTranslated" class="code small"></pre>
+    </section>
+  </aside>
+
+  <main id="mapArea">
+    <div id="viewWrap">
+      <div id="viewDiv"></div>
+      <div id="boot" class="boot"><span class="spin" aria-hidden="true"></span><span>Starting the mock FeatureServer…</span></div>
+      <div id="timeSliderDiv" class="hidden"></div>
+    </div>
+    <section id="results" class="collapsed">
+      <header>
+        <strong id="resTitle">Results</strong>
+        <span id="resMeta" class="hint"></span>
+        <span class="spacer"></span>
+        <span class="seg"><button id="resViewTable" class="on">Table</button><button id="resViewChart">Chart</button></span>
+        <button id="resCsv" title="Download CSV">CSV</button>
+        <button id="resToggle" title="Show / hide">▾</button>
+      </header>
+      <div id="resRequest" class="hint mono"></div>
+      <div id="resBody"></div>
+    </section>
+  </main>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

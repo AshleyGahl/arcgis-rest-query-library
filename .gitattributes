@@ -1,0 +1,15 @@
+# Normalise text to LF in the repository; check out with the platform's endings.
+* text=auto
+
+# Binary: never touch these. A line-ending conversion would corrupt the Wasm module
+# that the static demo's query engine runs on.
+*.wasm binary
+*.png binary
+*.ico binary
+
+# Generated from sql-library/queryLibrary.js by `npm run build`.
+rest/library.http linguist-generated=true
+sql/03_vw_QueryLibrary.sql linguist-generated=true
+
+# Vendored third-party code should not count towards the repository's language stats.
+viewer/vendor/** linguist-vendored=true

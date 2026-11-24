@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Service Request GIS</title>
+<meta name="description" content="A mock ArcGIS REST FeatureServer over synthetic public service requests, with a Maps SDK viewer, a dashboard and 70 analytical queries written as both REST calls and T-SQL.">
+<link rel="icon" href="data:,">
+<style>
+  :root {
+    --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781;
+    --surface: #fcfcfb; --rule: #e1e0d9; --accent: #2a78d6;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--surface); color: var(--ink);
+    font: 16px/1.6 -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  main { max-width: 52rem; margin: 0 auto; padding: 4rem 1.5rem 5rem; }
+  h1 { font-size: 2rem; line-height: 1.2; margin: 0 0 .5rem; letter-spacing: -0.015em; }
+  .lede { font-size: 1.125rem; color: var(--ink-2); margin: 0 0 2rem; }
+  h2 { font-size: .8125rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 2.5rem 0 .875rem; font-weight: 600; }
+  p { margin: 0 0 1rem; }
+  a { color: var(--accent); }
+  .cta {
+    display: inline-flex; align-items: center; gap: .5rem;
+    background: var(--accent); color: #fff; text-decoration: none;
+    padding: .625rem 1.125rem; border-radius: 6px; font-weight: 600;
+  }
+  .cta:hover { background: #1f63b5; }
+  .links { display: flex; flex-wrap: wrap; gap: 1.25rem; align-items: center; margin-bottom: 2rem; }
+  .links a:not(.cta) { color: var(--ink-2); }
+  ul { margin: 0 0 1rem; padding-left: 1.125rem; }
+  li { margin-bottom: .5rem; }
+  .note {
+    border-left: 3px solid var(--rule); padding: .125rem 0 .125rem 1rem;
+    color: var(--ink-2); font-size: .9375rem; margin: 0 0 1rem;
+  }
+  code { font: .875em ui-monospace, Consolas, monospace; background: #f1f0ea; padding: .1em .35em; border-radius: 3px; }
+  table { border-collapse: collapse; width: 100%; font-size: .9375rem; }
+  th, td { text-align: left; padding: .5rem .75rem .5rem 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: .8125rem; }
+  footer { margin-top: 3rem; padding-top: 1.25rem; border-top: 1px solid var(--rule); color: var(--muted); font-size: .875rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Service Request GIS</h1>
+  <p class="lede">
+    A mock ArcGIS REST FeatureServer over ~850 synthetic public service requests in and around
+    Cape Town, with a Maps SDK viewer, a cross-filtering dashboard, and 70 analytical questions
+    written twice — once as REST <code>query</code> calls, once as T-SQL.
+  </p>
+
+  <div class="links">
+    <a class="cta" href="viewer/">Open the GIS viewer</a>
+    <a href="arcgis/rest/services">REST services directory</a>
+    <a href="docs/data-model.md">Data model</a>
+    <a href="docs/framework.md">Analytical framework</a>
+  </div>
+
+  <h2>What is actually running</h2>
+  <p>
+    There is no server behind this page. The mock FeatureServer — the SQL query engine, the
+    ArcGIS query semantics, the T-SQL dialect translation — runs inside the viewer tab on
+    <a href="https://sqlite.org/wasm">SQLite Wasm</a>, and a service worker answers the
+    <code>/arcgis/rest/…</code> requests the ArcGIS Maps SDK makes. Open the Network tab and
+    you will see genuine <code>FeatureServer/0/query</code> requests with genuine Esri JSON
+    responses.
+  </p>
+  <p class="note">
+    It is the same code the local Node server runs: the viewer detects whether a real server is
+    there and, if not, stands the engine up in the page. The REST services directory above is
+    served that way too, so the viewer needs to be open in a tab for it to answer.
+  </p>
+
+  <h2>What to try in the viewer</h2>
+  <table>
+    <tr><th>Tab</th><th></th></tr>
+    <tr><td><strong>Filter</strong></td><td>Build a <code>where</code> clause from dropdowns and watch it go to the service; switch basemaps, symbology, clustering and the time slider.</td></tr>
+    <tr><td><strong>Dashboard</strong></td><td>KPIs and charts built entirely from REST <code>outStatistics</code> requests. Click a bar to cross-filter the map.</td></tr>
+    <tr><td><strong>Library</strong></td><td>All 70 questions. Run each as REST, or compare it against the original T-SQL side by side.</td></tr>
+    <tr><td><strong>REST</strong></td><td>A query console: the raw ArcGIS parameters, and the URL they produce.</td></tr>
+    <tr><td><strong>T-SQL</strong></td><td>Read-only T-SQL against the same data, so a REST port can be checked against the statement it came from.</td></tr>
+  </table>
+
+  <h2>Running it locally</h2>
+  <p>
+    Node ≥ 22.16, no npm dependencies. <code>npm start</code> serves the real mock FeatureServer
+    on <code>http://127.0.0.1:3000</code>, and <code>npm test</code> runs the 70 REST queries,
+    the T-SQL equivalents, their parity assertions, and the same suite again against the
+    in-browser engine. The repository also carries SQL Server scripts that load the identical
+    data, so the T-SQL can be run where it was written for.
+  </p>
+
+  <footer>
+    Synthetic data, generated for development and testing. No real people, addresses or records.
+  </footer>
+</main>
+</body>
+</html>

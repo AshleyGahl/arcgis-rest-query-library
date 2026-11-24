@@ -1,0 +1,9 @@
+{
+  "files.associations": { "*.geojson": "json" },
+  "files.exclude": { "**/node_modules": true },
+  "search.exclude": { "data/*.geojson": true, "viewer/vendor/**": true },
+  "editor.formatOnSave": false,
+  "rest-client.environmentVariables": {
+    "local": { "layer": "http://127.0.0.1:3000/arcgis/rest/services/ServiceRequests/FeatureServer/0" }
+  }
+}

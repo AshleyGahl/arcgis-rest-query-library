@@ -1,0 +1,75 @@
+{
+  // F5 runs the first configuration. Pick another from the Run and Debug view (Ctrl+Shift+D).
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "▶ Run Service Request GIS",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/server/start.js",
+      "cwd": "${workspaceFolder}",
+      "env": { "PORT": "3000", "CLOCK": "snapshot" },
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"],
+      "serverReadyAction": { "pattern": "GIS viewer:\\s+(https?://\\S+)", "uriFormat": "%s", "action": "openExternally" }
+    },
+    {
+      "name": "Server (no browser)",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/server/start.js",
+      "cwd": "${workspaceFolder}",
+      "env": { "PORT": "3000" },
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Debug viewer in Edge",
+      "type": "msedge",
+      "request": "launch",
+      "url": "http://127.0.0.1:3000/viewer/",
+      "webRoot": "${workspaceFolder}/viewer"
+    },
+    {
+      "name": "Debug viewer in Chrome",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://127.0.0.1:3000/viewer/",
+      "webRoot": "${workspaceFolder}/viewer"
+    },
+    {
+      "name": "Run library query…",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/run-query.js",
+      "runtimeArgs": ["--disable-warning=ExperimentalWarning"],
+      "args": ["${input:queryId}", "--compare"],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Run tests",
+      "type": "node",
+      "request": "launch",
+      "runtimeArgs": ["--disable-warning=ExperimentalWarning", "--test"],
+      "args": ["test/library.test.js"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Regenerate data",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/generate-data.js",
+      "args": ["--count", "${input:featureCount}"],
+      "console": "integratedTerminal"
+    }
+  ],
+  "compounds": [
+    { "name": "Server + debug viewer (Edge)", "configurations": ["Server (no browser)", "Debug viewer in Edge"], "stopAll": true },
+    { "name": "Server + debug viewer (Chrome)", "configurations": ["Server (no browser)", "Debug viewer in Chrome"], "stopAll": true }
+  ],
+  "inputs": [
+    { "id": "queryId", "type": "promptString", "description": "Library query id (1-70)", "default": "44" },
+    { "id": "featureCount", "type": "promptString", "description": "Number of features (500-1000)", "default": "850" }
+  ]
+}
