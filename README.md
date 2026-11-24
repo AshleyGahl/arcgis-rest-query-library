@@ -175,33 +175,15 @@ otherwise it starts the in-page one. Force either with `?mode=live` or `?mode=st
 URL — `?mode=static` is how you try the published path locally.
 
 `test/browser-engine.test.js` runs every library entry on both runtimes and asserts the results are
-identical; `test/deploy.test.js` resolves what the browser imports and fails if any of it is
-uncommitted, Node-dependent, or unreachable under `npm start`.
+identical; `test/deploy.test.js` resolves what the browser imports and fails if the Pages workflow
+does not stage it.
 
 ### Publishing it
 
-GitHub Pages serves the repository directly: **Settings › Pages › Source = Deploy from a branch ›
-`main` / `/ (root)`**. There is no build step and no workflow — the site *is* the repository.
-`index.html` is the landing page, `sw.js` must stay at the root (a service worker can only
-intercept URLs inside its own scope), `.nojekyll` stops Pages running the files through Jekyll, and
-`viewer/`, `docs/`, `data/`, `sql-library/`, `server/` and `mcp/` are fetched as modules and data
-at runtime.
-
-This replaced an Actions workflow that staged a subset of the repository into `_site`. Two
-things were wrong with it: the staged file list had to be maintained by hand, and
-`actions/deploy-pages` intermittently failed with `Found 0 artifact(s)` because it queries an
-eventually-consistent artifact index straight after the upload — three of five runs failed that
-way, with no pattern in action versions or timing. Serving the branch has neither problem. The
-cost is that the Node-only source (`server/index.js`, `mcp/server.js`, `test/`, `scripts/`) is
-served as files too; it is a public repository, so nothing is exposed that `git clone` would not
-give you, and the browser simply never requests it.
-
-The site works from any path, so a project page at `…/<repo>/` needs no configuration: the viewer
-derives its own base URL from the module it is loaded as.
-
-`test/deploy.test.js` checks what still matters — that everything the browser imports is
-committed, that those modules stay platform-free, and that the local server's prefix map covers
-them so `npm start` matches the published site.
+GitHub Actions (`.github/workflows/pages.yml`) stages the site into `_site` and deploys it. It
+needs Settings › Pages › Source = **GitHub Actions**, set once by hand. The site works from any
+path, so a project page at `…/<repo>/` needs no configuration: the viewer derives its own base URL
+from the module it is loaded as.
 
 ## The data
 
