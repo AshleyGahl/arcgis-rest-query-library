@@ -10,7 +10,7 @@ This project takes a GeoJSON of about 850 synthetic **public service requests** 
 - a cross-filtering dashboard
 - 70 analytical queries written as REST requests, with T-SQL alongside
 
-**Live demo: _(GitHub Pages URL goes here once the repository is published)_** — no install, no server. See
+**Live demo: <https://ashleygahl.github.io/arcgis-rest-query-library/>** — no install, no server. See
 [Running without a server](#running-without-a-server) for how that works.
 
 ## Run it from VS Code
