@@ -99,7 +99,7 @@ viewer derives its own base URL from the module it is loaded as.
 - Animals
 - Abandoned Vehicles
 
-They are modelled on what New Zealand councils expose through Snap Send Solve, Antenno, Auckland's *Report a problem* and Wellington's *FIXiT*. `docs/data-model.md` lists the sources.
+`docs/data-model.md` describes the model in full.
 
 The data is seeded, so the same seed always produces the same file. It includes:
 - southern-hemisphere seasonality
