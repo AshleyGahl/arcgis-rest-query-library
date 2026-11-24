@@ -5,8 +5,10 @@
 # only intercept URLs inside its own scope), and `server/`, `sql-library/` and
 # `data/` are fetched by the viewer as ES modules and data at runtime.
 #
-# `configure-pages` has `enablement: true`, so the first successful run turns
-# Pages on by itself -- no repository setting has to be changed by hand.
+# Requires Settings > Pages > Source = "GitHub Actions" (set once, by hand: the
+# Actions token is not permitted to enable Pages on a repository that has never
+# had it on), and Settings > Actions > General > Workflow permissions allowing
+# `pages: write`, which the Deploy step needs.
 name: Deploy to GitHub Pages
 
 on:
@@ -34,10 +36,8 @@ jobs:
       - name: Check out
         uses: actions/checkout@v4
 
-      - name: Configure Pages (enabling it if it is off)
+      - name: Configure Pages
         uses: actions/configure-pages@v5
-        with:
-          enablement: true
 
       - name: Upload the repository as the site
         uses: actions/upload-pages-artifact@v3
