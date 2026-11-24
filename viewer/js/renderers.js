@@ -1,4 +1,4 @@
-import { THEMES, THEME_COLORS, STATUS_GROUP_COLORS, CHANNEL_COLORS } from './config.js';
+import { THEMES, THEME_COLORS, STATUS_GROUP_COLORS, CHANNEL_COLORS, OTHER } from './config.js';
 
 const marker = (color, size = 7) => ({ type: 'simple-marker', style: 'circle', color, size, outline: { color: [255, 255, 255, 0.9], width: 0.6 } });
 const arr = (list) => `[${list.map((s) => `'${s.replace(/'/g, "\\'")}'`).join(', ')}]`;
@@ -7,15 +7,27 @@ export const THEME_ARCADE = Object.entries(THEMES)
   .map(([theme, cats]) => (cats ? `if (Includes(${arr(cats)}, $feature.Category)) { return '${theme}'; }` : `return '${theme}';`))
   .join('\n');
 
-const unique = (title, { field, valueExpression }, classes) => ({
-  type: 'unique-value',
-  field,
-  valueExpression,
-  valueExpressionTitle: title,
-  uniqueValueInfos: classes.map(([value, color]) => ({ value, label: value, symbol: marker(color) })),
-  defaultSymbol: marker('#9aa5b1'),
-  defaultLabel: 'Other',
-});
+/**
+ * A unique-value renderer over `classes` ([value, colour] pairs).
+ *
+ * The catch-all is added only when the classes do not already define their own
+ * 'Other'. The theme renderer does: its Arcade expression always returns one of
+ * the named themes, so a second catch-all would never be used and would simply
+ * show up as a duplicate 'Other' in the legend. `status` and `channel` read a
+ * field directly, where an unexpected value really can turn up, so they keep it.
+ */
+const unique = (title, { field, valueExpression }, classes) => {
+  const hasOwnOther = classes.some(([value]) => value === 'Other');
+  return {
+    type: 'unique-value',
+    field,
+    valueExpression,
+    valueExpressionTitle: title,
+    uniqueValueInfos: classes.map(([value, color]) => ({ value, label: value, symbol: marker(color) })),
+    // The palette's grey, so the map agrees with the charts (see config.js).
+    ...(hasOwnOther ? {} : { defaultSymbol: marker(OTHER), defaultLabel: 'Other' }),
+  };
+};
 
 export const RENDERERS = {
   theme: () => unique('Theme', { valueExpression: THEME_ARCADE }, Object.entries(THEME_COLORS)),
