@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Service Request GIS · Service Request GIS</title>
+<meta name="description" content="What this proof of concept is testing, the two-request architecture, what the demo shows and the three places it breaks down — the front door of the site.">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="docs.css">
+</head>
+<body>
+<header class="site">
+  <a class="brand" href="overview.html">Service Request GIS</a>
+  <nav aria-label="Documentation">
+      <a href="overview.html" aria-current="page">Overview</a>
+      <a href="index.html">Docs</a>
+      <a href="architecture.html">Architecture</a>
+      <a href="data-model.html">Data model</a>
+      <a href="framework.html">Analytics framework</a>
+      <a href="query-catalog.html">Query catalog</a>
+      <a href="catalog-pattern.html">Catalog pattern</a>
+      <a href="../viewer/">Viewer</a>
+      <a href="../arcgis/rest/services">REST services</a>
+      <a href="https://github.com/AshleyGahl/arcgis-rest-query-library" rel="noopener">GitHub</a>
+  </nav>
+</header>
+<main>
+<nav class="toc" aria-label="On this page"><h2>On this page</h2><ol><li><a href="#the-problem-it-is-testing">The problem it is testing</a></li><li><a href="#the-architecture">The architecture</a></li><li><a href="#what-the-demo-shows">What the demo shows</a></li><li><a href="#where-it-breaks-down">Where it breaks down</a></li><li><a href="#what-is-actually-running">What is actually running</a></li><li><a href="#what-to-try-in-the-viewer">What to try in the viewer</a></li><li><a href="#the-data">The data</a></li><li><a href="#running-it-locally">Running it locally</a></li></ol></nav>
+<article>
+<h1>Service Request GIS</h1>
+<p><em>Proof-of-concept demo · mock service, synthetic data.</em></p>
+<p>Can an ArcGIS REST FeatureServer carry a whole analytics layer — no analytics API, no endpoint per metric — by publishing the questions themselves as data? This demo is the test: ~850 synthetic public service requests around Cape Town, and 70 analytical questions served as a table on the same service, each written twice so the answers can be checked.</p>
+<p><a href="../viewer/">Open the GIS viewer</a> · <a href="../arcgis/rest/services">REST services directory</a> · <a href="https://github.com/AshleyGahl/arcgis-rest-query-library">Source on GitHub</a></p>
+<h2 id="the-problem-it-is-testing">The problem it is testing</h2>
+<p>In most enterprise and municipal systems, reporting is welded to the application tier. Every metric operations asks for — a 90th-percentile resolution time, a backlog breakdown by suburb, a month-over-month anomaly check — becomes the same ritual: a new response type, a new repository method, a new controller action, a docs update, a release. Analytical definitions scatter across server code, frontend helpers and ad-hoc SQL, until nobody can say what metrics exist or whether two departments compute the same KPI the same way.</p>
+<p>Handing clients open query flexibility instead just moves the problem: it pushes heavy window-function work outward, and exposes the schema to filters that can scan an unindexed column in production. The third option is to stop treating analytical questions as code and treat them as <strong>data</strong> — authored once, stored next to the data they query, and reached through one generic way to list them and one generic way to run them.</p>
+<p>The <a href="catalog-pattern.html">catalog pattern</a> makes that argument on its own terms, without a platform in it, and then scores this repository against it.</p>
+<h2 id="the-architecture">The architecture</h2>
+<p>The service publishes two things, and the second one is the catalog:</p>
+<div class="table-wrap"><table><thead><tr><th>Id</th><th>Name</th><th>Type</th><th></th></tr></thead><tbody><tr><td><code>0</code></td><td><code>ServiceRequests</code></td><td>Feature Layer</td><td>the ~850 service requests, as points</td></tr><tr><td><code>1</code></td><td><code>QueryLibrary</code></td><td>Table</td><td>the 70 analytical questions, as rows</td></tr></tbody></table></div>
+<p>So a client needs exactly two requests, and both are the standard ArcGIS <code>query</code> operation — neither is specific to any question:</p>
+<pre><code>GET  …/FeatureServer/1/query?where=1=1&amp;outFields=*       70 rows: Question, Portability,
+                                                         RestParams, SqlText, ChartType…
+POST …/FeatureServer/0/query  &lt;the RestParams of a row&gt;  the answer, computed in the
+                                                         service's own SQL engine</code></pre>
+<p>There is no analytics controller. Adding a metric is a row, not a deployment: it appears in the UI with no client code changing, because the viewer's run tabs fetch their list from table 1 at start-up. They know how to <em>run</em> a catalogued question, but nothing about <em>which</em> questions exist.</p>
+<blockquote>The catalog stores the REST parameters, not a <code>SELECT</code> statement — a real FeatureServer has no endpoint that accepts one. What <code>query</code> does accept is SQL in pieces (<code>where</code>, <code>groupByFieldsForStatistics</code>, <code>outStatistics</code>, <code>having</code>), which it transforms and executes server-side. The equivalent T-SQL rides along in the same row as the reference definition.</blockquote>
+<p>The row also carries the <strong>chart contract</strong> — <code>ChartType</code>, <code>ChartLabelColumn</code>, <code>ChartValueColumns</code> and the rest — so the same request that tells a client what the question is tells it how the answer is drawn. No response type is declared for any question anywhere in the pipeline, which makes those columns the only place the shape of an answer is written down.</p>
+<p><a href="architecture.html">The architecture page</a> traces the whole pipeline component by component.</p>
+<h2 id="what-the-demo-shows">What the demo shows</h2>
+<p>Try it yourself: open the <a href="../viewer/">viewer</a>, go to the Run REST tab and watch the Network panel. The question list arrives from <code>FeatureServer/1/query</code>; running one fires <code>FeatureServer/0/query</code> with parameters that came out of that first response.</p>
+<p>The repository's test suite asserts the same thing over 400 times — including that all 70 questions execute from their catalog row alone and return results identical to running the library directly, that every declared chart column exists in the result it describes, and that the whole library behaves the same on the server engine and the in-browser one.</p>
+<h2 id="where-it-breaks-down">Where it breaks down</h2>
+<p>Three limits are real, and the catalog states them per row rather than hiding them.</p>
+<ul><li><strong>No window functions.</strong> <code>LAG</code>, running totals, <code>RANK</code>, moving averages and <code>ROLLUP</code> have no representation in <code>outStatistics</code>. Nine of the seventy come back as raw groups and are finished on the client — which is the very failure mode this architecture is meant to avoid. The catalog declares it in a <code>Transforms</code> column, so at least a client knows what it must apply.</li><li><strong>Date arithmetic is not portable.</strong> Standardized SQL has no date-difference function, so every duration and SLA metric needs a SQL Server-backed service called with <code>sqlFormat=native</code>. The descriptive half of the library runs anywhere; the performance half — the half management asks for — does not.</li><li><strong>The catalog is a convention, not an access control.</strong> <code>FeatureServer/0/query</code> still accepts an arbitrary <code>where</code> from anyone who can reach it. Publishing a catalog gives you governance of <em>definitions</em>, not of <em>access</em>; the whitelist property needs a tier in front that refuses to forward a client-supplied predicate.</li></ul>
+<p>How far each question travels is itself a column in the catalog, so the service can answer "how portable is this library?" with one statistics query:</p>
+<div class="table-wrap"><table><thead><tr><th>Portability</th><th>Count</th><th>Runs on</th></tr></thead><tbody><tr><td><code>standard</code></td><td>32</td><td>any FeatureServer</td></tr><tr><td><code>sql-expression</code></td><td>14</td><td>ArcGIS Online hosted, Enterprise 10.9+</td></tr><tr><td><code>native</code></td><td>23</td><td>SQL Server-backed Enterprise, <code>sqlFormat=native</code></td></tr><tr><td><code>extension</code></td><td>1</td><td>this mock only</td></tr></tbody></table></div>
+<p><a href="query-catalog.html">The query catalog</a> sets all of this out in full.</p>
+<h2 id="what-is-actually-running">What is actually running</h2>
+<p>There is no server behind this page. The mock FeatureServer — the SQL query engine, the ArcGIS query semantics, the T-SQL dialect translation, both layers — runs inside the viewer tab on <a href="https://sqlite.org/wasm">SQLite Wasm</a>, and a service worker answers the <code>/arcgis/rest/…</code> requests the ArcGIS Maps SDK makes. Open the Network tab and you will see genuine <code>FeatureServer/0/query</code> and <code>FeatureServer/1/query</code> requests with genuine Esri JSON responses.</p>
+<blockquote>It is the same code the local Node server runs: the viewer detects whether a real server is there and, if not, stands the engine up in the page. The REST services directory in the nav is served that way too, so the viewer needs to be open in a tab for it to answer.</blockquote>
+<h2 id="what-to-try-in-the-viewer">What to try in the viewer</h2>
+<div class="table-wrap"><table><thead><tr><th>Tab</th><th></th></tr></thead><tbody><tr><td><strong>Filter</strong></td><td>Build a <code>where</code> clause from dropdowns and watch it go to the service; switch basemaps, symbology, clustering and the time slider.</td></tr><tr><td><strong>Dashboard</strong></td><td>KPIs and charts built entirely from REST <code>outStatistics</code> requests. Click a bar to cross-filter the map.</td></tr><tr><td><strong>Run REST</strong></td><td>All 70 questions — and the list is not built into the page. It is fetched from <code>FeatureServer/1/query</code>, because the query library is published as a table on the same service. Pick one and run it as ArcGIS REST.</td></tr><tr><td><strong>Run SQL</strong></td><td>The same 70 questions, run as their original T-SQL against the same data through <code>…/FeatureServer/0/sql</code>, a read-only mock extension. The statement is editable, so the panel is the SQL console too.</td></tr><tr><td><strong>API</strong></td><td>A query console: the raw ArcGIS parameters, and the URL they produce.</td></tr></tbody></table></div>
+<blockquote>Both run tabs share one question list, one selection and one catalog request, so picking a question under Run REST keeps your place when you switch to Run SQL — only the verb changes. Each traces what the click did, step by step and timed, then the MCP <code>tools/call</code> that wraps the very same work, with its JSON-RPC envelopes — stacked above the request itself, each one expandable. No language model and no API key are involved — it is the protocol made visible, not a chatbot.</blockquote>
+<h2 id="the-data">The data</h2>
+<p>Deliberately generic: a council "report a problem" record, holding only what a member of the public submits plus the lifecycle dates — no internal system names, staff or contractor fields, ward codes or contact details. The core facts are <code>DtLogged</code>, <code>DtCompleted</code> and <code>Category</code>, across thirteen categories with sub-categories under each.</p>
+<p>It is generated from a seed, so the same seed always produces the same file, and it is shaped so the queries have something real to find: southern-hemisphere seasonality, a realistic open backlog, resolution times that vary by sub-category, and deliberate defects for the data-quality queries. <a href="data-model.html">The data model</a> describes it in full, and <a href="framework.html">the analytics framework</a> how the 70 questions are organised.</p>
+<h2 id="running-it-locally">Running it locally</h2>
+<p>Node ≥ 22.16, no npm dependencies. <code>npm start</code> serves the real mock FeatureServer on <code>http://127.0.0.1:3000</code>, and <code>npm test</code> runs the 70 REST queries, the T-SQL equivalents, their parity assertions, the catalog round-trip, and the whole suite again against the in-browser engine. The repository also carries SQL Server scripts that load the identical data, so the T-SQL can be run where it was written for.</p>
+</article>
+</main>
+<footer>
+  <p>Synthetic data, a mock service, and a proof of concept &mdash; not a deployable product.
+  Generated from the Markdown in <code>docs/</code> by <code>npm run build</code>.</p>
+</footer>
+</body>
+</html>

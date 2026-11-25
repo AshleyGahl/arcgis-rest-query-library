@@ -9,66 +9,105 @@ imports — it is **a table of the service**, discovered over REST like any othe
 
 ## 1. The whole picture
 
-```
-                       sql-library/queryLibrary.js
-                       70 entries: { id, category, question, dimension, layer,
-                                     portability, rest, transform, tsql, notes }
-                         |                    |                        |
-        derived at load  |      generated     |        generated       |  imported
-                         v                    v                        v
-          server/catalogSchema.js    scripts/build-sql.js     scripts/build-http.js
-          CATALOG_FIELDS +           -> sql/03_vw_         -> rest/library.http
-          catalogRows()                 QueryLibrary.sql      sql-library/runner.js
-                         |                    |               mcp/*, scripts/run-query.js
-                         |                    |
-  ===== THE SERVICE ==== | ============       |  ===== SQL SERVER (comparison) =====
-                         v                    v
-   server/featureService.js  (engine)     sql/01 ServiceRequest table
-     load():                              sql/02 OPENJSON import (view + proc)
-       _ServiceRequest  <- data/service_requests.geojson
-       _QueryLibrary    <- catalogRows()  sql/03 vw_QueryLibrary + usp_RunLibraryQuery
-     query(params, layerId)                      |
-     + server/sqlDialect.js  (T-SQL -> SQLite)   v
-     + server/schema.js (layer 0 fields)    sp_executesql on the same data
-     + server/serviceConfig.js                   ^
-              ^            ^                     |
-              |            |              parity asserted by test/library.test.js
-    runtime injected:      |
-  server/nodeRuntime.js    viewer/js/engine/sqliteWasmRuntime.js
-  (fs + node:sqlite)       (SQLite Wasm, in the browser)
-              ^                        ^
-              |                        |
-   server/restRouter.js  <-------------+   (same router, both modes)
-   (path, params) -> response          |
-              ^                        |
-              |                        |
-   server/index.js                 sw.js  (service worker intercepts
-   HTTP + static files             the REST URLs in static mode)
-              ^                        ^
-              |      HTTP              |     fetch
-              +----------+-------------+
-                         |
-                  viewer/js/engine/boot.js   live  vs  ?mode=static
-                         |
-      +------------------+---------------------+------------------+
-      |                  |                     |                  |
- FeatureLayer       js/catalog.js          js/dashboard.js    js/mcp-envelope.js
- on /0 (map)        reads /1/query         REST statistics    tools/call envelopes
-                    -> js/query-store.js   -> js/charts.js    from mcp/tools.js
-                           |                                        |
-                    js/query-panel.js x2                            |
-                    Run REST | Run SQL                              |
-                           |                                        |
-                           +-------- js/workflow.js ----------------+
-                                     Workflow + Agent view, stacked, per run
-                           |
-                    sql-library/runner.js  applies client transforms
-                    (lag, runningTotal, movingAverage, rank, topPerGroup...)
+Three bands. **Top:** one source file, three derivations — none of them a second copy to
+maintain. **Middle:** the engine, with a runtime injected underneath it so the same code runs on
+Node and in the browser. **Bottom:** the consumers, all of them speaking REST.
+
+### Top: one source, three derivations
+
+```mermaid
+flowchart TB
+  LIB["sql-library/queryLibrary.js
+  70 entries: id, question, rest,
+  transform, tsql, chart, portability"]
+  CAT["server/catalogSchema.js
+  CATALOG_FIELDS + catalogRows()"]
+  BSQL["scripts/build-sql.js
+  sql/03_vw_QueryLibrary.sql"]
+  BHTTP["scripts/build-http.js
+  rest/library.http"]
+  USE["sql-library/runner.js
+  mcp/*, scripts/run-query.js"]
+  LIB -->|derived at load| CAT
+  LIB -->|generated| BSQL
+  LIB -->|generated| BHTTP
+  LIB -->|imported| USE
 ```
 
-Read it as three bands. **Top:** one source file, three derivations — none of them a second
-copy to maintain. **Middle:** the engine, with a runtime injected underneath it so the same
-code runs on Node and in the browser. **Bottom:** four consumers, all of them speaking REST.
+### Middle: one engine, two runtimes
+
+```mermaid
+flowchart TB
+  GEO[("data/service_requests.geojson")]
+  CATROWS["catalogRows()"]
+  ENG["server/featureService.js
+  query(params, layerId)"]
+  DIA["server/sqlDialect.js
+  T-SQL and ArcGIS SQL to SQLite"]
+  SCH["server/schema.js
+  server/serviceConfig.js"]
+  NODE["server/nodeRuntime.js
+  fs + node:sqlite"]
+  WASM["viewer/js/engine/sqliteWasmRuntime.js
+  SQLite Wasm, in the page"]
+  ROUTER["server/restRouter.js
+  (path, params) to response"]
+  HTTP["server/index.js
+  HTTP + static files"]
+  SW["sw.js
+  service worker, static mode"]
+  GEO -->|layer 0| ENG
+  CATROWS -->|table 1| ENG
+  ENG --- DIA
+  ENG --- SCH
+  NODE -->|runtime injected| ENG
+  WASM -->|runtime injected| ENG
+  ENG --> ROUTER
+  ROUTER --> HTTP
+  ROUTER --> SW
+```
+
+The same `restRouter.js` answers in both modes, which is why the GitHub Pages demo needs no
+server: `sw.js` intercepts the REST URLs and hands them to an engine running in the tab.
+
+### Bottom: the viewer
+
+```mermaid
+flowchart TB
+  BOOT["viewer/js/engine/boot.js
+  live or ?mode=static"]
+  MAP["FeatureLayer on layer 0
+  the map"]
+  CATJS["js/catalog.js
+  one GET on table 1"]
+  DASH["js/dashboard.js
+  REST statistics"]
+  STORE["js/query-store.js
+  one fetch, one selection"]
+  PANEL["js/query-panel.js x2
+  Run REST | Run SQL"]
+  RUNNER["sql-library/runner.js
+  client-side transforms"]
+  WF["js/workflow.js
+  Workflow + Agent view"]
+  ENV["js/mcp-envelope.js
+  tools/call, from mcp/tools.js"]
+  CHARTS["js/charts.js"]
+  RC["js/result-chart.js
+  table or chart"]
+  BOOT --> MAP
+  BOOT --> CATJS
+  BOOT --> DASH
+  CATJS --> STORE
+  STORE --> PANEL
+  PANEL --> RUNNER
+  PANEL --> WF
+  WF --> ENV
+  RUNNER --> RC
+  DASH --> CHARTS
+  RC --> CHARTS
+```
+
 
 ## 2. Who references whom
 
@@ -215,16 +254,20 @@ it gets the same rows and the same instruction for drawing them.
 
 ## 4. The two REST hops, end to end
 
-```
-viewer/js/catalog.js            GET  /FeatureServer/1/query?where=1=1&outFields=*
-  -> restRouter.js -> svc.query(params, 1) -> _QueryLibrary        70 rows
-  -> the run panels list them, grouped by Category
-
-user picks Q44                  POST /FeatureServer/0/query   <RestParams of that row>
-  -> restRouter.js -> svc.query(params, 0) -> sqlDialect.js rewrite -> _ServiceRequest
-  -> rows back
-  -> sql-library/runner.js applies TransformSpec (here: lag)
-  -> viewer/js/result-chart.js renders table or chart
+```mermaid
+sequenceDiagram
+  autonumber
+  participant V as viewer
+  participant R as restRouter.js
+  participant E as featureService.js
+  V->>R: GET /FeatureServer/1/query (where=1=1, outFields=*)
+  R->>E: svc.query(params, 1)
+  E-->>V: 70 catalog rows
+  Note over V: the run panels list them, grouped by Category
+  V->>R: POST /FeatureServer/0/query, the RestParams of that row
+  R->>E: svc.query(params, 0)
+  E-->>V: rows
+  Note over V: runner.js applies the TransformSpec,<br/>result-chart.js draws it per the Chart* columns
 ```
 
 Both hops are the standard ArcGIS `query` operation, and nothing about Q44 exists in the client.

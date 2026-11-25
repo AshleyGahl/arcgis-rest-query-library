@@ -7,12 +7,14 @@
 <meta name="description" content="The components and how they reference one another: one library source, three derivations, one engine on two runtimes — and the query library as table 1 of the service and as a view in SQL Server.">
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="docs.css">
+<script src="vendor/mermaid.min.js" defer></script>
+<script src="mermaid-init.js" defer></script>
 </head>
 <body>
 <header class="site">
-  <a class="brand" href="../index.html">Service Request GIS</a>
+  <a class="brand" href="overview.html">Service Request GIS</a>
   <nav aria-label="Documentation">
-      <a href="../index.html">Overview</a>
+      <a href="overview.html">Overview</a>
       <a href="index.html">Docs</a>
       <a href="architecture.html" aria-current="page">Architecture</a>
       <a href="data-model.html">Data model</a>
@@ -20,6 +22,8 @@
       <a href="query-catalog.html">Query catalog</a>
       <a href="catalog-pattern.html">Catalog pattern</a>
       <a href="../viewer/">Viewer</a>
+      <a href="../arcgis/rest/services">REST services</a>
+      <a href="https://github.com/AshleyGahl/arcgis-rest-query-library" rel="noopener">GitHub</a>
   </nav>
 </header>
 <main>
@@ -29,61 +33,88 @@
 <p><em>How the parts fit together, and where the query library lives in each of the two databases.</em></p>
 <p>The repository is one pipeline with two front doors. A single query engine answers ArcGIS REST requests; everything else is either a producer of its data, a renderer of its answers, or a generator kept in step with it. The library of 70 analytical questions is not a module the UI imports — it is <strong>a table of the service</strong>, discovered over REST like any other table.</p>
 <h2 id="1-the-whole-picture">1. The whole picture</h2>
-<pre><code>                       sql-library/queryLibrary.js
-                       70 entries: { id, category, question, dimension, layer,
-                                     portability, rest, transform, tsql, notes }
-                         |                    |                        |
-        derived at load  |      generated     |        generated       |  imported
-                         v                    v                        v
-          server/catalogSchema.js    scripts/build-sql.js     scripts/build-http.js
-          CATALOG_FIELDS +           -&gt; sql/03_vw_         -&gt; rest/library.http
-          catalogRows()                 QueryLibrary.sql      sql-library/runner.js
-                         |                    |               mcp/*, scripts/run-query.js
-                         |                    |
-  ===== THE SERVICE ==== | ============       |  ===== SQL SERVER (comparison) =====
-                         v                    v
-   server/featureService.js  (engine)     sql/01 ServiceRequest table
-     load():                              sql/02 OPENJSON import (view + proc)
-       _ServiceRequest  &lt;- data/service_requests.geojson
-       _QueryLibrary    &lt;- catalogRows()  sql/03 vw_QueryLibrary + usp_RunLibraryQuery
-     query(params, layerId)                      |
-     + server/sqlDialect.js  (T-SQL -&gt; SQLite)   v
-     + server/schema.js (layer 0 fields)    sp_executesql on the same data
-     + server/serviceConfig.js                   ^
-              ^            ^                     |
-              |            |              parity asserted by test/library.test.js
-    runtime injected:      |
-  server/nodeRuntime.js    viewer/js/engine/sqliteWasmRuntime.js
-  (fs + node:sqlite)       (SQLite Wasm, in the browser)
-              ^                        ^
-              |                        |
-   server/restRouter.js  &lt;-------------+   (same router, both modes)
-   (path, params) -&gt; response          |
-              ^                        |
-              |                        |
-   server/index.js                 sw.js  (service worker intercepts
-   HTTP + static files             the REST URLs in static mode)
-              ^                        ^
-              |      HTTP              |     fetch
-              +----------+-------------+
-                         |
-                  viewer/js/engine/boot.js   live  vs  ?mode=static
-                         |
-      +------------------+---------------------+------------------+
-      |                  |                     |                  |
- FeatureLayer       js/catalog.js          js/dashboard.js    js/mcp-envelope.js
- on /0 (map)        reads /1/query         REST statistics    tools/call envelopes
-                    -&gt; js/query-store.js   -&gt; js/charts.js    from mcp/tools.js
-                           |                                        |
-                    js/query-panel.js x2                            |
-                    Run REST | Run SQL                              |
-                           |                                        |
-                           +-------- js/workflow.js ----------------+
-                                     Workflow + Agent view, stacked, per run
-                           |
-                    sql-library/runner.js  applies client transforms
-                    (lag, runningTotal, movingAverage, rank, topPerGroup...)</code></pre>
-<p>Read it as three bands. <strong>Top:</strong> one source file, three derivations — none of them a second copy to maintain. <strong>Middle:</strong> the engine, with a runtime injected underneath it so the same code runs on Node and in the browser. <strong>Bottom:</strong> four consumers, all of them speaking REST.</p>
+<p>Three bands. <strong>Top:</strong> one source file, three derivations — none of them a second copy to maintain. <strong>Middle:</strong> the engine, with a runtime injected underneath it so the same code runs on Node and in the browser. <strong>Bottom:</strong> the consumers, all of them speaking REST.</p>
+<h3 id="top-one-source-three-derivations">Top: one source, three derivations</h3>
+<div class="mermaid">flowchart TB
+  LIB["sql-library/queryLibrary.js
+  70 entries: id, question, rest,
+  transform, tsql, chart, portability"]
+  CAT["server/catalogSchema.js
+  CATALOG_FIELDS + catalogRows()"]
+  BSQL["scripts/build-sql.js
+  sql/03_vw_QueryLibrary.sql"]
+  BHTTP["scripts/build-http.js
+  rest/library.http"]
+  USE["sql-library/runner.js
+  mcp/*, scripts/run-query.js"]
+  LIB --&gt;|derived at load| CAT
+  LIB --&gt;|generated| BSQL
+  LIB --&gt;|generated| BHTTP
+  LIB --&gt;|imported| USE</div>
+<h3 id="middle-one-engine-two-runtimes">Middle: one engine, two runtimes</h3>
+<div class="mermaid">flowchart TB
+  GEO[("data/service_requests.geojson")]
+  CATROWS["catalogRows()"]
+  ENG["server/featureService.js
+  query(params, layerId)"]
+  DIA["server/sqlDialect.js
+  T-SQL and ArcGIS SQL to SQLite"]
+  SCH["server/schema.js
+  server/serviceConfig.js"]
+  NODE["server/nodeRuntime.js
+  fs + node:sqlite"]
+  WASM["viewer/js/engine/sqliteWasmRuntime.js
+  SQLite Wasm, in the page"]
+  ROUTER["server/restRouter.js
+  (path, params) to response"]
+  HTTP["server/index.js
+  HTTP + static files"]
+  SW["sw.js
+  service worker, static mode"]
+  GEO --&gt;|layer 0| ENG
+  CATROWS --&gt;|table 1| ENG
+  ENG --- DIA
+  ENG --- SCH
+  NODE --&gt;|runtime injected| ENG
+  WASM --&gt;|runtime injected| ENG
+  ENG --&gt; ROUTER
+  ROUTER --&gt; HTTP
+  ROUTER --&gt; SW</div>
+<p>The same <code>restRouter.js</code> answers in both modes, which is why the GitHub Pages demo needs no server: <code>sw.js</code> intercepts the REST URLs and hands them to an engine running in the tab.</p>
+<h3 id="bottom-the-viewer">Bottom: the viewer</h3>
+<div class="mermaid">flowchart TB
+  BOOT["viewer/js/engine/boot.js
+  live or ?mode=static"]
+  MAP["FeatureLayer on layer 0
+  the map"]
+  CATJS["js/catalog.js
+  one GET on table 1"]
+  DASH["js/dashboard.js
+  REST statistics"]
+  STORE["js/query-store.js
+  one fetch, one selection"]
+  PANEL["js/query-panel.js x2
+  Run REST | Run SQL"]
+  RUNNER["sql-library/runner.js
+  client-side transforms"]
+  WF["js/workflow.js
+  Workflow + Agent view"]
+  ENV["js/mcp-envelope.js
+  tools/call, from mcp/tools.js"]
+  CHARTS["js/charts.js"]
+  RC["js/result-chart.js
+  table or chart"]
+  BOOT --&gt; MAP
+  BOOT --&gt; CATJS
+  BOOT --&gt; DASH
+  CATJS --&gt; STORE
+  STORE --&gt; PANEL
+  PANEL --&gt; RUNNER
+  PANEL --&gt; WF
+  WF --&gt; ENV
+  RUNNER --&gt; RC
+  DASH --&gt; CHARTS
+  RC --&gt; CHARTS</div>
 <h2 id="2-who-references-whom">2. Who references whom</h2>
 <div class="table-wrap"><table><thead><tr><th>Component</th><th>Depends on</th><th>Must never import</th></tr></thead><tbody><tr><td><code>sql-library/queryLibrary.js</code></td><td>nothing</td><td>—</td></tr><tr><td><code>server/catalogSchema.js</code></td><td><code>queryLibrary.js</code></td><td>anything platform-specific</td></tr><tr><td><code>server/featureService.js</code></td><td><code>schema.js</code>, <code>catalogSchema.js</code>, <code>sqlDialect.js</code>, <code>serviceConfig.js</code>, an injected runtime</td><td><code>node:*</code>, <code>process</code>, <code>Buffer</code></td></tr><tr><td><code>server/restRouter.js</code></td><td>a <code>FeatureService</code> instance</td><td>HTTP objects</td></tr><tr><td><code>server/index.js</code></td><td><code>restRouter.js</code>, <code>nodeRuntime.js</code></td><td>—</td></tr><tr><td><code>viewer/js/catalog.js</code></td><td>the REST endpoint <code>…/FeatureServer/1/query</code></td><td><code>queryLibrary.js</code></td></tr><tr><td><code>viewer/js/query-store.js</code></td><td><code>js/catalog.js</code></td><td>a second catalog fetch — there is one, shared</td></tr><tr><td><code>viewer/js/query-panel.js</code></td><td><code>js/query-store.js</code>, <code>runner.js</code>, <code>js/workflow.js</code></td><td>knowledge of which questions exist</td></tr><tr><td><code>viewer/js/mcp-envelope.js</code></td><td><code>toolContent</code> from <code>mcp/tools.js</code></td><td>a dispatcher — nothing in the page dispatches</td></tr><tr><td><code>viewer/js/workflow.js</code></td><td><code>js/mcp-envelope.js</code>, the payload builders in <code>mcp/tools.js</code></td><td>hand-built JSON-RPC</td></tr><tr><td><code>mcp/server.js</code></td><td><code>mcp/tools.js</code>, <code>nodeRuntime.js</code></td><td>—</td></tr><tr><td><code>scripts/build-*.js</code>, <code>scripts/run-query.js</code></td><td><code>queryLibrary.js</code> directly</td><td>—</td></tr></tbody></table></div>
 <p>Two of those rules are enforced by tests rather than by convention: <code>test/deploy.test.js</code> resolves the browser's import closure and fails if a Node-only module enters it, and <code>test/browser-engine.test.js</code> runs all 70 entries on both runtimes and fails if they diverge.</p>
@@ -113,15 +144,19 @@ EXEC sp_executesql @sql;</code></pre>
 <p>Note what this deliberately is <strong>not</strong>. It is not a physical table, so there is no load step and no stored row that can drift from the library — regenerate the file, re-run it, and the view is current. And it is not the same schema as layer 1: it has no <code>Portability</code>, <code>RequestCount</code>, <code>Transforms</code>, <code>RestParams</code> or <code>TransformSpec</code>, because those describe the <em>REST</em> half of an entry and mean nothing to a client that already holds a T-SQL statement. The two catalogues are two projections of one source, each carrying the columns its own execution path can act on.</p>
 <p>The <code>Chart*</code> columns are the exception that shows the rule: they appear in both, because they describe the <em>answer</em> rather than the route taken to it. Whichever way a client resolves query 44 — replaying <code>RestParams</code> against layer 0, or <code>EXEC dbo.usp_RunLibraryQuery @QueryNumber = 44</code> — it gets the same rows and the same instruction for drawing them.</p>
 <h2 id="4-the-two-rest-hops-end-to-end">4. The two REST hops, end to end</h2>
-<pre><code>viewer/js/catalog.js            GET  /FeatureServer/1/query?where=1=1&amp;outFields=*
-  -&gt; restRouter.js -&gt; svc.query(params, 1) -&gt; _QueryLibrary        70 rows
-  -&gt; the run panels list them, grouped by Category
-
-user picks Q44                  POST /FeatureServer/0/query   &lt;RestParams of that row&gt;
-  -&gt; restRouter.js -&gt; svc.query(params, 0) -&gt; sqlDialect.js rewrite -&gt; _ServiceRequest
-  -&gt; rows back
-  -&gt; sql-library/runner.js applies TransformSpec (here: lag)
-  -&gt; viewer/js/result-chart.js renders table or chart</code></pre>
+<div class="mermaid">sequenceDiagram
+  autonumber
+  participant V as viewer
+  participant R as restRouter.js
+  participant E as featureService.js
+  V-&gt;&gt;R: GET /FeatureServer/1/query (where=1=1, outFields=*)
+  R-&gt;&gt;E: svc.query(params, 1)
+  E--&gt;&gt;V: 70 catalog rows
+  Note over V: the run panels list them, grouped by Category
+  V-&gt;&gt;R: POST /FeatureServer/0/query, the RestParams of that row
+  R-&gt;&gt;E: svc.query(params, 0)
+  E--&gt;&gt;V: rows
+  Note over V: runner.js applies the TransformSpec,&lt;br/&gt;result-chart.js draws it per the Chart* columns</div>
 <p>Both hops are the standard ArcGIS <code>query</code> operation, and nothing about Q44 exists in the client.</p>
 <p>See also: <a href="query-catalog.html">query catalog</a> for the design argument and its three real limits, <a href="data-model.html">data model</a> for layer 0's fields, <a href="framework.html">analytics framework</a> for the dimensions the catalog columns expose.</p>
 </article>

@@ -130,3 +130,19 @@ ul.cards p { margin: .25rem 0 0; color: var(--ink-2); font-size: .9375rem; }
   body { background: #fff; }
   main { display: block; max-width: none; padding: 0; }
 }
+
+/* ------------------------------------------------------------------ diagrams */
+/* ```mermaid blocks, drawn by docs/vendor/mermaid.min.js via docs/mermaid-init.js.
+   Hidden until mermaid has replaced the source text, so the page never flashes
+   twenty lines of diagram syntax; mermaid-init.js reveals them again if it cannot
+   run, and marks a diagram that failed to parse so the source is there to fix. */
+.mermaid { margin: 1.75rem 0; text-align: center; }
+.mermaid:not([data-processed]) { visibility: hidden; }
+.mermaid svg { max-width: 100%; height: auto; }
+.mermaid .edgeLabel { font-size: .8125rem; }
+.mermaid-failed {
+  visibility: visible; text-align: left; white-space: pre; overflow-x: auto;
+  font: .8125em ui-monospace, Consolas, monospace;
+  background: var(--code-bg); border: 1px solid var(--code-rule); border-radius: 4px;
+  padding: .7em .9em; color: var(--ink-2);
+}

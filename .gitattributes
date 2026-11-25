@@ -13,3 +13,4 @@ sql/03_vw_QueryLibrary.sql linguist-generated=true
 
 # Vendored third-party code should not count towards the repository's language stats.
 viewer/vendor/** linguist-vendored=true
+docs/vendor/** linguist-vendored=true

@@ -81,3 +81,38 @@ test('the local server serves every directory the browser imports from', () => {
   const missing = closure.filter((f) => !prefixes.some((p) => f.startsWith(p)) && !served.includes(f));
   assert.deepEqual(missing, [], `not served by server/index.js (add a STATIC prefix): ${missing.join(', ')}`);
 });
+
+/**
+ * The doc site is published the same way, but by `<script>` and `<link>` rather than
+ * by `import`, so the closure walker above cannot see it. The diagrams are drawn by a
+ * copy of mermaid vendored at `docs/vendor/`, which is only there for the same reason
+ * everything else is: it is committed. A page referencing a file nobody committed
+ * fails silently on Pages — the diagram simply never appears.
+ */
+test('every local file the generated doc pages reference is committed', () => {
+  const docsDir = path.join(root, 'docs');
+  const missing = [];
+  for (const f of fs.readdirSync(docsDir).filter((x) => x.endsWith('.html'))) {
+    const html = fs.readFileSync(path.join(docsDir, f), 'utf8');
+    for (const [, ref] of html.matchAll(/(?:src|href)="([^"]+)"/g)) {
+      // Only files: a bare directory or a REST route is not served from the repository.
+      if (/^(https?:|data:|mailto:|#)/.test(ref) || !/\.(js|css|html|png|svg|wasm)$/.test(ref)) continue;
+      if (!fs.existsSync(path.resolve(docsDir, ref))) missing.push(`${f} -> ${ref}`);
+    }
+  }
+  assert.deepEqual(missing, [], `referenced by a doc page but not in the repository: ${missing.join(', ')}`);
+});
+
+/**
+ * The repository root is the front door, and it now only redirects: the overview it
+ * used to hold is a generated doc page. A redirect to a file that is not there is the
+ * one way this arrangement can break, and it breaks for every visitor at once.
+ */
+test('the root page redirects to a page that exists', () => {
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const target = /url=([^"'\s]+)/i.exec(html);
+  assert.ok(target, 'index.html has no meta refresh target');
+  assert.ok(fs.existsSync(path.join(root, target[1])), `index.html redirects to ${target[1]}, which is not in the repository`);
+  assert.match(html, /location\.replace\('([^']+)'\)/, 'index.html has no scripted redirect either');
+  assert.equal(/location\.replace\('([^']+)'\)/.exec(html)[1], target[1], 'the two redirects disagree');
+});

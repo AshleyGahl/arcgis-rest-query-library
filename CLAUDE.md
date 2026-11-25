@@ -49,10 +49,13 @@ docs/data-model.md              fields, categories, how the generated data behav
 docs/framework.md               5W+H dimensions, analytical layers, roadmap
 docs/query-catalog.md           the catalog-as-a-table architecture, and its three real limits
 docs/catalog-pattern.md         the pattern argued platform-free, its costs, this repo scored against it
-docs/*.html + docs/docs.css     GENERATED from the .md by scripts/build-docs.js (the site's doc pages)
+docs/overview.md                the front door: what the PoC tests, the architecture, what it shows
+docs/*.html + docs/docs.css     GENERATED from the .md by scripts/build-docs.js (the site’s doc pages)
+docs/mermaid-init.js            theme + startup for the mermaid diagrams (hand-written, not generated)
+docs/vendor/mermaid.min.js      Mermaid 11, vendored like viewer/vendor — no CDN, no npm dependency
 scripts/build-docs.js           zero-dependency Markdown -> HTML for docs/; add a page to its PAGES list
 scripts/generate-data.js        seeded generator (categories → sub-categories, seasonality, data defects)
-index.html                      landing page (the GitHub Pages front door)
+index.html                      redirect to docs/overview.html (the root URL is the doc site)
 sw.js                           service worker for the static demo; MUST stay at the repo root
 server/start.js                 entry point (Node version check) → server/index.js
 server/index.js                 HTTP host + static files only; the REST surface is restRouter.js
@@ -89,6 +92,15 @@ mcp/server.js                   stdio transport over it, for Claude Code (Node o
 ```
 
 ## Conventions
+- **The site's front door is `docs/overview.html`.** The repository root `index.html` only
+  redirects there; the overview is a normal generated page, so it shares the nav, stylesheet and
+  TOC. The nav tabs (including Viewer, REST services and GitHub) come from `navFor()` in
+  `scripts/build-docs.js`.
+- **Diagrams are mermaid fences in the Markdown.** `scripts/build-docs.js` turns one into a
+  `<div class="mermaid">` and loads `docs/vendor/mermaid.min.js` + `docs/mermaid-init.js` from the
+  page `<head>` — the body must stay script-free, which `test/docs.test.js` checks. Keep the theme
+  in `mermaid-init.js` in step with the palette in `docs/docs.css` by hand: Mermaid cannot read CSS
+  variables. Prefer a diagram to ASCII art, and keep node labels short.
 - **Docs are Markdown-first.** Edit `docs/*.md`, never the generated `docs/*.html`; run `npm run build`.
   `test/docs.test.js` fails if the committed HTML is stale. A new `docs/*.md` must be added to `PAGES`
   in `scripts/build-docs.js`, or that test fails too.

@@ -21,6 +21,7 @@ const docsDir = path.join(root, 'docs');
 
 /** Order on the nav bar and the docs index. `blurb` is shown on the index only. */
 const PAGES = [
+  { file: 'overview.md', nav: 'Overview', blurb: 'What this proof of concept is testing, the two-request architecture, what the demo shows and the three places it breaks down — the front door of the site.' },
   { file: 'architecture.md', nav: 'Architecture', blurb: 'The components and how they reference one another: one library source, three derivations, one engine on two runtimes — and the query library as table 1 of the service and as a view in SQL Server.' },
   { file: 'data-model.md', nav: 'Data model', blurb: 'The fields, the categories and sub-categories, how the generated data behaves, and the defects planted for the data-quality queries.' },
   { file: 'framework.md', nav: 'Analytics framework', blurb: 'How the 70 questions are organised: the 5W+H dimensions, the five analytical layers, the coverage checklist and what comes next.' },
@@ -75,7 +76,11 @@ function render(md) {
       i++;
       while (i < lines.length && !/^```/.test(lines[i])) body.push(lines[i++]);
       i++;
-      out.push(`<pre${lang ? ` data-lang="${lang}"` : ''}><code>${escapeHtml(body.join('\n'))}</code></pre>`);
+      // A ```mermaid fence is a diagram, drawn in the browser by docs/vendor/mermaid.min.js.
+      // The source is escaped into the element exactly as written; mermaid reads it from there.
+      out.push(lang === 'mermaid'
+        ? `<div class="mermaid">${escapeHtml(body.join('\n'))}</div>`
+        : `<pre${lang ? ` data-lang="${lang}"` : ''}><code>${escapeHtml(body.join('\n'))}</code></pre>`);
       continue;
     }
 
@@ -150,22 +155,33 @@ function render(md) {
     else i++;
   }
 
-  return { html: out.join('\n'), title: title ?? 'Documentation', toc };
+  const html = out.join('\n');
+  return { html, title: title ?? 'Documentation', toc, hasDiagram: html.includes('<div class="mermaid">') };
 }
 
 // ---------------------------------------------------------------- page shell
-const navFor = (current) =>
-  [
-    `<a href="../index.html">Overview</a>`,
+// Overview is the site's front door, so it leads the nav; the card index follows it,
+// then the rest of the pages in PAGES order, then the things that are not doc pages.
+const navFor = (current) => {
+  const link = (href, text, extra = '') =>
+    `<a href="${href}"${current === href ? ' aria-current="page"' : ''}${extra}>${text}</a>`;
+  const [overview, ...rest] = PAGES.map((p) => [p.file.replace(/\.md$/, '.html'), p.nav]);
+  return [
+    link(...overview),
     `<a href="index.html"${current === 'index' ? ' aria-current="page"' : ''}>Docs</a>`,
-    ...PAGES.map((p) => {
-      const href = p.file.replace(/\.md$/, '.html');
-      return `<a href="${href}"${current === href ? ' aria-current="page"' : ''}>${p.nav}</a>`;
-    }),
+    ...rest.map(([href, text]) => link(href, text)),
     `<a href="../viewer/">Viewer</a>`,
+    `<a href="../arcgis/rest/services">REST services</a>`,
+    link('https://github.com/AshleyGahl/arcgis-rest-query-library', 'GitHub', ' rel="noopener"'),
   ].join('\n      ');
+};
 
-function page({ title, description, body, toc = [], current }) {
+function page({ title, description, body, toc = [], current, hasDiagram = false }) {
+  // In the head, not before </body>: the injection test in test/docs.test.js reads each
+  // page from <article> onwards and fails on a script tag there, which is worth keeping.
+  const diagramScripts = hasDiagram
+    ? '\n<script src="vendor/mermaid.min.js" defer></script>\n<script src="mermaid-init.js" defer></script>'
+    : '';
   const tocHtml = toc.length
     ? `<nav class="toc" aria-label="On this page"><h2>On this page</h2><ol>${toc.map((t) => `<li><a href="#${t.id}">${t.text}</a></li>`).join('')}</ol></nav>`
     : '';
@@ -177,11 +193,11 @@ function page({ title, description, body, toc = [], current }) {
 <title>${escapeHtml(title)} · Service Request GIS</title>
 <meta name="description" content="${escapeHtml(description)}">
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="docs.css">
+<link rel="stylesheet" href="docs.css">${diagramScripts}
 </head>
 <body>
 <header class="site">
-  <a class="brand" href="../index.html">Service Request GIS</a>
+  <a class="brand" href="overview.html">Service Request GIS</a>
   <nav aria-label="Documentation">
       ${navFor(current)}
   </nav>
@@ -206,9 +222,10 @@ const written = [];
 
 for (const p of PAGES) {
   const md = fs.readFileSync(path.join(docsDir, p.file), 'utf8');
-  const { html, title, toc } = render(md);
+  const rendered = render(md);
+  const { html, title, toc, hasDiagram } = rendered;
   const outName = p.file.replace(/\.md$/, '.html');
-  fs.writeFileSync(path.join(docsDir, outName), page({ title, description: p.blurb, body: html, toc, current: outName }));
+  fs.writeFileSync(path.join(docsDir, outName), page({ title, description: p.blurb, body: html, toc, current: outName, hasDiagram }));
   written.push(outName);
 }
 
