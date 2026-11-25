@@ -25,6 +25,7 @@ const PAGES = [
   { file: 'data-model.md', nav: 'Data model', blurb: 'The fields, the categories and sub-categories, how the generated data behaves, and the defects planted for the data-quality queries.' },
   { file: 'framework.md', nav: 'Analytics framework', blurb: 'How the 70 questions are organised: the 5W+H dimensions, the five analytical layers, the coverage checklist and what comes next.' },
   { file: 'query-catalog.md', nav: 'Query catalog', blurb: 'The architecture: the query library published as a FeatureServer table, why it stores parameters rather than statements, and the three places the pattern does not hold.' },
+  { file: 'catalog-pattern.md', nav: 'Catalog pattern', blurb: 'The argument without a platform in it: why you would make the questions data rather than code, what that costs, what it does to caching and delivery, and an honest scoring of this repository against it.' },
 ];
 
 // ---------------------------------------------------------------- inline

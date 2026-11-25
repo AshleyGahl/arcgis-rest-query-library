@@ -14,7 +14,7 @@ import { execFileSync } from 'node:child_process';
 import { config } from '../server/config.js';
 
 const docsDir = path.join(config.root, 'docs');
-const generated = ['data-model.html', 'framework.html', 'query-catalog.html', 'index.html'];
+const generated = ['architecture.html', 'data-model.html', 'framework.html', 'query-catalog.html', 'catalog-pattern.html', 'index.html'];
 
 test('every Markdown doc has a generated page', () => {
   const md = fs.readdirSync(docsDir).filter((f) => f.endsWith('.md'));
