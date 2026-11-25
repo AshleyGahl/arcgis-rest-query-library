@@ -105,26 +105,20 @@ function build(rows, a, sel, dateColumns) {
   return { labels, datasets, truncated };
 }
 
-// A single value is a number, not a chart: show it as a figure (with the T-SQL value when comparing).
-function renderFigures(host, rows, columns, dateColumns, compare) {
+// A single value is a number, not a chart: show it as a figure.
+function renderFigures(host, rows, columns, dateColumns) {
   const val = (v, c, dates) => (v == null ? 'null' : dates?.has(c) ? fmtDateSAST(v) : typeof v === 'number' ? fmtNum(v, Number.isInteger(v) ? 0 : 2) : esc(v));
   const tiles = (side, label, dates) => side.columns.map((c) => `<div class="fig"><span class="fig-label">${esc(label)} · ${esc(c)}</span><span class="fig-value">${val(side.rows[0]?.[c], c, dates)}</span></div>`).join('');
-  let verdict = '';
-  if (compare && !compare.error && compare.rows?.length === 1) {
-    const l = columns.map((c) => rows[0][c]), r = compare.columns.map((c) => compare.rows[0][c]);
-    const same = l.length === r.length && l.every((v, i) => (typeof v === 'number' && typeof r[i] === 'number' ? Math.abs(v - r[i]) < 1e-6 : String(v) === String(r[i])));
-    verdict = `<p class="fig-verdict ${same ? 'ok' : 'diff'}">${same ? '✓ REST and T-SQL agree' : '≠ REST and T-SQL differ (check the notes on this query: e.g. integer AVG truncation in T-SQL)'}</p>`;
-  }
-  host.innerHTML = `<div class="figs">${tiles({ rows, columns }, compare ? 'REST' : 'Result', dateColumns)}${compare && !compare.error ? tiles(compare, 'T-SQL') : ''}</div>${verdict}`;
+  host.innerHTML = `<div class="figs">${tiles({ rows, columns }, 'Result', dateColumns)}</div>`;
 }
 
 /** Render controls + chart into `host` for the given result set. */
-export function renderResultChart(host, { rows, columns, dateColumns = [], compare }, onFilter) {
+export function renderResultChart(host, { rows, columns, dateColumns = [] }, onFilter) {
   if (!chartsAvailable()) { host.innerHTML = '<div class="error">Chart.js not loaded.</div>'; return; }
   const dc = new Set(dateColumns);
   const a = analyse(rows, columns, dc);
-  if (rows.length === 1 && !a.groupable.length && (a.measures.length === 1 || compare)) {
-    renderFigures(host, rows, columns, dc, compare);
+  if (rows.length === 1 && !a.groupable.length && a.measures.length === 1) {
+    renderFigures(host, rows, columns, dc);
     return;
   }
   // A single summary row with several measures (e.g. Q59 missing-field counts): one bar per measure

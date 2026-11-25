@@ -78,8 +78,23 @@ export function libraryQueryPayload({ q, runResult, tsqlResult }) {
   return out;
 }
 
-/** Whether `compare` would actually run the T-SQL for this entry. */
+/**
+ * Whether this entry's `tsql` can actually be executed against the mock.
+ *
+ * Two callers, one meaning: `compare` skips these entries, and so does the viewer's
+ * Run SQL panel, which disables its button rather than letting the read-only engine
+ * reject the statement. Q50's statement is `CREATE VIEW …`, the only entry of the 70
+ * that is not a SELECT.
+ */
 export const comparable = (q) => !NO_COMPARE.has(q.id);
+
+/**
+ * Shape a `run_tsql` payload from an already-executed `/sql` result — the T-SQL
+ * counterpart of `libraryQueryPayload`, exported for the same reason: the viewer runs
+ * the statement itself and then shows the envelope an agent would have received, built
+ * by this code rather than by a second implementation of it.
+ */
+export const tsqlPayload = (r) => ({ sqlite: r.sqlite, ...clip(r.rows) });
 
 /**
  * How a tool's return value is wrapped into an MCP `tools/call` result. The dispatcher
@@ -196,7 +211,7 @@ export function createTools({ service, layerUrl }) {
       handler: async ({ sql }) => {
         const r = await service.sql(sql);
         if (r.error) throw new Error(`${r.error.message} ${(r.error.details ?? []).join(' ')}`);
-        return { sqlite: r.sqlite, ...clip(r.rows) };
+        return tsqlPayload(r);
       },
     },
   ];

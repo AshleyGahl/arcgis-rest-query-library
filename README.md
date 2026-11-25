@@ -44,9 +44,9 @@ operation**, neither of them specific to any question:
 
 There is no `/api/analytics/revenue-by-month`. There is no analytics controller at all. Adding a
 metric is a row in `sql-library/queryLibrary.js`, and it appears in the UI without a line of
-client code changing — the viewer's Library tab fetches its list from table 1 at start-up
-(`viewer/js/catalog.js`), so it knows how to *run* a catalogued query but nothing about *which*
-queries exist.
+client code changing — the viewer's run tabs fetch their list from table 1 at start-up
+(`viewer/js/catalog.js`, once, via `js/query-store.js`), so they know how to *run* a catalogued
+query but nothing about *which* queries exist.
 
 ### The evidence
 
@@ -250,14 +250,20 @@ on 127.0.0.1.
 
 ## Viewer
 
-Four tabs:
+Five tabs, and the tab is the verb:
 - **Filter:** builds a where clause and applies it to the map. Colour by theme, status or channel, or switch to a heatmap; clustering and a time slider.
 - **Dashboard:** KPI tiles and six charts, all driven by REST statistics queries. Click a bar or a month to add that value to the map filter.
-- **Library:** the 70 questions, **fetched from table 1 rather than built into the page**. Run any as REST, run its T-SQL against the same data, or compare the two side by side. The statement is editable, so this is also the T-SQL console. **Run REST** traces what it did — each `/0/query`, each client-side transform, timed — beside the MCP `tools/call` that wraps the same requests. The rest of that contract sits below the questions. No model, no key.
-- **REST:** a query console, including drawn-polygon queries.
+- **Run REST:** the 70 questions, **fetched from table 1 rather than built into the page**. Pick one and run it as ArcGIS REST.
+- **Run SQL:** the same 70 questions, run as their original T-SQL against the same data. The statement is editable, so this is the SQL console too.
+- **API:** an ad-hoc query console, including drawn-polygon queries.
 
-Every result switches between **Table** and **Chart**; a single-value result shows as a large
-figure, with the REST and T-SQL values side by side when comparing.
+The two run tabs share one question list, one selection and one catalog request, so picking a
+question under Run REST keeps your place when you switch to Run SQL — only the verb changes. Each
+traces what it did and shows the MCP `tools/call` that wraps the same work (below). There is no
+Compare button: with each verb on its own tab, a control that quietly does both is the odd one out.
+`npm run query -- 44 --compare` and the `compare: true` tool argument still do it side by side.
+
+Every result switches between **Table** and **Chart**; a single-value result shows as a large figure.
 
 ## The query library
 
@@ -278,22 +284,24 @@ no second copy to keep in step, and `scripts/build-*.js` generate `rest/library.
 The tools and the JSON-RPC dispatch live in `mcp/tools.js`, which has no transport and no platform
 dependency. Two things drive it:
 
-| | |
-|---|---|
-| `mcp/server.js` | newline-delimited JSON-RPC over stdin/stdout, for Claude Code |
-| `viewer/js/mcp-service.js` | the same tools and dispatcher in the page, over a REST adapter |
+`mcp/server.js` is the only transport: newline-delimited JSON-RPC over stdin/stdout, for Claude
+Code. It is a local child process with no network listener, so publishing this repository exposes
+the source, not a running endpoint.
 
-So the tool surface the viewer shows is not a description of the MCP server — it is the same
-contract, with a function call where the pipe would be. Two parts of the Library tab drive it:
+The viewer shows the same contract under the questions it runs. `viewer/js/workflow.js` traces
+each run as two collapsible sections — **Workflow**, the real pipeline timed live, then **Agent
+view**, the `tools/call` an agent would have sent for that same question: `run_library_query` under
+Run REST, `run_tsql` under Run SQL. They stack above the request itself, so a question reads top to
+bottom: what ran, what an agent would have sent, what was sent.
 
-- `viewer/js/workflow.js` — the trace behind **Run REST**. The spine is the real pipeline, timed
-  live; beside it is the `tools/call run_library_query` an agent would have sent for that same
-  question, with real envelopes. The panel runs the entry itself, because the grid needs every row
-  and raw epoch dates, so the agent lane's payload is built by `libraryQueryPayload` — the tool's
-  own code — over that one result rather than by a second request or a second implementation.
-  `test/mcp.test.js` asserts the two agree, through `toolContent`, so the lane cannot drift.
-- `viewer/js/mcp-contract.js` — the rest of the surface: every tool, its `inputSchema`, a
-  free-form `tools/call`, and the `initialize` handshake.
+Each panel runs its entry itself, because the grid needs every row and raw epoch dates, so the
+agent view's payload is built from that one result by the tools' own code — `libraryQueryPayload`
+and `tsqlPayload`, wrapped by `toolContent`, all exported from `mcp/tools.js`. One execution, and
+the envelope is the one the server would write rather than a lookalike assembled in the page.
+
+Nothing in the page dispatches, so two tests in `test/mcp.test.js` are what keep those envelopes
+honest: they assert each builder matches a real `tools/call`. They are load-bearing — if a handler
+and its builder drift apart, the viewer starts showing an envelope that does not exist.
 
 **It involves no language model and no API key**, so it costs nothing to run and works on the
 published static demo. Worth being explicit about the billing question it raises: an MCP server

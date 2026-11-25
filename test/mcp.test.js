@@ -2,7 +2,7 @@
  * The MCP tool contract (`mcp/tools.js`) and the stdio transport over it
  * (`mcp/server.js`).
  *
- * The same contract is driven in the browser — by the Library panel's workflow lane
+ * The same contract is driven in the browser — by the run panels' workflow trace
  * and by `viewer/js/mcp-contract.js` — so these tests also cover what the viewer
  * shows. The last test spawns the real server over a pipe, because that is the only
  * thing that proves Claude Code can still talk to it.
@@ -13,7 +13,7 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { createFeatureService } from '../server/nodeRuntime.js';
 import { config } from '../server/config.js';
-import { createTools, createDispatcher, MAX_ROWS, SERVER_INFO, libraryQueryPayload, toolContent } from '../mcp/tools.js';
+import { createTools, createDispatcher, MAX_ROWS, SERVER_INFO, libraryQueryPayload, tsqlPayload, toolContent } from '../mcp/tools.js';
 import { queryLibrary, getQuery } from '../sql-library/queryLibrary.js';
 import { runEntry, toQueryUrl } from '../sql-library/runner.js';
 
@@ -127,8 +127,10 @@ test('run_library_query runs an entry, and compare adds the T-SQL result', async
 /**
  * The viewer runs library entries itself — its grid needs every row and raw epoch
  * dates — and then shows the JSON-RPC response an agent would have received, built
- * from that same result by `libraryQueryPayload`. If the handler and the builder ever
- * disagree, the viewer would be showing an envelope the server never sends.
+ * from that same result by `libraryQueryPayload` / `tsqlPayload`. Nothing in the page
+ * dispatches any more, so these two tests are the only thing keeping the envelopes the
+ * viewer renders identical to the ones the server actually sends. If a handler and its
+ * builder drift apart, the viewer starts showing an envelope that does not exist.
  */
 test('libraryQueryPayload is what run_library_query returns, so the viewer cannot drift', async () => {
   const local = async (params) => ({ url: toQueryUrl(layerUrl, params), json: await service.query(params) });
@@ -142,6 +144,18 @@ test('libraryQueryPayload is what run_library_query returns, so the viewer canno
       await call('run_library_query', { id }),
       `entry ${id}`,
     );
+  }
+});
+
+test('tsqlPayload is what run_tsql returns, so the Run SQL lane cannot drift', async () => {
+  // Including an entry over the row cap, since clipping is the one thing that differs
+  // between what the grid shows and what the agent receives.
+  for (const statement of [
+    'SELECT Category, COUNT(*) AS n FROM ServiceRequest GROUP BY Category',
+    getQuery(11).tsql,
+  ]) {
+    const r = await service.sql(statement);
+    assert.deepEqual(toolContent(tsqlPayload(r)), await call('run_tsql', { sql: statement }));
   }
 });
 

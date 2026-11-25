@@ -26,8 +26,9 @@
     <nav class="tabs" role="tablist">
       <button class="tab active" data-tab="filter">Filter</button>
       <button class="tab" data-tab="dash">Dashboard</button>
-      <button class="tab" data-tab="library">Library</button>
-      <button class="tab" data-tab="console">REST</button>
+      <button class="tab" data-tab="rest">Run REST</button>
+      <button class="tab" data-tab="sql">Run SQL</button>
+      <button class="tab" data-tab="api">API</button>
     </nav>
 
     <!-- FILTER -->
@@ -100,11 +101,12 @@
       <p class="hint" id="dStatus"></p>
     </section>
 
-    <!-- LIBRARY -->
-    <section class="pane" id="pane-library">
+    <!-- RUN REST -->
+    <section class="pane" id="pane-rest">
+      <p class="hint">The 70 catalogued questions, fetched from <code>FeatureServer/1/query</code> rather than built into this page. Pick one and run it as ArcGIS REST. The same list appears under <strong>Run SQL</strong>, where it runs as T-SQL instead.</p>
       <div class="row">
-        <input id="libSearch" type="search" placeholder="Search 70 queries…">
-        <select id="libPortability" title="Portability">
+        <input id="restSearch" type="search" placeholder="Search queries…">
+        <select id="restPortability" title="Portability">
           <option value="">All portability</option>
           <option value="standard">standard</option>
           <option value="sql-expression">sql-expression</option>
@@ -112,28 +114,29 @@
           <option value="extension">extension</option>
         </select>
       </div>
-      <div id="libList" class="lib-list"></div>
-      <div id="libDetail" class="lib-detail hidden"></div>
-
-      <!-- The rest of the MCP surface. Running a question above shows the one tool call
-           behind it; this is every tool, its schema, and a free-form tools/call. -->
-      <details id="mcpContract">
-        <summary>MCP tool contract</summary>
-        <p class="hint">The same contract Claude Code connects to (<code>mcp/tools.js</code>), driven in this page —
-          only the transport differs: stdin/stdout there, a function call here. No language model and no API key.</p>
-        <div class="buttons">
-          <button id="mcpInit">initialize</button>
-          <button id="mcpListBtn">tools/list</button>
-        </div>
-        <div id="mcpList" class="lib-list"></div>
-        <div id="mcpDetail" class="lib-detail hidden"></div>
-        <h3 id="mcpWireLabel">JSON-RPC</h3>
-        <pre id="mcpWire" class="code small"></pre>
-      </details>
+      <div id="restList" class="lib-list"></div>
+      <div id="restDetail" class="lib-detail hidden"></div>
     </section>
 
-    <!-- REST CONSOLE -->
-    <section class="pane" id="pane-console">
+    <!-- RUN SQL -->
+    <section class="pane" id="pane-sql">
+      <p class="hint">The same 70 questions, run as their original T-SQL against the same data via <code>…/FeatureServer/0/sql</code> — a read-only mock extension, not part of ArcGIS REST. The statement is editable, so this is the SQL console too.</p>
+      <div class="row">
+        <input id="sqlSearch" type="search" placeholder="Search queries…">
+        <select id="sqlPortability" title="Portability">
+          <option value="">All portability</option>
+          <option value="standard">standard</option>
+          <option value="sql-expression">sql-expression</option>
+          <option value="native">native</option>
+          <option value="extension">extension</option>
+        </select>
+      </div>
+      <div id="sqlList" class="lib-list"></div>
+      <div id="sqlDetail" class="lib-detail hidden"></div>
+    </section>
+
+    <!-- API (ad-hoc REST console) -->
+    <section class="pane" id="pane-api">
       <p class="hint">Builds a <code>…/FeatureServer/0/query</code> request exactly as you would against ArcGIS.</p>
       <label>where <input id="cWhere" type="text" value="1=1" spellcheck="false"></label>
       <label>outFields <input id="cOutFields" type="text" value="RequestID,Category,CategorySub,Status,Suburb,DtLogged" spellcheck="false"></label>

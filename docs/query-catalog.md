@@ -17,7 +17,7 @@ A client needs exactly two requests, and both are the standard ArcGIS `query` op
 ```
 
 Nothing about any individual question is compiled into the client. `viewer/js/catalog.js`
-does step 1 at start-up and the Library panel renders whatever comes back; add a query to
+does step 1 at start-up and the run panels render whatever comes back; add a query to
 `sql-library/queryLibrary.js`, restart the service, and it appears in the UI with no change
 to the viewer. `test/catalog.test.js` asserts this for all 70: it reads each row over REST,
 replays its `RestParams`, and requires the result to equal the library run exactly.

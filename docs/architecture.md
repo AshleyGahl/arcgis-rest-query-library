@@ -52,12 +52,15 @@ imports — it is **a table of the service**, discovered over REST like any othe
                          |
       +------------------+---------------------+------------------+
       |                  |                     |                  |
- FeatureLayer       js/catalog.js          js/dashboard.js    js/mcp-service.js
- on /0 (map)        reads /1/query         REST statistics    drives mcp/tools.js
-                    -> Library panel       -> js/charts.js    over a REST adapter
+ FeatureLayer       js/catalog.js          js/dashboard.js    js/mcp-envelope.js
+ on /0 (map)        reads /1/query         REST statistics    tools/call envelopes
+                    -> js/query-store.js   -> js/charts.js    from mcp/tools.js
+                           |                                        |
+                    js/query-panel.js x2                            |
+                    Run REST | Run SQL                              |
                            |                                        |
                            +-------- js/workflow.js ----------------+
-                                     the trace behind Run REST
+                                     Workflow + Agent view, stacked, per run
                            |
                     sql-library/runner.js  applies client transforms
                     (lag, runningTotal, movingAverage, rank, topPerGroup...)
@@ -77,8 +80,10 @@ code runs on Node and in the browser. **Bottom:** four consumers, all of them sp
 | `server/restRouter.js` | a `FeatureService` instance | HTTP objects |
 | `server/index.js` | `restRouter.js`, `nodeRuntime.js` | — |
 | `viewer/js/catalog.js` | the REST endpoint `…/FeatureServer/1/query` | `queryLibrary.js` |
-| `viewer/js/mcp-service.js` | `mcp/tools.js` plus a REST adapter | `mcp/server.js` (stdio) |
-| `viewer/js/workflow.js`, `js/mcp-contract.js` | `js/mcp-service.js` | a dispatcher of their own |
+| `viewer/js/query-store.js` | `js/catalog.js` | a second catalog fetch — there is one, shared |
+| `viewer/js/query-panel.js` | `js/query-store.js`, `runner.js`, `js/workflow.js` | knowledge of which questions exist |
+| `viewer/js/mcp-envelope.js` | `toolContent` from `mcp/tools.js` | a dispatcher — nothing in the page dispatches |
+| `viewer/js/workflow.js` | `js/mcp-envelope.js`, the payload builders in `mcp/tools.js` | hand-built JSON-RPC |
 | `mcp/server.js` | `mcp/tools.js`, `nodeRuntime.js` | — |
 | `scripts/build-*.js`, `scripts/run-query.js` | `queryLibrary.js` directly | — |
 
@@ -190,7 +195,7 @@ projections of one source, each carrying the columns its own execution path can 
 ```
 viewer/js/catalog.js            GET  /FeatureServer/1/query?where=1=1&outFields=*
   -> restRouter.js -> svc.query(params, 1) -> _QueryLibrary        70 rows
-  -> Library panel lists them, grouped by Category
+  -> the run panels list them, grouped by Category
 
 user picks Q44                  POST /FeatureServer/0/query   <RestParams of that row>
   -> restRouter.js -> svc.query(params, 0) -> sqlDialect.js rewrite -> _ServiceRequest

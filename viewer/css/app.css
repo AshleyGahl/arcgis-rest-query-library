@@ -87,9 +87,6 @@ table.grid td { padding: 4px 10px; border-bottom: 1px solid #eef0f3; white-space
 table.grid td.num { text-align: right; font-variant-numeric: tabular-nums; }
 table.grid td.null { color: #b3bac2; font-style: italic; }
 table.grid tr.clickable:hover td { background: #eef5fb; cursor: pointer; }
-.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
-.compare > div { border-right: 1px solid var(--line); overflow: auto; }
-.compare h5 { margin: 0; padding: 6px 10px; background: var(--bg); font-size: 11px; text-transform: uppercase; color: var(--muted); }
 
 /* ------------------------------------------------ dashboard */
 .dash-head { display: flex; align-items: flex-start; gap: 8px; }
@@ -123,9 +120,6 @@ table.grid tr.clickable:hover td { background: #eef5fb; cursor: pointer; }
 .fig { border: 1px solid var(--line); border-radius: 6px; padding: 10px 16px; min-width: 180px; background: #fcfcfb; display: flex; flex-direction: column; }
 .fig-label { font-size: 11px; color: var(--muted); }
 .fig-value { font-size: 30px; font-weight: 600; color: #0b0b0b; font-variant-numeric: tabular-nums; line-height: 1.2; }
-.fig-verdict { margin: 6px 12px; font-size: 12px; }
-.fig-verdict.ok { color: #006300; }
-.fig-verdict.diff { color: #a3273b; }
 
 /* Boot overlay: shown until the FeatureServer (real or in-page) is ready to answer. */
 #viewWrap { position: relative; }
@@ -145,17 +139,33 @@ table.grid tr.clickable:hover td { background: #eef5fb; cursor: pointer; }
   animation: boot-spin 0.8s linear infinite;
 }
 @keyframes boot-spin { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .boot .spin, .wf .spin { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .boot .spin, .wf-sec .spin { animation: none; } }
 
-/* Workflow trace: what Run REST did (spine), and the MCP call that wraps it (agent view). */
-.wf {
-  display: grid; grid-template-columns: 1.4fr 1fr; gap: 0 12px;
-  border: 1px solid var(--line); border-radius: 4px; padding: 8px 10px; font-size: 12px;
+/* Workflow trace. Three stacked, collapsible sections: what the run did, the MCP call
+   that wraps the same work, and the request itself. The request section lives in
+   query-panel.js; all three share this markup. */
+.wf-sec { border: 1px solid var(--line); border-radius: 4px; font-size: 12px; }
+.wf-sec + .wf-sec { margin-top: 6px; }
+.wf-sec > summary {
+  display: flex; align-items: baseline; gap: 8px; padding: 6px 10px;
 }
-.wf-head {
-  font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em;
-  color: var(--muted); padding-bottom: 6px; border-bottom: 1px solid var(--line); margin-bottom: 6px;
+/* `display: flex` drops the native disclosure triangle, so supply one. */
+.wf-sec > summary::marker { content: ''; }
+.wf-sec > summary::-webkit-details-marker { display: none; }
+.wf-sec > summary::before { content: '▸'; font-size: 9px; color: var(--muted); }
+.wf-sec[open] > summary::before { content: '▾'; }
+.wf-sec[open] > summary { border-bottom: 1px solid var(--line); }
+.wf-sec > summary > .wf-sec-sum { margin-left: auto; }
+.wf-sec-title {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted);
 }
+.wf-sec-sum {
+  font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.wf-sec-body { padding: 8px 10px; }
+.wf-sec-body > .code { max-height: 180px; }
+.wf-sec-body > textarea { width: 100%; box-sizing: border-box; }
 .wf-step {
   display: grid; grid-template-columns: 14px auto 1fr auto; align-items: baseline; gap: 6px;
   padding: 2px 0; min-height: 20px;
@@ -168,7 +178,7 @@ table.grid tr.clickable:hover td { background: #eef5fb; cursor: pointer; }
 .wf-step.running .wf-dot::before { content: ''; }
 .wf-step.skipped { opacity: 0.45; }
 .wf-step.error .wf-detail { color: #a3273b; }
-.wf .spin {
+.wf-sec .spin {
   display: inline-block; width: 10px; height: 10px; border-radius: 50%;
   border: 2px solid #e1e0d9; border-top-color: var(--accent);
   animation: boot-spin 0.8s linear infinite;
@@ -185,8 +195,8 @@ table.grid tr.clickable:hover td { background: #eef5fb; cursor: pointer; }
 }
 .wf-agent-row.call code { font-size: 11px; }
 .wf-args { font-family: var(--mono); font-size: 11px; color: var(--muted); }
-.wf-rpc { margin-top: 6px; }
-.wf-rpc summary { font-size: 11px; color: var(--accent); cursor: pointer; }
+.wf-rewrite { margin-top: 6px; }
+.wf-wire { margin-top: 6px; }
 .wf-note { margin: 6px 0 0; font-size: 11px; color: var(--muted); line-height: 1.45; }
 
 /* "in-browser service" badge next to the panel subtitle, in the static demo. */

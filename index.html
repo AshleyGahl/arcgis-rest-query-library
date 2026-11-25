@@ -104,8 +104,8 @@
 POST …/FeatureServer/0/query  &lt;the RestParams of one row&gt;  <span class="cmt">&larr; the answer, computed in the service's SQL engine</span></code></pre>
   <p>
     There is no analytics controller. Adding a metric is a row, not a deployment: it appears in the
-    UI with no client code changing, because the viewer's Library tab fetches its list from table 1
-    at start-up. It knows how to <em>run</em> a catalogued question, but nothing about <em>which</em>
+    UI with no client code changing, because the viewer's run tabs fetch their list from table 1
+    at start-up. They know how to <em>run</em> a catalogued question, but nothing about <em>which</em>
     questions exist.
   </p>
   <p class="note">
@@ -118,7 +118,7 @@ POST …/FeatureServer/0/query  &lt;the RestParams of one row&gt;  <span class="
 
   <h2>What the demo shows</h2>
   <p>
-    Try it yourself: open the <a href="viewer/">viewer</a>, go to the Library tab and watch the
+    Try it yourself: open the <a href="viewer/">viewer</a>, go to the Run REST tab and watch the
     Network panel. The question list arrives from <code>FeatureServer/1/query</code>; running one
     fires <code>FeatureServer/0/query</code> with parameters that came out of that first response.
     The repository's test suite asserts the same thing 396 times over &mdash; including that all 70
@@ -182,16 +182,22 @@ POST …/FeatureServer/0/query  &lt;the RestParams of one row&gt;  <span class="
     <tr><th>Tab</th><th></th></tr>
     <tr><td><strong>Filter</strong></td><td>Build a <code>where</code> clause from dropdowns and watch it go to the service; switch basemaps, symbology, clustering and the time slider.</td></tr>
     <tr><td><strong>Dashboard</strong></td><td>KPIs and charts built entirely from REST <code>outStatistics</code> requests. Click a bar to cross-filter the map.</td></tr>
-    <tr><td><strong>Library</strong></td><td>All 70 questions &mdash; and the list is not built into the page. It is
+    <tr><td><strong>Run REST</strong></td><td>All 70 questions &mdash; and the list is not built into the page. It is
       fetched from <code>FeatureServer/1/query</code>, because the query library is published as a table on the same
-      service. Run each question as REST, run the original T-SQL against the same data, or compare the two
-      side by side. The statement is editable, so the panel is the read-only T-SQL console too.
-      Running a question also traces what the click did &mdash; each <code>/0/query</code> and each client-side
-      transform, timed &mdash; next to the MCP <code>tools/call</code> that wraps the very same requests, with its
-      JSON-RPC envelopes. Below the questions, the rest of that contract: every tool and its schema.
-      No language model and no API key are involved &mdash; it is the protocol made visible, not a chatbot.</td></tr>
-    <tr><td><strong>REST</strong></td><td>A query console: the raw ArcGIS parameters, and the URL they produce.</td></tr>
+      service. Pick one and run it as ArcGIS REST.</td></tr>
+    <tr><td><strong>Run SQL</strong></td><td>The same 70 questions, run as their original T-SQL against the same
+      data through <code>&hellip;/FeatureServer/0/sql</code>, a read-only mock extension. The statement is editable,
+      so the panel is the SQL console too.</td></tr>
+    <tr><td><strong>API</strong></td><td>A query console: the raw ArcGIS parameters, and the URL they produce.</td></tr>
   </table>
+  <p class="note">
+    Both run tabs share one question list, one selection and one catalog request, so picking a question
+    under Run REST keeps your place when you switch to Run SQL &mdash; only the verb changes. Each traces
+    what the click did, step by step and timed, then the MCP <code>tools/call</code> that wraps the very
+    same work, with its JSON-RPC envelopes &mdash; stacked above the request itself, each one
+    expandable. No language model and no API key are involved &mdash; it is the
+    protocol made visible, not a chatbot.
+  </p>
 
   <h2>The data</h2>
   <p>

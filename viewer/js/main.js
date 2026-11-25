@@ -3,7 +3,8 @@ import { bootMockService } from './engine/boot.js';
 import { createMap } from './map.js';
 import { initResults } from './results.js';
 import { initFilterPanel } from './filter-panel.js';
-import { initLibraryPanel } from './library-panel.js';
+import { createQueryStore } from './query-store.js';
+import { createQueryPanel } from './query-panel.js';
 import { initConsolePanel } from './console-panel.js';
 import { initDashboard } from './dashboard.js';
 
@@ -60,5 +61,11 @@ initResults({
   },
 });
 dashboard = initDashboard(map, filters);
-initLibraryPanel(map, filters);
 initConsolePanel(map, filters);
+
+// One catalog fetch feeds both run panels, and they share the selection and the filters:
+// picking a question under Run REST keeps your place when you switch to Run SQL.
+const queries = createQueryStore();
+createQueryPanel({ prefix: 'rest', mode: 'rest', map, filters, store: queries });
+createQueryPanel({ prefix: 'sql', mode: 'sql', map, filters, store: queries });
+queries.load();

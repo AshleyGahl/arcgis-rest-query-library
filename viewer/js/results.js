@@ -1,4 +1,4 @@
-// Results drawer: sortable grid, chart view, CSV export, side-by-side compare.
+// Results drawer: sortable grid, chart view, CSV export.
 import { renderResultChart } from './result-chart.js';
 import { destroyChart } from './charts.js';
 
@@ -20,10 +20,10 @@ function defaultSort(columns) {
   return null;
 }
 
-function buildTable(rows, columns, { dateColumns = new Set(), onRowClick, sort } = {}) {
+function buildTable(rows, columns, { dateColumns = new Set(), onRowClick } = {}) {
   const table = document.createElement('table');
   table.className = 'grid';
-  let state = sort ?? defaultSort(columns);
+  let state = defaultSort(columns);
   const render = () => {
     let data = rows;
     if (state) {
@@ -85,26 +85,6 @@ export function showResults({ title, meta = '', urls = [], rows, columns, dateCo
   $('resMeta').textContent = `${rows.length} row${rows.length === 1 ? '' : 's'}${meta ? ' · ' + meta : ''}`;
   $('resRequest').innerHTML = urls.map((u) => `<a href="${esc(u.replace('f=json', 'f=pjson'))}" target="_blank">${esc(decodeURIComponent(u))}</a>`).join('<br>');
   renderTable = () => $('resBody').replaceChildren(rows.length ? buildTable(rows, columns, { dateColumns: new Set(dateColumns ?? []), onRowClick }) : Object.assign(document.createElement('div'), { className: 'error', textContent: 'No rows returned.' }));
-  renderBody();
-  open();
-}
-
-export function showCompare({ title, left, right }) {
-  $('resTitle').textContent = title;
-  $('resMeta').textContent = `REST ${left.rows.length} rows · T-SQL ${right.rows.length} rows`;
-  $('resRequest').textContent = '';
-  renderTable = () => {
-    const wrap = document.createElement('div');
-    wrap.className = 'compare';
-    for (const side of [left, right]) {
-      const d = document.createElement('div');
-      d.innerHTML = `<h5>${esc(side.label)}</h5>`;
-      d.appendChild(side.error ? Object.assign(document.createElement('div'), { className: 'error', textContent: side.error }) : buildTable(side.rows, side.columns, { dateColumns: new Set(side.dateColumns ?? []), sort: null }));
-      wrap.appendChild(d);
-    }
-    $('resBody').replaceChildren(wrap);
-  };
-  current = { ...left, title, compare: right };
   renderBody();
   open();
 }
