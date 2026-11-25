@@ -101,6 +101,11 @@ mcp/server.js                   stdio transport over it, for Claude Code (Node o
   page `<head>` — the body must stay script-free, which `test/docs.test.js` checks. Keep the theme
   in `mermaid-init.js` in step with the palette in `docs/docs.css` by hand: Mermaid cannot read CSS
   variables. Prefer a diagram to ASCII art, and keep node labels short.
+- **Tables rule their columns, not just their rows.** Every HTML table — the generated doc
+  pages (`docs/docs.css`) and the viewer's result grid (`table.grid` in `viewer/css/app.css`) —
+  draws a vertical rule between columns, with the outer edges left open so the table sits flush
+  with the text around it rather than reading as a boxed figure. Style tables there, never per
+  page or inline.
 - **Docs are Markdown-first.** Edit `docs/*.md`, never the generated `docs/*.html`; run `npm run build`.
   `test/docs.test.js` fails if the committed HTML is stale. A new `docs/*.md` must be added to `PAGES`
   in `scripts/build-docs.js`, or that test fails too.

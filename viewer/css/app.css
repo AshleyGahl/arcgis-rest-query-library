@@ -80,10 +80,12 @@ details summary { cursor: pointer; color: var(--muted); font-size: 12px; }
 #resBody { overflow: auto; flex: 1; }
 #resBody .error { color: #a3273b; padding: 10px 12px; font-family: var(--mono); white-space: pre-wrap; }
 table.grid { border-collapse: collapse; width: 100%; font-size: 12px; }
-table.grid th { position: sticky; top: 0; background: #fff; text-align: left; padding: 6px 10px; border-bottom: 2px solid var(--line); cursor: pointer; white-space: nowrap; user-select: none; }
+table.grid th { position: sticky; top: 0; background: #fff; text-align: left; padding: 6px 10px; border-bottom: 2px solid var(--line); border-right: 1px solid var(--line); cursor: pointer; white-space: nowrap; user-select: none; }
 table.grid th.sorted::after { content: ' ▾'; color: var(--accent); }
 table.grid th.sorted.asc::after { content: ' ▴'; }
-table.grid td { padding: 4px 10px; border-bottom: 1px solid #eef0f3; white-space: nowrap; max-width: 380px; overflow: hidden; text-overflow: ellipsis; }
+table.grid td { padding: 4px 10px; border-bottom: 1px solid #eef0f3; border-right: 1px solid #eef0f3; white-space: nowrap; max-width: 380px; overflow: hidden; text-overflow: ellipsis; }
+/* Column rules, like the doc pages. The last column keeps the grid's outer edge open. */
+table.grid th:last-child, table.grid td:last-child { border-right: none; }
 table.grid td.num { text-align: right; font-variant-numeric: tabular-nums; }
 table.grid td.null { color: #b3bac2; font-style: italic; }
 table.grid tr.clickable:hover td { background: #eef5fb; cursor: pointer; }
