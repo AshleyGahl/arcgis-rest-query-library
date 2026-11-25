@@ -7,7 +7,7 @@
  * This file is only the transport and the Node wiring. The tools themselves and
  * the JSON-RPC dispatch live in `mcp/tools.js`, which takes no platform
  * dependency, so the viewer's MCP tab drives exactly the same contract in the
- * browser (see `viewer/js/mcp-panel.js`).
+ * browser (see `viewer/js/mcp-service.js`).
  *
  * Tools: describe_layer, query_layer, list_library, run_library_query, run_tsql
  */

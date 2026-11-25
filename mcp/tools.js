@@ -4,8 +4,9 @@
  *
  * Two things speak this contract:
  *   - `mcp/server.js`      newline-delimited JSON-RPC over stdin/stdout, for Claude Code
- *   - `viewer/js/mcp-panel.js`  the viewer's MCP tab, which drives the same dispatcher
- *                               in the page so the tool surface can be inspected in a browser
+ *   - `viewer/js/mcp-service.js` the same tools and dispatcher in the page, over a REST
+ *                               adapter, so the Library tab can show the tool call behind a
+ *                               question it just ran and let the contract be inspected
  *
  * Keeping the definitions here rather than in the stdio server is the point: the
  * tools the viewer shows are not a description of the MCP server, they *are* it.
@@ -37,15 +38,55 @@ export const INSTRUCTIONS =
 
 const SAST_OFFSET_MS = 2 * 3600000;
 
-const fmtDates = (rows, dateCols) => rows.map((r) => {
+export const fmtDates = (rows, dateCols) => rows.map((r) => {
   const o = { ...r };
   for (const c of dateCols) {
     if (typeof o[c] === 'number') o[c] = new Date(o[c] + SAST_OFFSET_MS).toISOString().slice(0, 19).replace('T', ' ') + ' SAST';
   }
   return o;
 });
-const dateColsOf = (json) => (json.fields ?? []).filter((f) => f.type === 'esriFieldTypeDate').map((f) => f.name);
-const clip = (rows) => ({ rowCount: rows.length, truncated: rows.length > MAX_ROWS, rows: rows.slice(0, MAX_ROWS) });
+export const dateColsOf = (json) => (json.fields ?? []).filter((f) => f.type === 'esriFieldTypeDate').map((f) => f.name);
+export const clip = (rows) => ({ rowCount: rows.length, truncated: rows.length > MAX_ROWS, rows: rows.slice(0, MAX_ROWS) });
+
+/** Library entries whose T-SQL has no single-statement equivalent, so `compare` skips them. */
+const NO_COMPARE = new Set([50]);
+
+/**
+ * Shape a `run_library_query` payload from an already-executed `runEntry` result.
+ *
+ * Exported because the viewer's Library panel runs the entry itself — it needs the
+ * uncapped rows and raw epoch dates for its grid — and then shows the JSON-RPC
+ * response an agent would have received for the same question. Building it here means
+ * that lane is the real payload from the real code, not a second implementation of it.
+ *
+ * @param q          the library entry
+ * @param runResult  what `runEntry(q, fetcher)` resolved to
+ * @param tsqlResult optional `{ sqlite, columns, rows } | { error }` from the /sql side
+ */
+export function libraryQueryPayload({ q, runResult, tsqlResult }) {
+  const dateCols = runResult.requests.flatMap((x) => dateColsOf(x.response));
+  const out = {
+    id: q.id, question: q.question, portability: q.portability, notes: q.notes,
+    rest: q.rest, transform: q.transform,
+    urls: runResult.requests.map((x) => x.url),
+    result: clip(fmtDates(runResult.rows, dateCols)),
+  };
+  if (tsqlResult && !NO_COMPARE.has(q.id)) {
+    out.tsql = q.tsql;
+    out.tsqlResult = tsqlResult.error ? tsqlResult.error : clip(tsqlResult.rows);
+  }
+  return out;
+}
+
+/** Whether `compare` would actually run the T-SQL for this entry. */
+export const comparable = (q) => !NO_COMPARE.has(q.id);
+
+/**
+ * How a tool's return value is wrapped into an MCP `tools/call` result. The dispatcher
+ * uses this, and so does the viewer when it shows the envelope for a payload it already
+ * holds — so the two cannot drift apart over something as small as an indent width.
+ */
+export const toolContent = (payload) => ({ content: [{ type: 'text', text: JSON.stringify(payload, null, 1) }] });
 
 /**
  * Build the tool list.
@@ -143,20 +184,9 @@ export function createTools({ service, layerUrl }) {
       handler: async ({ id, compare }) => {
         const q = getQuery(id);
         if (!q) throw new Error(`No library query ${id}`);
-        const r = await runEntry(q, local);
-        const dateCols = r.requests.flatMap((x) => dateColsOf(x.response));
-        const out = {
-          id, question: q.question, portability: q.portability, notes: q.notes,
-          rest: q.rest, transform: q.transform,
-          urls: r.requests.map((x) => x.url),
-          result: clip(fmtDates(r.rows, dateCols)),
-        };
-        if (compare && q.id !== 50) {
-          const t = await service.sql(q.tsql);
-          out.tsql = q.tsql;
-          out.tsqlResult = t.error ? t.error : clip(t.rows);
-        }
-        return out;
+        const runResult = await runEntry(q, local);
+        const tsqlResult = compare && comparable(q) ? await service.sql(q.tsql) : undefined;
+        return libraryQueryPayload({ q, runResult, tsqlResult });
       },
     },
     {
@@ -181,6 +211,7 @@ export function createTools({ service, layerUrl }) {
  */
 export function createDispatcher({ tools, serverInfo = SERVER_INFO, instructions = INSTRUCTIONS }) {
   const ok = (id, result) => ({ jsonrpc: '2.0', id, result });
+  const okTool = (id, payload) => ok(id, toolContent(payload));
   const err = (id, code, message) => ({ jsonrpc: '2.0', id, error: { code, message } });
 
   return async function dispatch(msg) {
@@ -207,7 +238,7 @@ export function createDispatcher({ tools, serverInfo = SERVER_INFO, instructions
           if (!tool) return err(id, -32602, `Unknown tool ${params?.name}`);
           try {
             const result = await tool.handler(params.arguments ?? {});
-            return ok(id, { content: [{ type: 'text', text: JSON.stringify(result, null, 1) }] });
+            return okTool(id, result);
           } catch (e) {
             return ok(id, { content: [{ type: 'text', text: `Error: ${e.message}` }], isError: true });
           }

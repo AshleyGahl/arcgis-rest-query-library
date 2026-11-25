@@ -185,11 +185,12 @@ POST …/FeatureServer/0/query  &lt;the RestParams of one row&gt;  <span class="
     <tr><td><strong>Library</strong></td><td>All 70 questions &mdash; and the list is not built into the page. It is
       fetched from <code>FeatureServer/1/query</code>, because the query library is published as a table on the same
       service. Run each question as REST, run the original T-SQL against the same data, or compare the two
-      side by side. The statement is editable, so the panel is the read-only T-SQL console too.</td></tr>
-    <tr><td><strong>REST</strong></td><td>A query console: the raw ArcGIS parameters, and the URL they produce.</td></tr>
-    <tr><td><strong>MCP</strong></td><td>The same MCP tool contract an AI assistant connects to, driven in the page: send
-      <code>initialize</code>, <code>tools/list</code> and <code>tools/call</code> and read both JSON-RPC envelopes.
+      side by side. The statement is editable, so the panel is the read-only T-SQL console too.
+      Running a question also traces what the click did &mdash; each <code>/0/query</code> and each client-side
+      transform, timed &mdash; next to the MCP <code>tools/call</code> that wraps the very same requests, with its
+      JSON-RPC envelopes. Below the questions, the rest of that contract: every tool and its schema.
       No language model and no API key are involved &mdash; it is the protocol made visible, not a chatbot.</td></tr>
+    <tr><td><strong>REST</strong></td><td>A query console: the raw ArcGIS parameters, and the URL they produce.</td></tr>
   </table>
 
   <h2>The data</h2>

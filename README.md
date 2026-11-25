@@ -250,12 +250,11 @@ on 127.0.0.1.
 
 ## Viewer
 
-Five tabs:
+Four tabs:
 - **Filter:** builds a where clause and applies it to the map. Colour by theme, status or channel, or switch to a heatmap; clustering and a time slider.
 - **Dashboard:** KPI tiles and six charts, all driven by REST statistics queries. Click a bar or a month to add that value to the map filter.
-- **Library:** the 70 questions, **fetched from table 1 rather than built into the page**. Run any as REST, run its T-SQL against the same data, or compare the two side by side. The statement is editable, so this is also the T-SQL console.
+- **Library:** the 70 questions, **fetched from table 1 rather than built into the page**. Run any as REST, run its T-SQL against the same data, or compare the two side by side. The statement is editable, so this is also the T-SQL console. **Run REST** traces what it did — each `/0/query`, each client-side transform, timed — beside the MCP `tools/call` that wraps the same requests. The rest of that contract sits below the questions. No model, no key.
 - **REST:** a query console, including drawn-polygon queries.
-- **MCP:** the service's MCP tool contract, driven in the page — the JSON-RPC traffic an AI client normally hides. No model, no key.
 
 Every result switches between **Table** and **Chart**; a single-value result shows as a large
 figure, with the REST and T-SQL values side by side when comparing.
@@ -282,11 +281,19 @@ dependency. Two things drive it:
 | | |
 |---|---|
 | `mcp/server.js` | newline-delimited JSON-RPC over stdin/stdout, for Claude Code |
-| `viewer/js/mcp-panel.js` | the viewer's **MCP tab**, which runs the same dispatcher in the page |
+| `viewer/js/mcp-service.js` | the same tools and dispatcher in the page, over a REST adapter |
 
 So the tool surface the viewer shows is not a description of the MCP server — it is the same
-contract, with a function call where the pipe would be. The tab sends `initialize`, `tools/list`
-and `tools/call`, shows both JSON-RPC envelopes, and renders the result like any other query.
+contract, with a function call where the pipe would be. Two parts of the Library tab drive it:
+
+- `viewer/js/workflow.js` — the trace behind **Run REST**. The spine is the real pipeline, timed
+  live; beside it is the `tools/call run_library_query` an agent would have sent for that same
+  question, with real envelopes. The panel runs the entry itself, because the grid needs every row
+  and raw epoch dates, so the agent lane's payload is built by `libraryQueryPayload` — the tool's
+  own code — over that one result rather than by a second request or a second implementation.
+  `test/mcp.test.js` asserts the two agree, through `toolContent`, so the lane cannot drift.
+- `viewer/js/mcp-contract.js` — the rest of the surface: every tool, its `inputSchema`, a
+  free-form `tools/call`, and the `initialize` handshake.
 
 **It involves no language model and no API key**, so it costs nothing to run and works on the
 published static demo. Worth being explicit about the billing question it raises: an MCP server

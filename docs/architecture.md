@@ -52,9 +52,12 @@ imports — it is **a table of the service**, discovered over REST like any othe
                          |
       +------------------+---------------------+------------------+
       |                  |                     |                  |
- FeatureLayer       js/catalog.js          js/dashboard.js    js/mcp-panel.js
+ FeatureLayer       js/catalog.js          js/dashboard.js    js/mcp-service.js
  on /0 (map)        reads /1/query         REST statistics    drives mcp/tools.js
                     -> Library panel       -> js/charts.js    over a REST adapter
+                           |                                        |
+                           +-------- js/workflow.js ----------------+
+                                     the trace behind Run REST
                            |
                     sql-library/runner.js  applies client transforms
                     (lag, runningTotal, movingAverage, rank, topPerGroup...)
@@ -74,7 +77,8 @@ code runs on Node and in the browser. **Bottom:** four consumers, all of them sp
 | `server/restRouter.js` | a `FeatureService` instance | HTTP objects |
 | `server/index.js` | `restRouter.js`, `nodeRuntime.js` | — |
 | `viewer/js/catalog.js` | the REST endpoint `…/FeatureServer/1/query` | `queryLibrary.js` |
-| `viewer/js/mcp-panel.js` | `mcp/tools.js` plus a REST adapter | `mcp/server.js` (stdio) |
+| `viewer/js/mcp-service.js` | `mcp/tools.js` plus a REST adapter | `mcp/server.js` (stdio) |
+| `viewer/js/workflow.js`, `js/mcp-contract.js` | `js/mcp-service.js` | a dispatcher of their own |
 | `mcp/server.js` | `mcp/tools.js`, `nodeRuntime.js` | — |
 | `scripts/build-*.js`, `scripts/run-query.js` | `queryLibrary.js` directly | — |
 

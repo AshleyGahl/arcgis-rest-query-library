@@ -10,6 +10,8 @@ import { runEntry, httpFetcher, requestsOf, toQueryUrl } from '../../sql-library
 import { layerUrl, dateColumnsOf, tsql } from './rest.js';
 import { showResults, showError, showCompare } from './results.js';
 import { fetchCatalog } from './catalog.js';
+import { createTrace } from './workflow.js';
+import { initMcpContract } from './mcp-contract.js';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -58,6 +60,7 @@ function renderDetail(q) {
       <button id="libCompare">Compare</button>
       ${!Array.isArray(q.rest) && q.rest.where && q.rest.where !== '1=1' ? '<button id="libApply">Apply where to map</button>' : ''}
     </div>
+    <div id="libWorkflow" class="hidden"></div>
     ${reqs.map((r) => `
       <details open><summary>REST request${reqs.length > 1 ? ` · ${esc(r.name)}` : ''} · <a href="${esc(toQueryUrl(layerUrl, { ...r.params, f: 'pjson' }))}" target="_blank">open ↗</a></summary>
       <pre class="code">${esc(JSON.stringify(r.params, null, 2))}</pre></details>`).join('')}
@@ -71,11 +74,19 @@ function renderDetail(q) {
 
 export async function initLibraryPanel(map, filters) {
   let active = null;
-  const select = (q) => { active = q; renderList(select, q.id); renderDetail(q); wire(q); };
+  // Bumped on every run and re-selection, so a slow run cannot draw over a newer one.
+  let seq = 0;
+  const select = (q) => { active = q; seq++; renderList(select, q.id); renderDetail(q); wire(q); };
 
   async function run(q) {
+    const my = ++seq;
+    const trace = createTrace($('libWorkflow'), q, $('libList').dataset.catalogUrl);
+    $('libRun').disabled = true;
+    const t0 = performance.now();
     try {
-      const r = await runEntry(q, fetcher);
+      const r = await runEntry(q, trace.wrapFetcher(fetcher));
+      if (my !== seq) return null;
+      trace.finish({ runResult: r, elapsed: performance.now() - t0 });
       const dateColumns = r.requests.flatMap((x) => dateColumnsOf(x.response));
       showResults({
         title: `Q${q.id}. ${q.question}`,
@@ -87,7 +98,13 @@ export async function initLibraryPanel(map, filters) {
       const ids = r.rows.map((x) => x.ObjectID).filter((x) => x != null);
       if (ids.length && r.columns.includes('ObjectID')) map.highlightIds(ids);
       return { r, dateColumns };
-    } catch (e) { showError(`Q${q.id} failed`, e); return null; }
+    } catch (e) {
+      if (my === seq) trace.fail(e.message);
+      showError(`Q${q.id} failed`, e);
+      return null;
+    } finally {
+      if (my === seq && $('libRun')) $('libRun').disabled = false;
+    }
   }
 
   // The box starts as the entry's statement but is free-form: this is also the SQL console.
@@ -127,6 +144,10 @@ export async function initLibraryPanel(map, filters) {
 
   $('libSearch').oninput = () => renderList(select, active?.id);
   $('libPortability').onchange = () => renderList(select, active?.id);
+
+  // The rest of the MCP surface, below the questions: every tool, its schema and a
+  // free-form tools/call. It needs no catalog, so it is mounted before the fetch.
+  initMcpContract();
 
   // One REST request discovers every question the service can answer.
   try {

@@ -28,7 +28,6 @@
       <button class="tab" data-tab="dash">Dashboard</button>
       <button class="tab" data-tab="library">Library</button>
       <button class="tab" data-tab="console">REST</button>
-      <button class="tab" data-tab="mcp">MCP</button>
     </nav>
 
     <!-- FILTER -->
@@ -115,6 +114,22 @@
       </div>
       <div id="libList" class="lib-list"></div>
       <div id="libDetail" class="lib-detail hidden"></div>
+
+      <!-- The rest of the MCP surface. Running a question above shows the one tool call
+           behind it; this is every tool, its schema, and a free-form tools/call. -->
+      <details id="mcpContract">
+        <summary>MCP tool contract</summary>
+        <p class="hint">The same contract Claude Code connects to (<code>mcp/tools.js</code>), driven in this page —
+          only the transport differs: stdin/stdout there, a function call here. No language model and no API key.</p>
+        <div class="buttons">
+          <button id="mcpInit">initialize</button>
+          <button id="mcpListBtn">tools/list</button>
+        </div>
+        <div id="mcpList" class="lib-list"></div>
+        <div id="mcpDetail" class="lib-detail hidden"></div>
+        <h3 id="mcpWireLabel">JSON-RPC</h3>
+        <pre id="mcpWire" class="code small"></pre>
+      </details>
     </section>
 
     <!-- REST CONSOLE -->
@@ -146,21 +161,6 @@
       </div>
     </section>
 
-    <!-- MCP -->
-    <section class="pane" id="pane-mcp">
-      <p class="hint">The same MCP tool contract an AI assistant connects to (<code>mcp/tools.js</code>),
-      driven here in the page. <strong>No language model is involved and no API key is used</strong> &mdash;
-      this panel is the JSON-RPC traffic that is normally invisible, so you can see what a tool call
-      actually is. The tools query the service over REST, like any other client.</p>
-      <div class="buttons">
-        <button id="mcpInit">initialize</button>
-        <button id="mcpListBtn">tools/list</button>
-      </div>
-      <div id="mcpList" class="lib-list"></div>
-      <div id="mcpDetail" class="lib-detail hidden"></div>
-      <h3 id="mcpWireLabel">JSON-RPC</h3>
-      <pre id="mcpWire" class="code small"></pre>
-    </section>
   </aside>
 
   <main id="mapArea">

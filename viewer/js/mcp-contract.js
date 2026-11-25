@@ -1,62 +1,22 @@
 /**
- * The MCP tab: the service's MCP tool surface, driven in the page.
+ * The MCP tool contract, explorable inside the Library panel.
  *
- * This is not a description of `mcp/server.js` — it imports the same
- * `mcp/tools.js` and the same JSON-RPC dispatcher that the stdio server uses, so
- * what you call here is literally the contract Claude Code sees. The only
- * difference is the transport: stdin/stdout there, a function call here.
+ * The Library panel's workflow lane shows the one tool call behind a question you just
+ * ran. This is the rest of the surface: every tool, its `inputSchema`, a free-form
+ * `tools/call`, and the `initialize` handshake — the parts of MCP a client normally
+ * hides. It drives the shared dispatcher in `mcp-service.js`, which is built from the
+ * same `mcp/tools.js` the stdio server uses, so what you call here is literally the
+ * contract Claude Code sees. The only difference is the transport: stdin/stdout there,
+ * a function call here.
  *
- * There is no language model involved and no API key. The panel sends JSON-RPC
- * requests to the dispatcher and shows the envelopes, which is the part of MCP
- * that is normally invisible. It therefore costs nothing to run and works on the
+ * No language model and no API key. It therefore costs nothing to run and works on the
  * static demo, where the service it queries is the engine in this same page.
  */
-import { CONFIG } from './config.js';
-import { createTools, createDispatcher } from '../../mcp/tools.js';
+import { tools, dispatch, nextRpcId, toolCallRequest } from './mcp-service.js';
 import { showResults, showError } from './results.js';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
-
-const post = async (path, body) => {
-  const res = await fetch(`${CONFIG.layerUrl}${path}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams(body),
-  });
-  return res.json();
-};
-
-/**
- * The service adapter `mcp/tools.js` expects, backed by REST rather than by an
- * in-process engine. Every call is a real request to the FeatureServer — answered
- * by the Node server, or by the service worker in the static demo.
- */
-const service = {
-  query: (params) => {
-    const flat = { f: 'json' };
-    for (const [k, v] of Object.entries(params)) {
-      if (v === undefined || v === null) continue;
-      flat[k] = typeof v === 'object' ? JSON.stringify(v) : String(v);
-    }
-    return post('/query', flat);
-  },
-  sql: (statement) => post('/sql', { q: statement, f: 'json' }),
-  stats: async () => {
-    const [count, info] = await Promise.all([
-      post('/query', { f: 'json', where: '1=1', returnCountOnly: 'true' }),
-      fetch(`${CONFIG.layerUrl}?f=json`).then((r) => r.json()),
-    ]);
-    return {
-      featureCount: count.count,
-      asOf: info.editingInfo?.lastEditDate ? new Date(info.editingInfo.lastEditDate).toISOString() : undefined,
-      clock: 'reported by the service',
-    };
-  },
-};
-
-const tools = createTools({ service, layerUrl: CONFIG.layerUrl });
-const dispatch = createDispatcher({ tools });
 
 /** Arguments worth starting from, per tool. */
 const EXAMPLES = {
@@ -72,7 +32,6 @@ const EXAMPLES = {
   run_tsql: { sql: 'SELECT TOP 10 Suburb, COUNT(*) AS n FROM ServiceRequest GROUP BY Suburb ORDER BY n DESC' },
 };
 
-let nextId = 1;
 let active = null;
 
 /** Pull something table-shaped out of a tool payload, if there is one. */
@@ -126,7 +85,7 @@ function showWire(label, request, response) {
 }
 
 async function listTools() {
-  const request = { jsonrpc: '2.0', id: nextId++, method: 'tools/list' };
+  const request = { jsonrpc: '2.0', id: nextRpcId(), method: 'tools/list' };
   const response = await dispatch(request);
   showWire('tools/list', request, response);
   showResults({
@@ -142,7 +101,7 @@ async function listTools() {
 }
 
 async function initialize() {
-  const request = { jsonrpc: '2.0', id: nextId++, method: 'initialize', params: { protocolVersion: '2025-06-18', clientInfo: { name: 'service-request-gis-viewer', version: '1.0.0' } } };
+  const request = { jsonrpc: '2.0', id: nextRpcId(), method: 'initialize', params: { protocolVersion: '2025-06-18', clientInfo: { name: 'service-request-gis-viewer', version: '1.0.0' } } };
   showWire('initialize · the handshake every MCP client makes first', request, await dispatch(request));
 }
 
@@ -155,7 +114,7 @@ async function callTool(tool) {
     return;
   }
 
-  const request = { jsonrpc: '2.0', id: nextId++, method: 'tools/call', params: { name: tool.name, arguments: args } };
+  const request = toolCallRequest(tool.name, args);
   $('mcpCall').disabled = true;
   try {
     const response = await dispatch(request);
@@ -195,7 +154,7 @@ async function callTool(tool) {
   }
 }
 
-export function initMcpPanel() {
+export function initMcpContract() {
   $('mcpInit').onclick = initialize;
   $('mcpListBtn').onclick = listTools;
   renderToolList();

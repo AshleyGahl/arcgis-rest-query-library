@@ -2,9 +2,10 @@
  * The MCP tool contract (`mcp/tools.js`) and the stdio transport over it
  * (`mcp/server.js`).
  *
- * The same contract is driven by the viewer's MCP tab, so these tests also cover
- * what the browser shows. The last test spawns the real server over a pipe,
- * because that is the only thing that proves Claude Code can still talk to it.
+ * The same contract is driven in the browser — by the Library panel's workflow lane
+ * and by `viewer/js/mcp-contract.js` — so these tests also cover what the viewer
+ * shows. The last test spawns the real server over a pipe, because that is the only
+ * thing that proves Claude Code can still talk to it.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -12,8 +13,9 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { createFeatureService } from '../server/nodeRuntime.js';
 import { config } from '../server/config.js';
-import { createTools, createDispatcher, MAX_ROWS, SERVER_INFO } from '../mcp/tools.js';
-import { queryLibrary } from '../sql-library/queryLibrary.js';
+import { createTools, createDispatcher, MAX_ROWS, SERVER_INFO, libraryQueryPayload, toolContent } from '../mcp/tools.js';
+import { queryLibrary, getQuery } from '../sql-library/queryLibrary.js';
+import { runEntry, toQueryUrl } from '../sql-library/runner.js';
 
 const svc = createFeatureService(config);
 const layerUrl = `http://127.0.0.1:${config.port}/arcgis/rest/services/${config.serviceName}/FeatureServer/0`;
@@ -120,6 +122,32 @@ test('run_library_query runs an entry, and compare adds the T-SQL result', async
     compared.result.rows.map((r) => r.Count),
     compared.tsqlResult.rows.map((r) => r.Count),
   );
+});
+
+/**
+ * The viewer runs library entries itself — its grid needs every row and raw epoch
+ * dates — and then shows the JSON-RPC response an agent would have received, built
+ * from that same result by `libraryQueryPayload`. If the handler and the builder ever
+ * disagree, the viewer would be showing an envelope the server never sends.
+ */
+test('libraryQueryPayload is what run_library_query returns, so the viewer cannot drift', async () => {
+  const local = async (params) => ({ url: toQueryUrl(layerUrl, params), json: await service.query(params) });
+  for (const id of [2, 44, 62]) {
+    const q = getQuery(id);
+    const runResult = await runEntry(q, local);
+    // Compared through the envelope, because that is what the viewer renders — and it
+    // is `toolContent` that decides how a payload becomes text.
+    assert.deepEqual(
+      toolContent(libraryQueryPayload({ q, runResult })),
+      await call('run_library_query', { id }),
+      `entry ${id}`,
+    );
+  }
+});
+
+test('the tools/call envelope is shaped in exactly one place', async () => {
+  const r = await call('list_library', { portability: 'extension' });
+  assert.deepEqual(r, toolContent(JSON.parse(r.content[0].text)));
 });
 
 test('run_library_query reports a bad id as a tool error', async () => {

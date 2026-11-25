@@ -68,7 +68,9 @@ sql-library/runner.js           runs entries anywhere + client-side transforms (
 viewer/                         ArcGIS JS 4.x viewer, ES modules, no build step
   js/config.js                  layer URL, catalog URL, themes, palette (THEME_COLORS etc.)
   js/catalog.js                 reads the query library from FeatureServer table 1 at runtime
-  js/mcp-panel.js               MCP tab: drives mcp/tools.js in the page over a REST adapter
+  js/mcp-service.js             the MCP tools + dispatcher in the page, over a REST adapter
+  js/workflow.js                the two-lane trace behind the Library panel's Run REST
+  js/mcp-contract.js            the rest of the MCP surface, inside the Library tab
   js/charts.js                  ALL Chart.js create/destroy logic
   js/dashboard.js               Dashboard tab (KPIs + charts from REST statistics, cross-filtering)
   js/result-chart.js            table | chart toggle for any result
@@ -114,11 +116,20 @@ mcp/server.js                   stdio transport over it, for Claude Code (Node o
   registering a descriptor in `load()`, never by special-casing the query methods. A non-spatial
   table must report `type: 'Table'` with null `geometryType`, `extent` and `timeInfo`.
 - **MCP tools are defined once, in `mcp/tools.js`.** `mcp/server.js` is only the stdio transport and
-  `viewer/js/mcp-panel.js` only a UI; both drive the same `createDispatcher`. Add or change a tool in
-  `tools.js` and both get it. `tools.js` is loaded by the browser, so it must stay platform-free, and
-  it talks to a small injected adapter (`query`/`sql`/`stats`, each may be async) rather than to a
-  FeatureService, which is what lets it run in-process on the server and over REST in the page.
-  **The MCP tab involves no language model and no API key — keep it that way.**
+  `viewer/js/mcp-service.js` only the page's adapter + dispatcher; both drive the same
+  `createDispatcher`. Add or change a tool in `tools.js` and both get it. `tools.js` is loaded by the
+  browser, so it must stay platform-free, and it talks to a small injected adapter
+  (`query`/`sql`/`stats`, each may be async) rather than to a FeatureService, which is what lets it
+  run in-process on the server and over REST in the page.
+  **MCP in the viewer involves no language model and no API key — keep it that way.**
+- **There is no MCP tab.** MCP lives in the Library tab, because the protocol only means something
+  next to a question: `js/workflow.js` traces **Run REST** as two lanes (the real pipeline, timed
+  live, beside the `tools/call` that wraps the same requests) and `js/mcp-contract.js` carries the
+  rest of the surface below the questions. The response an agent would get is built by
+  `libraryQueryPayload` and wrapped by `toolContent`, both exported from `mcp/tools.js`, so the
+  viewer shows the real envelope and never a second implementation of it — never hand-build that
+  JSON in the viewer. The panel still runs the entry itself: `run_library_query` clips to
+  `MAX_ROWS` and formats dates as SAST text, which the grid's sorting, charts and CSV need raw.
 - **The viewer must not import `queryLibrary.js` for its UI.** The Library panel reads the catalog
   over REST (`viewer/js/catalog.js`); that is the whole point of publishing it. Build scripts, the
   MCP server and the CLI may import it directly.
