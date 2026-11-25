@@ -277,10 +277,56 @@ thing here.
 because a FeatureServer has no execute-by-identifier endpoint. That is section 4's invariant running
 backwards, and it is a platform limit rather than an oversight — see limit 3 in
 [the query catalog page](query-catalog.md), which notes that the layer still accepts an arbitrary
-`where` from anyone who can reach it. The consequence is worth stating in the language of this page:
-the platform replaces the storage, the executor and the serialisation. **It does not replace the
-trust boundary.** A tier that refuses to forward a client-supplied predicate is still required if
-the whitelist property matters.
+`where` from anyone who can reach it. Stated in the language of this page: the platform replaces the
+storage, the executor and the serialisation. **It does not replace the trust boundary.**
+
+Why it is lost is worth separating from the obvious answer, because the obvious answer is wrong. In
+the system this demo descends from, the client selects a question bound to an integer and posts that
+id; the execute endpoint accepts no text at all. An integer cannot express "run this other thing",
+so the ratified definitions are the only definitions that can execute. The authority comes from the
+**input type of the executor** — and the definition staying on the trusted side is a side effect of
+that narrowness, not the mechanism.
+
+Confidentiality and enforcement are therefore orthogonal, and the test is quick. Hide the definition
+and nothing is recovered, because the layer still accepts a predicate. Put an identifier-only tier in
+front and the invariant returns, even with every definition published. So publishing `SqlText` and
+`RestParams` as columns of table 1 does not cause the loss; it makes visible a loss the platform had
+already imposed by accepting a query rather than an id. It discloses little else on a plain service:
+`…/FeatureServer/0?f=json` already publishes every field and type, and `query` already accepts
+arbitrary filters. The reference T-SQL is the one genuine addition, and here it is documentation
+rather than something a client executes.
+
+Two of section 4's four payoffs are what actually go:
+
+- **Per-question telemetry.** The service logs the definition it received, not the reference, so it
+  cannot tell question 44 from a hand-written lookalike. Fidelity improves — the log says literally
+  what ran — while aggregation by question disappears, and that was the half which tells you what to
+  index and what to retire.
+- **Cache coherence.** Section 6 assumes one cache with one writer, invalidated by a loop inside the
+  process. Definitions copied to clients are *N* caches with no invalidation hook: a tab open since
+  yesterday will replay yesterday's parameters indefinitely. A monotonic catalog version lets a
+  client **detect** staleness on its next catalog read, which is not the same as invalidating it.
+
+What remains is a shift from a capability to a manifest. An identifier is a capability: holding it is
+the only way to execute. A published row is a manifest: a sanctioned description, verifiable after
+the fact, unenforceable before it. Manifests are weaker on control and stronger on audit — anyone can
+check what a service claims to answer, and whether the claims hold, without access to the service,
+which is exactly what this repository's own test suite does to its own catalog. Whether the trade is
+acceptable turns on whether the schema is sensitive: for generic service-request data, largely not;
+for rows scoped per tenant, not at all.
+
+Restoring the invariant costs one component, and every candidate reintroduces a tier of some kind:
+
+| Route back | What it costs |
+|---|---|
+| a hosted view per question, filter baked in | a layer per question — section 1's amortisation bet is gone |
+| a server-object extension | an application tier again, hosted inside the GIS server |
+| a tier that takes an identifier, resolves the row and forwards the parameters | one generic component, no per-question code |
+
+The third is the honest reading of the result: the REST API replaces three of the four jobs
+generically, and a small forwarding tier restores the narrow input type, per-question telemetry and a
+single authoritative cache in one move. The pattern survives the platform change. The invariant does
+not, and the gap is one component wide.
 
 **Added since.** The `Chart*` columns of section 2 are now in the catalog: 44 of the 70 questions
 declare how their answer is drawn, 26 declare `HasChart = 0`, and the result drawer obeys the
@@ -294,7 +340,10 @@ than stored state.
 **Still missing.** Two things the pattern calls for, each named against its section:
 
 1. **Bounded parameterisation** (section 4). There is no way to vary a question within limits its
-   author ratified, so the only choices on offer are the exact question or a free-form query.
+   author ratified, so the only choices on offer are the exact question or a free-form query. Note
+   that a declared range is safe to publish precisely because it states intent rather than enforcing
+   it — unlike generating a variant from the definition, which on the client side would mean an
+   unratified statement submitted by the least trusted party in the system.
 2. **A validated definition cache** (sections 5 and 6). The library is loaded from source at
    start-up rather than from a mutable store, so neither the coherence protocol nor the load-time
    contract check has anywhere to live — and the liability in section 7 is correspondingly unguarded.
