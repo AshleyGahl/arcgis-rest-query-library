@@ -61,6 +61,12 @@ and the rest — so the same request that tells a client what the question is te
 is drawn. No response type is declared for any question anywhere in the pipeline, which makes those
 columns the only place the shape of an answer is written down.
 
+Six rows carry a **`ParamSpec`** as well: a typed parameter with the range its author ratified, so
+*"top 5 categories"* can be asked for ten without anyone composing SQL, and *"stuck for more than
+30 days"* can be asked at 90. The mock also serves `…/FeatureServer/1/execute`, which takes a
+question number and declared parameters and refuses anything else — the one non-generic route here,
+and the one that shows what it costs to make a published catalog enforceable.
+
 [The architecture page](architecture.md) traces the whole pipeline component by component.
 
 ## What the demo shows

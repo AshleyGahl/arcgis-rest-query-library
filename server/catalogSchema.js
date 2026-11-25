@@ -27,6 +27,13 @@
  * guesses from the shape of the rows instead is making an inference, and an inference
  * cannot be wrong loudly. `HasChart = 0` is the author saying this result is a figure
  * or a list of features, not a chart.
+ *
+ * `ParamSpec` is the row's extension contract: the parameters this question may be varied
+ * by, with the type and range its author ratified, and where each value lands in the
+ * definition. It is the published answer to "can I see ten instead of five?" — a question
+ * the catalog can answer without anyone composing SQL. A client may bind it and replay
+ * (`sql-library/runner.js`), or send the identifier and the values to the execute route,
+ * which binds on the trusted side and enforces the bounds instead of trusting them.
  */
 import { queryLibrary } from '../sql-library/queryLibrary.js';
 
@@ -48,6 +55,7 @@ export const CATALOG_FIELDS = [
   { name: 'ChartAnnotationColumn', type: 'esriFieldTypeString', alias: 'Chart Annotation Column', length: 100 },
   { name: 'RestParams', type: 'esriFieldTypeString', alias: 'REST Parameters (JSON)', length: 4000 },
   { name: 'TransformSpec', type: 'esriFieldTypeString', alias: 'Transform Spec (JSON)', length: 1000 },
+  { name: 'ParamSpec', type: 'esriFieldTypeString', alias: 'Bounded Parameters (JSON)', length: 1000 },
   { name: 'SqlText', type: 'esriFieldTypeString', alias: 'T-SQL', length: 4000 },
   { name: 'Notes', type: 'esriFieldTypeString', alias: 'Notes', length: 600 },
 ];
@@ -81,6 +89,7 @@ export const catalogRows = () =>
         ChartAnnotationColumn: e.chart?.annotation ?? null,
         RestParams: JSON.stringify(Array.isArray(e.rest) ? e.rest : e.rest),
         TransformSpec: transforms.length ? JSON.stringify(transforms) : null,
+        ParamSpec: e.params?.length ? JSON.stringify(e.params) : null,
         SqlText: e.tsql,
         Notes: e.notes ?? null,
       };

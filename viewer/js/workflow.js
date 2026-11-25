@@ -287,7 +287,9 @@ export function createTrace(host, q, { mode = 'rest' } = {}) {
       if (comparable(q)) agentNote += ' Add <code>compare: true</code> for the T-SQL side.';
       this.finish({
         rows: runResult.rows, columns: runResult.columns, elapsed, payload,
-        tool: 'run_library_query', args: { id: q.id },
+        // The values ride on the bound entry, so the envelope shows the call that
+        // reproduces this exact run rather than the unparameterised one.
+        tool: 'run_library_query', args: { id: q.id, ...(q.paramValues ? { params: q.paramValues } : {}) },
       });
     },
 

@@ -9,6 +9,8 @@
  *
  *   rest        : query parameters (object), or an array of { name, params } for multi-request entries
  *   transform   : optional client-side step(s) for things REST cannot do (window functions, joins) — runner.js
+ *   params      : optional bounded parameters — the only sanctioned way for a client to vary
+ *                 this question (see `param()` below). Published as the catalog's ParamSpec column.
  *   chart       : optional presentation contract — how the author says the result is drawn (see `chart()` below).
  *                 Absent means this result is not a chart: a single figure, or a list of features.
  *   portability : how far the REST request travels beyond this mock
@@ -45,6 +47,30 @@ export const THEME_CASE = "CASE WHEN Category IN ('Water Supply', 'Wastewater & 
  *               for a supporting count beside an average, or a second unit
  */
 const chart = (type, labels, values, extra = {}) => ({ type, labels, values, ...extra });
+
+/**
+ * A bounded parameter: the one way a client may vary a catalogued question without
+ * authoring one. The author declares the name, the type, the range they have ratified
+ * and where the value lands — in the REST request, in the T-SQL statement, or both.
+ *
+ * The declared default must reproduce the question exactly as written here, because the
+ * entry stores the *default rendering*, not a template: `resultRecordCount: 5` and
+ * `TOP 5` stay literal, so every client that ignores the parameter still replays the
+ * ratified question. `test/params.test.js` asserts that for every parameter.
+ *
+ * Binding is data, never a fragment of query text the client composes:
+ *   { in: 'rest', key: 'resultRecordCount' }                 set that request parameter
+ *   { in: 'rest', key: 'where', template: '… > {v}' }        rebuild it from a template
+ *   { in: 'tsql', find: 'TOP 5', template: 'TOP {v}' }       swap that substring
+ */
+const param = (name, { label, type = 'int', min, max, default: def, binds, help }) =>
+  ({ name, label, type, min, max, default: def, binds, ...(help ? { help } : {}) });
+
+/** The commonest parameter by far: how many rows of a ranked question to return. */
+const topN = (n, max = 25) => param('top', {
+  label: 'Rows', min: 1, max, default: n,
+  binds: [{ in: 'rest', key: 'resultRecordCount' }, { in: 'tsql', find: `TOP ${n}`, template: 'TOP {v}' }],
+});
 
 const count = (out = 'Count', field = 'ObjectID') => ({ statisticType: 'count', onStatisticField: field, outStatisticFieldName: out });
 const stat = (statisticType, onStatisticField, outStatisticFieldName, extra = {}) => ({ statisticType, onStatisticField, outStatisticFieldName, ...extra });
@@ -183,6 +209,10 @@ export const queryLibrary = [
   { id: 25, category: DURATION, dimension: 'HOW', layer: 'L3', portability: 'native',
     question: 'Ten slowest sub-categories (average days to close, min 10 closed)',
     chart: chart('bar', 'CategorySub', 'AvgDays', { annotation: 'Closed' }),
+    params: [topN(10), param('minClosed', { label: 'Minimum closed', min: 1, max: 200, default: 10,
+      help: 'How many closed requests a sub-category needs before its average is reported',
+      binds: [{ in: 'rest', key: 'having', template: 'COUNT(ObjectID) >= {v}' },
+        { in: 'tsql', find: 'HAVING COUNT(*) >= 10', template: 'HAVING COUNT(*) >= {v}' }] })],
     rest: { where: "Status = 'Closed' AND DtCompleted IS NOT NULL", sqlFormat: 'native', groupByFieldsForStatistics: 'CategorySub',
       outStatistics: [stat('avg', RES, 'AvgDays'), count('Closed')], having: 'COUNT(ObjectID) >= 10', orderByFields: 'AvgDays DESC', resultRecordCount: 10 },
     tsql: `SELECT TOP 10 CategorySub, AVG(CAST(DATEDIFF(day, DtLogged, DtCompleted) AS FLOAT)) AS AvgDays, COUNT(*) AS Closed FROM ServiceRequest WHERE Status = 'Closed' AND DtCompleted IS NOT NULL GROUP BY CategorySub HAVING COUNT(*) >= 10 ORDER BY AvgDays DESC;` },
@@ -258,11 +288,13 @@ export const queryLibrary = [
   { id: 41, category: ADVANCED, dimension: 'WHAT', layer: 'L5', portability: 'standard',
     question: 'Top 5 categories with most requests',
     chart: chart('bar', 'Category', 'Count'),
+    params: [topN(5)],
     rest: groupCount('Category', 'Count DESC', { resultRecordCount: 5 }),
     tsql: `SELECT TOP 5 Category, COUNT(*) AS Count FROM ServiceRequest GROUP BY Category ORDER BY Count DESC;` },
   { id: 42, category: ADVANCED, dimension: 'WHERE', layer: 'L5', portability: 'standard',
     question: 'Top 5 suburbs with most requests (excluding NULL)',
     chart: chart('bar', 'Suburb', 'Count'),
+    params: [topN(5)],
     rest: groupCount('Suburb', 'Count DESC', { where: 'Suburb IS NOT NULL', resultRecordCount: 5 }),
     tsql: `SELECT TOP 5 Suburb, COUNT(*) AS Count FROM ServiceRequest WHERE Suburb IS NOT NULL GROUP BY Suburb ORDER BY Count DESC;` },
   { id: 43, category: ADVANCED, dimension: 'WHEN', layer: 'L5', portability: 'sql-expression',
@@ -340,6 +372,7 @@ export const queryLibrary = [
   { id: 55, category: HOTSPOT, dimension: 'WHERE', layer: 'L5', portability: 'extension',
     question: 'Top 10 suburb hotspots (volume, variety, first and last report)',
     chart: chart('bar', 'Suburb', 'RequestCount', { annotation: 'DistinctTypes' }),
+    params: [topN(10)],
     notes: "statisticType 'countdistinct' is a mock extension. On a real service drop DistinctTypes or run a second groupBy Suburb,CategorySub query.",
     rest: { where: 'Suburb IS NOT NULL', groupByFieldsForStatistics: 'Suburb',
       outStatistics: [count('RequestCount'), stat('countdistinct', 'CategorySub', 'DistinctTypes'), stat('min', 'DtLogged', 'FirstRequest'), stat('max', 'DtLogged', 'LastRequest')],
@@ -378,6 +411,7 @@ export const queryLibrary = [
   { id: 61, category: OPS, dimension: 'WHERE', layer: 'L4', portability: 'standard',
     question: 'Suburbs with the highest open load',
     chart: chart('bar', 'Suburb', 'OpenCount'),
+    params: [topN(5)],
     rest: { where: `Suburb IS NOT NULL AND ${OPEN}`, groupByFieldsForStatistics: 'Suburb', outStatistics: [count('OpenCount')], orderByFields: 'OpenCount DESC', resultRecordCount: 5 },
     tsql: `SELECT TOP 5 Suburb, COUNT(*) AS OpenCount FROM ServiceRequest WHERE Suburb IS NOT NULL AND Status <> 'Closed' GROUP BY Suburb ORDER BY OpenCount DESC;` },
   { id: 62, category: OPS, dimension: 'HOW', layer: 'L5', portability: 'sql-expression',
@@ -406,6 +440,10 @@ export const queryLibrary = [
   { id: 65, category: OPS, dimension: 'WHY', layer: 'L4', portability: 'native',
     question: 'Which categories have the most requests stuck open for more than 30 days?',
     chart: chart('bar', 'Category', 'StuckCount'),
+    params: [topN(5), param('days', { label: 'Open longer than (days)', min: 1, max: 365, default: 30,
+      help: 'The age at which an open request counts as stuck',
+      binds: [{ in: 'rest', key: 'where', template: `${OPEN} AND ${AGE} > {v}` },
+        { in: 'tsql', find: 'DATEDIFF(day, DtLogged, GETDATE()) > 30', template: 'DATEDIFF(day, DtLogged, GETDATE()) > {v}' }] })],
     rest: { where: `${OPEN} AND ${AGE} > 30`, sqlFormat: 'native', groupByFieldsForStatistics: 'Category', outStatistics: [count('StuckCount')], orderByFields: 'StuckCount DESC', resultRecordCount: 5 },
     tsql: `SELECT TOP 5 Category, COUNT(*) AS StuckCount FROM ServiceRequest WHERE Status <> 'Closed' AND DATEDIFF(day, DtLogged, GETDATE()) > 30 GROUP BY Category ORDER BY StuckCount DESC;` },
   { id: 66, category: OPS, dimension: 'WHERE', layer: 'L5', portability: 'standard',

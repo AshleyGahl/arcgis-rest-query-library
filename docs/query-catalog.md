@@ -67,6 +67,23 @@ difference is not cosmetic: a declared contract can be checked, and `test/catalo
 checks every one of the forty-four against the columns its question actually returns. An
 inference cannot be checked, because it has not claimed anything.
 
+One more column says what a *user* may change. Six questions carry a `ParamSpec`: a typed,
+bounded parameter with the range its author ratified and a declaration of where the value lands
+in the definition.
+
+```
+ParamSpec of Q65 = [{ name: 'top',  type: 'int', min: 1, max:  25, default:  5, binds: […] },
+                    { name: 'days', type: 'int', min: 1, max: 365, default: 30, binds: […] }]
+```
+
+This is the answer to *"can I see ten instead of five?"* — the question every catalogue of
+canned reports eventually gets, and the one that usually ends with someone adding a free-text
+SQL box. A declared parameter answers it without anyone composing a statement: the row stores
+the default rendering (`resultRecordCount: 5`, `TOP 5`), so a client that ignores `ParamSpec`
+replays the ratified question, and one that honours it can only move inside the declared range.
+Either the REST request or the T-SQL can be bound, so the variant is the same question under
+both verbs.
+
 `SqlText` carries the equivalent T-SQL in the same row. It is not dead weight: it is the
 reference definition the REST request must reproduce, the audit record of what a metric
 means, and what you execute if you point the same catalog at SQL Server instead
@@ -111,6 +128,14 @@ this library?"* is one `outStatistics` call, no reporting code:
    whitelist property — clients may pass only a query number — you need a tier in front that
    refuses to forward a client-supplied `where`, because the FeatureServer will not refuse it
    for you. What the catalog gives you here is governance of *definitions*, not of *access*.
+
+   The mock now ships that tier, as a mock extension rather than as ArcGIS REST, so the cost can
+   be read rather than guessed at: `…/FeatureServer/1/execute?q=65&top=3&days=90` accepts a
+   question number and declared parameters only, resolves the row through layer 1, enforces the
+   `ParamSpec` bounds and executes. It is about sixty lines and it knows no individual question —
+   see [the catalog pattern](catalog-pattern.md) for why that one component is what the whole
+   invariant hangs on. Layer 0 is unchanged and still accepts anything, which is the point: the
+   tier is something you put *in front*, not a setting you switch on.
 
 ## Adding a question
 

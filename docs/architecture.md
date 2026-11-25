@@ -161,6 +161,7 @@ so `…/FeatureServer/1?f=json` describes it exactly as a real published table w
 | `ChartAnnotationColumn` | `esriFieldTypeString` | 100 | carried into the tooltip without being plotted, or null |
 | `RestParams` | `esriFieldTypeString` | 4000 | **the executable payload**: the decomposed query as JSON |
 | `TransformSpec` | `esriFieldTypeString` | 1000 | the transform parameters as JSON, or null |
+| `ParamSpec` | `esriFieldTypeString` | 1000 | the parameters this question may be varied by, as JSON, or null (6 of 70) |
 | `SqlText` | `esriFieldTypeString` | 4000 | the reference T-SQL statement |
 | `Notes` | `esriFieldTypeString` | 600 | caveats (for example a `DATEFIRST` assumption), or null |
 
@@ -176,6 +177,25 @@ the rows only for results that have no contract, such as anything run from the S
 `HasChart = 0` is a statement in its own right — a single figure or a list of features is not
 a chart — and the [catalog pattern](catalog-pattern.md) explains why a declared contract and an
 inferred one are not the same kind of thing.
+
+`ParamSpec` is the extension contract: the parameters a question may be varied by, each with the
+type, the range its author ratified, and where the value lands in the definition. Six questions
+declare one — *"top 5 categories"* is the obvious case, and Q65's *"stuck for more than 30 days"*
+is the interesting one, because 30 is a policy, not a fact:
+
+```
+[{ "name": "days", "label": "Open longer than (days)", "type": "int",
+   "min": 1, "max": 365, "default": 30,
+   "binds": [{ "in": "rest", "key": "where", "template": "Status <> 'Closed' AND … > {v}" },
+             { "in": "tsql", "find": "… GETDATE()) > 30", "template": "… GETDATE()) > {v}" }] }]
+```
+
+The binding is data, and it never hands the client a fragment of query text to compose. The entry
+stores the *default rendering* — `resultRecordCount: 5` and `TOP 5` stay literal — so a client
+that ignores `ParamSpec` still replays the question exactly as ratified, and binding the declared
+default has to reproduce the published definition byte for byte. `test/params.test.js` asserts
+that for every parameter, which is what makes a default the ratified question rather than merely
+a sensible number.
 
 ### How it is set up in the mock database
 
@@ -222,6 +242,7 @@ columns and the statement itself:
 | `HasChart` | `INT` | same value |
 | `ChartType`, `ChartLabelColumn`, `ChartValueColumns` | `NVARCHAR(200)` | same values |
 | `ChartSeriesColumn`, `ChartAnnotationColumn` | `NVARCHAR(200)` | same values |
+| `ParamSpec` | `NVARCHAR(1000)` | same value |
 
 An entry is executed by number, through the proc form in the same script — the T-SQL counterpart
 of replaying a row's `RestParams` against layer 0:
@@ -247,10 +268,13 @@ current. And it is not the same schema as layer 1: it has no `Portability`, `Req
 and mean nothing to a client that already holds a T-SQL statement. The two catalogues are two
 projections of one source, each carrying the columns its own execution path can act on.
 
-The `Chart*` columns are the exception that shows the rule: they appear in both, because they
-describe the *answer* rather than the route taken to it. Whichever way a client resolves query 44
-— replaying `RestParams` against layer 0, or `EXEC dbo.usp_RunLibraryQuery @QueryNumber = 44` —
-it gets the same rows and the same instruction for drawing them.
+The `Chart*` columns and `ParamSpec` are the exceptions that show the rule: they appear in both,
+because they describe the *question and its answer* rather than the route taken to it. Whichever
+way a client resolves query 44 — replaying `RestParams` against layer 0, or
+`EXEC dbo.usp_RunLibraryQuery @QueryNumber = 44` — it gets the same rows, the same instruction for
+drawing them, and the same statement of what a user is allowed to change. The proc runs `SQLText`
+as published; binding a parameter means rendering the declared template over the declared text,
+which the REST side does on the trusted side at `/FeatureServer/1/execute`.
 
 ## 4. The two REST hops, end to end
 
@@ -271,6 +295,34 @@ sequenceDiagram
 ```
 
 Both hops are the standard ArcGIS `query` operation, and nothing about Q44 exists in the client.
+
+### And one hop that is deliberately not generic
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant C as client
+  participant X as /1/execute
+  participant E as featureService.js
+  C->>X: GET ?q=65&top=3&days=90
+  X->>E: svc.query(where QueryNumber = 65, layer 1)
+  E-->>X: the catalog row
+  Note over X: bindEntry validates 3 and 90<br/>against the row's ParamSpec
+  X->>E: svc.query(the bound RestParams, layer 0)
+  E-->>X: rows
+  Note over X: runner.js applies the TransformSpec here,<br/>not in the client
+  X-->>C: question, parameters, rows, chart contract
+```
+
+`/FeatureServer/1/execute` is a mock extension, like `/0/sql`, and it exists to make a point the
+two generic hops cannot. Its input type is a question number plus the parameters that question
+declares — a `where` or an `outStatistics` sent to it is refused, not ignored. It resolves the row
+through its own layer 1, binds on the trusted side, executes, and applies the client-side
+transform before answering. That is the forwarding tier of the
+[catalog pattern](catalog-pattern.md): it restores the narrow input type the pattern rests on, and
+it knows nothing about any individual question. The viewer still replays rows against layer 0,
+because that is the honest demonstration of what a FeatureServer alone can do; the tier is what
+you add when the bounds have to be enforced rather than published.
 
 See also: [query catalog](query-catalog.md) for the design argument and its three real limits,
 [data model](data-model.md) for layer 0's fields, [analytics framework](framework.md) for the

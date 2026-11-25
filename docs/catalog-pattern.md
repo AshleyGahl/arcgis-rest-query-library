@@ -328,6 +328,18 @@ generically, and a small forwarding tier restores the narrow input type, per-que
 single authoritative cache in one move. The pattern survives the platform change. The invariant does
 not, and the gap is one component wide.
 
+That tier is now in the repository, as a mock extension beside `/0/sql` rather than as anything
+ArcGIS would recognise: `…/FeatureServer/1/execute?q=65&top=3&days=90`. It accepts a question number
+and the parameters that question declares, refuses a `where` or an `outStatistics` rather than
+ignoring it, resolves the row through its own layer 1, binds the values on the trusted side and
+executes — about sixty lines that know no individual question. Two things worth taking from it. It
+also applies the client-side transform before answering, so the window-function hole in limit 1 of
+[the query catalog](query-catalog.md) closes as a side effect of having a tier at all: compute moves
+back off the client because something trusted is finally in the path. And the viewer still replays
+rows against layer 0, deliberately — the demonstration of what a FeatureServer alone can carry is
+the point of the repository, and a tier in the default path would quietly answer the question the
+PoC exists to ask.
+
 **Added since.** The `Chart*` columns of section 2 are now in the catalog: 44 of the 70 questions
 declare how their answer is drawn, 26 declare `HasChart = 0`, and the result drawer obeys the
 contract where there is one, falling back to inferring from the shape of the rows only where there
@@ -337,19 +349,35 @@ missing from its result or is not numeric. That is section 5's load-time contrac
 a test rather than in a process boot — the most this repo can do while the library is source rather
 than stored state.
 
-**Still missing.** Two things the pattern calls for, each named against its section:
+**Added since, too.** Bounded parameterisation (section 4) is now in the catalog: six questions
+publish a `ParamSpec` naming a typed parameter, the range its author ratified, and where the value
+lands in the definition. The design decision that matters is that the row stores the *default
+rendering* rather than a template — `resultRecordCount: 5` and `TOP 5` stay literal — so a client
+that ignores the declaration still replays the ratified question, and binding the declared default
+must reproduce the published definition byte for byte. `test/params.test.js` asserts exactly that,
+which is what makes a default the ratified question rather than merely a sensible number.
 
-1. **Bounded parameterisation** (section 4). There is no way to vary a question within limits its
-   author ratified, so the only choices on offer are the exact question or a free-form query. Note
-   that a declared range is safe to publish precisely because it states intent rather than enforcing
-   it — unlike generating a variant from the definition, which on the client side would mean an
-   unratified statement submitted by the least trusted party in the system.
-2. **A validated definition cache** (sections 5 and 6). The library is loaded from source at
-   start-up rather than from a mutable store, so neither the coherence protocol nor the load-time
-   contract check has anywhere to live — and the liability in section 7 is correspondingly unguarded.
+This is the deliberate counterpart to how the system this demo descends from extends a question: it
+passes the stored statement to a local model as example text and runs what comes back, rewritten
+with the user's value. Both answer the same user need — *"ten instead of five"*, *"90 days instead of
+30"* — and they differ in what survives the variation. Generation keeps the question open-ended and
+gives up ratification: whatever comes back was not reviewed by the author, and the reason it is
+nonetheless defensible there is that the generation happens **on the trusted side**, where the
+output can be checked before it runs. A declared range keeps ratification and gives up
+open-endedness: the author said 1 to 365, so nothing outside that was ever ratified and nothing
+outside it runs. That difference is why parameterisation is the form this repository can honestly
+use. Its definitions live on the *client*, and a model prompted with the definition on the client
+side would mean an unratified statement submitted by the least trusted party in the system — the
+one arrangement in which the extension path is not merely weaker but unsafe.
 
-Those are gaps in the demonstration, not arguments against the pattern. What to do about them is a
-separate decision.
+A declared range is also safe to *publish*, because it states intent rather than enforcing it. The
+enforcement is the tier's job, and that is why the two landed together.
+
+**Still missing.** One thing the pattern calls for, named against its sections: **a validated
+definition cache** (sections 5 and 6). The library is loaded from source at start-up rather than
+from a mutable store, so neither the coherence protocol nor the load-time contract check has
+anywhere to live — and the liability in section 7 is correspondingly unguarded. That is a gap in the
+demonstration, not an argument against the pattern. What to do about it is a separate decision.
 
 **Not evidence.** The mock's `/0/sql` route and the MCP `run_tsql` tool both accept a statement from
 the caller. They are deliberate conveniences for comparing this engine against SQL Server, and they

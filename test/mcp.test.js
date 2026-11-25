@@ -15,7 +15,7 @@ import { createFeatureService } from '../server/nodeRuntime.js';
 import { config } from '../server/config.js';
 import { createTools, createDispatcher, MAX_ROWS, SERVER_INFO, libraryQueryPayload, tsqlPayload, toolContent } from '../mcp/tools.js';
 import { queryLibrary, getQuery } from '../sql-library/queryLibrary.js';
-import { runEntry, toQueryUrl } from '../sql-library/runner.js';
+import { runEntry, toQueryUrl, bindEntry, paramsOf } from '../sql-library/runner.js';
 
 const svc = createFeatureService(config);
 const layerUrl = `http://127.0.0.1:${config.port}/arcgis/rest/services/${config.serviceName}/FeatureServer/0`;
@@ -124,6 +124,42 @@ test('run_library_query runs an entry, and compare adds the T-SQL result', async
   );
 });
 
+test('list_library publishes what may be varied, so the list is also the extension contract', async () => {
+  const all = await payload('list_library', {});
+  const declared = all.filter((q) => q.params);
+  assert.deepEqual(declared.map((q) => q.id), queryLibrary.filter((q) => paramsOf(q).length).map((q) => q.id));
+  assert.deepEqual(all.find((q) => q.id === 41).params, [{ name: 'top', type: 'int', min: 1, max: 25, default: 5 }]);
+  assert.equal(all.find((q) => q.id === 2).params, undefined);
+});
+
+test('run_library_query varies a question within its declared bounds', async () => {
+  const published = await payload('run_library_query', { id: 41 });
+  assert.deepEqual(published.parameters, { top: 5 });
+  assert.equal(published.result.rows.length, 5);
+
+  const varied = await payload('run_library_query', { id: 41, params: { top: 12 } });
+  assert.deepEqual(varied.parameters, { top: 12 });
+  assert.equal(varied.result.rows.length, 12);
+  assert.equal(varied.rest.resultRecordCount, 12, 'the payload reports the definition that ran');
+
+  // compare runs the T-SQL side of the *bound* entry, not the published one.
+  const both = await payload('run_library_query', { id: 41, params: { top: 3 }, compare: true });
+  assert.match(both.tsql, /SELECT TOP 3 /);
+  assert.deepEqual(both.result.rows.map((r) => r.Count), both.tsqlResult.rows.map((r) => r.Count));
+});
+
+test('run_library_query refuses a value the author did not ratify', async () => {
+  for (const params of [{ top: 99 }, { top: 0 }, { top: 'lots' }, { nope: 1 }]) {
+    const r = await call('run_library_query', { id: 41, params });
+    assert.ok(r.isError, `${JSON.stringify(params)} was accepted`);
+    assert.match(r.content[0].text, /Query 41 not run/);
+    assert.match(r.content[0].text, /Declared: top \(int 1\.\.25, default 5\)/);
+  }
+  const none = await call('run_library_query', { id: 2, params: { top: 5 } });
+  assert.ok(none.isError);
+  assert.match(none.content[0].text, /declares no parameters/);
+});
+
 /**
  * The viewer runs library entries itself — its grid needs every row and raw epoch
  * dates — and then shows the JSON-RPC response an agent would have received, built
@@ -134,15 +170,19 @@ test('run_library_query runs an entry, and compare adds the T-SQL result', async
  */
 test('libraryQueryPayload is what run_library_query returns, so the viewer cannot drift', async () => {
   const local = async (params) => ({ url: toQueryUrl(layerUrl, params), json: await service.query(params) });
-  for (const id of [2, 44, 62]) {
-    const q = getQuery(id);
-    const runResult = await runEntry(q, local);
+  // The panel binds every entry before running it, so the comparison binds too: for a
+  // question with no parameters that is the entry itself, and for one with parameters it
+  // is the variant actually on screen.
+  for (const [id, params] of [[2, {}], [44, {}], [62, {}], [41, {}], [41, { top: 9 }], [65, { top: 2, days: 45 }]]) {
+    const { entry, errors } = bindEntry(getQuery(id), params);
+    assert.deepEqual(errors, [], `entry ${id}`);
+    const runResult = await runEntry(entry, local);
     // Compared through the envelope, because that is what the viewer renders — and it
     // is `toolContent` that decides how a payload becomes text.
     assert.deepEqual(
-      toolContent(libraryQueryPayload({ q, runResult })),
-      await call('run_library_query', { id }),
-      `entry ${id}`,
+      toolContent(libraryQueryPayload({ q: entry, runResult })),
+      await call('run_library_query', { id, ...(Object.keys(params).length ? { params } : {}) }),
+      `entry ${id} ${JSON.stringify(params)}`,
     );
   }
 });

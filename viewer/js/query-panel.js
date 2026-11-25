@@ -10,9 +10,19 @@
  * start-up (see `catalog.js`), once, into the shared store (`query-store.js`). This
  * panel therefore knows how to *run* a catalogued query but nothing about which queries
  * exist — that is the service's business.
+ *
+ * A question that declares bounded parameters (the catalog's ParamSpec column) gets an
+ * input per parameter, built from the declaration — the panel has no idea that any
+ * particular question takes a row count. Changing one re-binds the entry through
+ * `bindEntry`, so what the panel shows is always the definition it would send. The
+ * bounds are checked here because the inputs should refuse a value before a request is
+ * made, not because checking here enforces anything: a client holds the definition and
+ * can send what it likes. The service's `/1/execute` route is the enforcing counterpart,
+ * and the link beside the inputs runs the same binding through it.
  */
-import { runEntry, httpFetcher, requestsOf, toQueryUrl } from '../../sql-library/runner.js';
+import { runEntry, httpFetcher, requestsOf, toQueryUrl, bindEntry, paramsOf } from '../../sql-library/runner.js';
 import { comparable } from '../../mcp/tools.js';
+import { CONFIG } from './config.js';
 import { layerUrl, dateColumnsOf, tsql } from './rest.js';
 import { showResults, showError } from './results.js';
 import { createTrace } from './workflow.js';
@@ -33,6 +43,10 @@ export function createQueryPanel({ prefix, mode, map, filters, store }) {
 
   // Bumped on every run and re-selection, so a slow run cannot draw over a newer one.
   let seq = 0;
+
+  // The parameter values currently in the inputs, cleared when the selection changes.
+  let values = {};
+  const executeUrl = (q, v) => `${CONFIG.catalogUrl}/execute?${new URLSearchParams({ q: q.id, ...v, f: 'pjson' })}`;
 
   function renderList() {
     const list = el('List');
@@ -56,6 +70,52 @@ export function createQueryPanel({ prefix, mode, map, filters, store }) {
     }
   }
 
+  /**
+   * The inputs for a question's declared parameters, or nothing at all. Built from the
+   * declaration the catalog published, never from knowledge of the question.
+   */
+  function paramsBlock(q) {
+    const spec = paramsOf(q);
+    if (!spec.length) return '';
+    const input = (p) => `<label>${esc(p.label ?? p.name)}
+      <input type="number" data-param="${esc(p.name)}" value="${esc(values[p.name] ?? p.default)}" min="${p.min}" max="${p.max}" title="${esc(p.help ?? '')}">
+    </label>`;
+    return `<div class="params" id="${id('Params')}">
+      <div class="param-inputs">${spec.map(input).join('')}
+        <a href="${esc(executeUrl(q, values))}" target="_blank" data-execute>execute by id ↗</a>
+      </div>
+      <div class="note">${spec.length > 1 ? 'Parameters' : 'Parameter'} declared by the catalog:
+        ${esc(spec.map((p) => `${p.name} ${p.min}–${p.max} (default ${p.default})`).join(', '))}.
+        The default is the question as its author ratified it.</div>
+      <div class="note param-errors" id="${id('ParamErr')}"></div>
+    </div>`;
+  }
+
+  /**
+   * Re-bind after a parameter changes: the request preview, the open link, the editable
+   * statement and the Run button all follow the values in the inputs.
+   */
+  function syncParams(q) {
+    const host = el('Params');
+    if (!host) return;
+    for (const input of host.querySelectorAll('input[data-param]')) values[input.dataset.param] = input.value;
+    const { entry: bound, errors } = bindEntry(q, values);
+    el('ParamErr').textContent = errors.join(' · ');
+    const run = el('Run');
+    if (run) run.disabled = errors.length > 0 || (!isRest && !comparable(q));
+    host.querySelector('[data-execute]').href = executeUrl(q, values);
+    if (isRest) {
+      const blocks = [...el('Detail').querySelectorAll('[data-request]')];
+      requestsOf(bound).forEach((r, i) => {
+        if (!blocks[i]) return;
+        blocks[i].querySelector('pre').textContent = JSON.stringify(r.params, null, 2);
+        blocks[i].querySelector('a[data-open]').href = toQueryUrl(layerUrl, { ...r.params, f: 'pjson' });
+      });
+    } else if (el('Text')) {
+      el('Text').value = bound.tsql;
+    }
+  }
+
   function renderDetail(q) {
     const detail = el('Detail');
     if (!q) { detail.classList.add('hidden'); detail.innerHTML = ''; return; }
@@ -72,20 +132,22 @@ export function createQueryPanel({ prefix, mode, map, filters, store }) {
       ${q.notes ? `<div class="note">${esc(q.notes)}</div>` : ''}`;
 
     detail.innerHTML = isRest ? `${head}
+      ${paramsBlock(q)}
       <div class="buttons">
         <button class="primary" id="${id('Run')}">Run REST</button>
         ${!Array.isArray(q.rest) && q.rest.where && q.rest.where !== '1=1' ? `<button id="${id('Apply')}">Apply where to map</button>` : ''}
       </div>
       <div id="${id('Workflow')}" class="hidden"></div>
       ${requestsOf(q).map((r, i, all) => `
-        <details class="wf-sec" open>
+        <details class="wf-sec" open data-request="${i}">
           <summary>
             <span class="wf-sec-title">REST request${all.length > 1 ? ` · ${esc(r.name)}` : ''}</span>
-            <span class="wf-sec-sum"><a href="${esc(toQueryUrl(layerUrl, { ...r.params, f: 'pjson' }))}" target="_blank">open ↗</a></span>
+            <span class="wf-sec-sum"><a href="${esc(toQueryUrl(layerUrl, { ...r.params, f: 'pjson' }))}" target="_blank" data-open>open ↗</a></span>
           </summary>
           <div class="wf-sec-body"><pre class="code">${esc(JSON.stringify(r.params, null, 2))}</pre></div>
         </details>`).join('')}`
       : `${head}
+      ${paramsBlock(q)}
       <div class="buttons">
         <button class="primary" id="${id('Run')}"${comparable(q) ? '' : ' disabled'}>Run SQL</button>
       </div>
@@ -155,10 +217,21 @@ export function createQueryPanel({ prefix, mode, map, filters, store }) {
   }
 
   function wire(q) {
+    const host = el('Params');
+    if (host) for (const input of host.querySelectorAll('input[data-param]')) input.oninput = () => syncParams(q);
     const run = el('Run');
-    if (run) run.onclick = () => (isRest ? runRest(q) : runSql(q));
+    // Re-bound at click time, so a run always uses the values on screen.
+    if (run) run.onclick = () => {
+      const { entry: bound, errors } = bindEntry(q, values);
+      if (errors.length) { el('ParamErr').textContent = errors.join(' · '); return; }
+      return isRest ? runRest(bound) : runSql(bound);
+    };
     const apply = el('Apply');
-    if (apply) apply.onclick = () => { map.setDefinitionExpression(q.rest.where); filters.setWhere(q.rest.where); };
+    if (apply) apply.onclick = () => {
+      const { where } = bindEntry(q, values).entry.rest;
+      map.setDefinitionExpression(where);
+      filters.setWhere(where);
+    };
   }
 
   // The filters write to the shared store, so typing in one tab filters the other too.
@@ -179,6 +252,7 @@ export function createQueryPanel({ prefix, mode, map, filters, store }) {
     if (activeId !== drawn) {
       drawn = activeId;
       seq++;                     // a re-selection invalidates any run still in flight
+      values = {};               // and starts the new question at its ratified defaults
       renderDetail(store.active);
     }
   };

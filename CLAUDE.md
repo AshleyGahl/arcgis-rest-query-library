@@ -23,7 +23,7 @@ Keep it that way: no internal system names, staff/contractor fields, ward/admini
 | Task | Command |
 |---|---|
 | Start server | `npm start` |
-| Tests (70 REST + 69 T-SQL + catalog round-trip + parity + both runtimes) | `npm test` |
+| Tests (70 REST + 69 T-SQL + catalog round-trip + parity + parameters + both runtimes) | `npm test` |
 | List / run a library query | `npm run query -- list` · `npm run query -- 44 --compare` |
 | Ad-hoc REST | `npm run query -- --where "Suburb = 'Sea Point'" --outFields "RequestID,Category,Status" --resultRecordCount 5` |
 | Ad-hoc T-SQL (mock) | `npm run query -- --sql "SELECT TOP 5 Suburb, COUNT(*) n FROM ServiceRequest GROUP BY Suburb ORDER BY n DESC"` |
@@ -38,7 +38,8 @@ Don't add packages without asking. The only vendored third-party code is `viewer
 - `describe_layer`: schema and value lists. Call it first.
 - `query_layer`: REST parameters.
 - `list_library`
-- `run_library_query`: `compare: true` adds the T-SQL result.
+- `run_library_query`: `compare: true` adds the T-SQL result; `params: { top: 10 }` varies an entry
+  that declares bounded parameters (`list_library` shows which, and their ranges).
 - `run_tsql`: read-only.
 
 ## Layout
@@ -60,6 +61,7 @@ sw.js                           service worker for the static demo; MUST stay at
 server/start.js                 entry point (Node version check) → server/index.js
 server/index.js                 HTTP host + static files only; the REST surface is restRouter.js
 server/restRouter.js            the REST surface as (path, params) → response; no HTTP, no platform
+                                plus /1/execute: run a catalogued question by id (mock extension)
 server/featureService.js        query engine: GeoJSON → in-memory SQLite, ArcGIS query semantics
 server/nodeRuntime.js           Node runtime for the engine (fs + node:sqlite) + createFeatureService()
 server/serviceConfig.js         platform-free service defaults, shared with the browser demo
@@ -70,6 +72,7 @@ server/catalogSchema.js         layer 1: the query library as a non-spatial tabl
 sql-library/queryLibrary.js     THE library (70 entries: rest params, transform, tsql, portability)
                                 also the source of layer 1, via server/catalogSchema.js
 sql-library/runner.js           runs entries anywhere + client-side transforms (LAG, running totals…)
+                                also bindEntry/validateParams (bounded parameters) and entryFromRow
 viewer/                         ArcGIS JS 4.x viewer, ES modules, no build step
   js/config.js                  layer URL, catalog URL, themes, palette (THEME_COLORS etc.)
   js/catalog.js                 reads the query library from FeatureServer table 1 at runtime
@@ -135,6 +138,21 @@ mcp/server.js                   stdio transport over it, for Claude Code (Node o
   from the result's shape when there is no contract (the SQL console, an edited statement). A new
   charted entry must name columns its result really has: `test/catalog.test.js` runs all 44 and fails
   otherwise. Several `ChartValueColumns` are allowed only when they share a unit — one y-axis.
+- **A question is varied only by a parameter its author declared.** `params` on a library entry
+  declares a typed, bounded parameter and where its value lands; `bindEntry` in
+  `sql-library/runner.js` applies it, and layer 1 publishes the declaration as `ParamSpec`. The
+  entry stores the **default rendering**, not a template — `resultRecordCount: 5` and `TOP 5` stay
+  literal — so binding the declared default must reproduce the published definition exactly, and
+  `test/params.test.js` fails if it does not. Bind both the `rest` and the `tsql` side, so the
+  variant is the same question under either verb. Never widen a range to make a value fit: the
+  range *is* the ratification. An out-of-range value is refused, never clamped.
+- **`…/FeatureServer/1/execute` is the enforcing counterpart** (a mock extension, like `/0/sql`).
+  Its input is a question number plus declared parameters and nothing else: a `where` or an
+  `outStatistics` sent there is refused, not ignored. It resolves the row through the service's own
+  layer 1 — never by importing the library — binds on the trusted side, and applies the entry's
+  client-side transform before answering. The viewer deliberately does **not** run through it; it
+  replays rows against layer 0, because what a bare FeatureServer can carry is the thing this repo
+  is testing. Keep both paths: `test/params.test.js` asserts they give identical answers.
 - **Charts:** colours come from `viewer/js/config.js`. It is a validated palette in fixed order, and a colour follows its entity. One y-axis only, more than 8 series fold into "Other", and there is a legend only when there are 2 or more series.
 - The engine is read-only (`PRAGMA query_only` plus a statement filter). Keep it that way.
 - **Two layers, one pipeline.** `svc.query(params, layerId)` serves layer 0 (features) and table 1

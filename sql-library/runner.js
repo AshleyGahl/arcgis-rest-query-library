@@ -35,6 +35,21 @@ export function toRows(json) {
 
 export const requestsOf = (entry) => (Array.isArray(entry.rest) ? entry.rest : [{ name: 'main', params: entry.rest }]);
 
+/**
+ * The half of a run that happens after the service has answered: apply the entry's
+ * client-side transforms to the named result sets and work out the columns.
+ *
+ * Separate from `runEntry` because a caller that already has the rows synchronously --
+ * the execute-by-identifier route in `server/restRouter.js`, which holds the engine
+ * itself and needs no fetch -- must not be forced to become asynchronous to reuse the
+ * transform pipeline. One definition of what finishing an entry means, two ways in.
+ */
+export function finishEntry(entry, sets) {
+  let rows = sets.main ?? sets[Object.keys(sets)[0]];
+  for (const t of [entry.transform ?? []].flat()) rows = TRANSFORMS[t.type](rows, t, sets);
+  return { rows, columns: [...new Set(rows.flatMap((r) => Object.keys(r)))] };
+}
+
 export async function runEntry(entry, fetcher) {
   const requests = [];
   const sets = {};
@@ -43,10 +58,130 @@ export async function runEntry(entry, fetcher) {
     requests.push({ name: r.name, url, params: r.params, response: json });
     sets[r.name] = toRows(json);
   }
-  let rows = sets.main ?? sets[Object.keys(sets)[0]];
-  for (const t of [entry.transform ?? []].flat()) rows = TRANSFORMS[t.type](rows, t, sets);
-  const columns = [...new Set(rows.flatMap((r) => Object.keys(r)))];
-  return { rows, columns, requests };
+  return { ...finishEntry(entry, sets), requests };
+}
+
+/**
+ * A catalog row, reshaped into the entry object this module runs.
+ *
+ * The row *is* the wire format of an entry, so this mapping is the one place that
+ * knows it. Both the viewer (`viewer/js/catalog.js`, which reads the catalog over
+ * REST and may not import the library) and the service's own execute route
+ * (`server/restRouter.js`, which looks the row up through its own layer 1) go
+ * through here, so neither can drift from the other or from the published columns.
+ */
+export const entryFromRow = (r) => ({
+  id: r.QueryNumber,
+  category: r.Category,
+  question: r.Question,
+  dimension: r.Dimension,
+  layer: r.AnalyticLayer,
+  portability: r.Portability,
+  rest: JSON.parse(r.RestParams),
+  transform: r.TransformSpec ? JSON.parse(r.TransformSpec) : undefined,
+  params: r.ParamSpec ? JSON.parse(r.ParamSpec) : undefined,
+  chart: r.HasChart
+    ? { type: r.ChartType, labels: r.ChartLabelColumn, values: r.ChartValueColumns, series: r.ChartSeriesColumn ?? undefined, annotation: r.ChartAnnotationColumn ?? undefined }
+    : undefined,
+  tsql: r.SqlText,
+  notes: r.Notes ?? undefined,
+});
+
+// ---------------------------------------------------------------- bounded parameters
+// The only sanctioned way to vary a catalogued question: a parameter its author
+// declared, within bounds its author ratified. The declaration is published as a
+// column of the catalog (`ParamSpec`), so a client is told what may be varied in the
+// same request that tells it the question -- and a tier that executes by identifier
+// can enforce the bounds rather than trust them. See docs/catalog-pattern.md.
+//
+// A declaration never carries a fragment of query text that the *client* composes.
+// It names a parameter, its type and its range, and where the value lands:
+//   { in: 'rest', key: 'resultRecordCount' }                    set that request parameter
+//   { in: 'rest', key: 'having', template: 'COUNT(...) >= {v}' } rebuild it from a template
+//   { in: 'tsql', find: 'TOP 5', template: 'TOP {v}' }           swap that substring
+// Rendering a bind with the declared default must reproduce the published definition
+// exactly; `test/params.test.js` asserts that for every parameter in the library, which
+// is what makes the default the ratified question rather than merely a sensible value.
+
+export const paramsOf = (entry) => entry.params ?? [];
+
+const render = (template, v) => String(template).replaceAll('{v}', String(v));
+
+/**
+ * Resolve submitted values against a declaration.
+ * @returns `{ values, errors }` -- every declared name present, defaults filled in.
+ *          A non-empty `errors` means nothing should run: this is the check, not advice.
+ */
+export function validateParams(spec, values = {}) {
+  const out = {};
+  const errors = [];
+  const declared = new Set(spec.map((p) => p.name));
+  for (const k of Object.keys(values)) {
+    if (values[k] !== undefined && !declared.has(k)) errors.push(`'${k}' is not a parameter of this question`);
+  }
+  for (const p of spec) {
+    const raw = values[p.name];
+    if (raw === undefined || raw === null || raw === '') { out[p.name] = p.default; continue; }
+    if (p.type !== 'int') { errors.push(`'${p.name}' declares unsupported type '${p.type}'`); continue; }
+    const n = Number(raw);
+    if (!Number.isInteger(n)) { errors.push(`'${p.name}' must be a whole number (got '${raw}')`); continue; }
+    if (p.min !== undefined && n < p.min) { errors.push(`'${p.name}' must be ${p.min} or more (got ${n})`); continue; }
+    if (p.max !== undefined && n > p.max) { errors.push(`'${p.name}' must be at most ${p.max} (got ${n})`); continue; }
+    out[p.name] = n;
+  }
+  return { values: out, errors };
+}
+
+/**
+ * Apply parameter values to an entry, returning a new entry to run.
+ *
+ * With no values -- or for an entry that declares none -- the result is the question as
+ * published. A `rest` bind applies to every request of a multi-request entry that
+ * already carries that key, so a bind can never introduce a parameter the author did
+ * not write into the definition.
+ *
+ * @returns `{ entry, values, errors }`. On any error the original entry comes back
+ *          unbound, so a caller that ignores `errors` runs the ratified question
+ *          rather than a half-applied one.
+ */
+export function bindEntry(entry, values = {}) {
+  const spec = paramsOf(entry);
+  const given = Object.keys(values).filter((k) => values[k] !== undefined && values[k] !== '');
+  if (!spec.length) return { entry, values: {}, errors: given.length ? ['this question declares no parameters'] : [] };
+
+  const { values: v, errors } = validateParams(spec, values);
+  if (errors.length) return { entry, values: v, errors };
+
+  const requests = JSON.parse(JSON.stringify(requestsOf(entry)));
+  let tsql = entry.tsql;
+  for (const p of spec) {
+    for (const b of p.binds ?? []) {
+      const value = v[p.name];
+      if (b.in === 'rest') {
+        let hit = false;
+        for (const r of requests) {
+          if (!(b.key in r.params)) continue;
+          r.params[b.key] = b.template ? render(b.template, value) : value;
+          hit = true;
+        }
+        if (!hit) errors.push(`'${p.name}' binds to request parameter '${b.key}', which this question does not set`);
+      } else if (b.in === 'tsql') {
+        if (!tsql?.includes(b.find)) errors.push(`'${p.name}' binds to T-SQL text '${b.find}', which this statement does not contain`);
+        else tsql = tsql.replace(b.find, render(b.template, value));
+      } else {
+        errors.push(`'${p.name}' declares an unknown bind target '${b.in}'`);
+      }
+    }
+  }
+  if (errors.length) return { entry, values: v, errors };
+  return {
+    // `paramValues` rides along on the bound entry so that everything downstream — the
+    // MCP payload, the envelope the viewer renders, a log line — reports what actually
+    // ran without being handed the values separately.
+    entry: { ...entry, rest: Array.isArray(entry.rest) ? requests : requests[0].params, tsql, paramValues: v },
+    values: v,
+    errors: [],
+  };
 }
 
 // ---------------------------------------------------------------- client-side transforms

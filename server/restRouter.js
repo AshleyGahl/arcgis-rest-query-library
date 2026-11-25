@@ -8,10 +8,20 @@
  *   {prefix}/arcgis/rest/services/{service}/FeatureServer/{id}            0 = features, 1 = QueryLibrary table
  *   {prefix}/arcgis/rest/services/{service}/FeatureServer/{id}/query
  *   {prefix}/arcgis/rest/services/{service}/FeatureServer/0/sql           (mock extension)
+ *   {prefix}/arcgis/rest/services/{service}/FeatureServer/1/execute       (mock extension)
  *
  * Layer 1 is the query catalog (server/catalogSchema.js): the analytical questions
  * served as a non-spatial table over the same `query` operation, so a client
  * discovers what to ask with one standard request and executes it with another.
+ *
+ * `/1/execute` is the one route here that is not generic, and it exists to make a point
+ * the two generic requests cannot: it accepts a question identifier and the parameters
+ * that question declares, and nothing else. No `where`, no `outStatistics` — it refuses
+ * them rather than ignoring them. It resolves the row through its own layer 1, binds the
+ * parameters on the trusted side, and executes. That is the forwarding tier of
+ * docs/catalog-pattern.md: narrow the executor's input type back to an identifier and
+ * the catalog becomes enforceable again, at the cost of one component that knows no
+ * individual question. Like `/0/sql` it is a mock extension, not part of ArcGIS REST.
  *
  * No HTTP and no platform built-ins, so the same routing, the same services
  * directory pages and the same `f=html` query form serve both the Node host
@@ -22,11 +32,16 @@
  * root, '/<repo>' when the demo is published under a GitHub Pages project path.
  */
 
+import { toRows, entryFromRow, bindEntry, paramsOf, requestsOf, finishEntry } from '../sql-library/runner.js';
+
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
 const JSON_TYPE = 'application/json; charset=utf-8';
 const GEOJSON_TYPE = 'application/geo+json; charset=utf-8';
 const HTML_TYPE = 'text/html; charset=utf-8';
+
+/** An Esri-shaped error body. The mock answers 200 with an error object, as a real service does. */
+const restError = (code, message, details = []) => ({ error: { code, message, details } });
 
 const json = (obj, f) => ({
   status: 200,
@@ -96,6 +111,83 @@ export function createRestRouter(svc, cfg, hooks = {}) {
   const base = `/arcgis/rest/services/${cfg.serviceName}/FeatureServer`;
   const lbase = base.toLowerCase();
 
+  /** Every catalog row, as entries, read through the service's own table 1. */
+  const catalogEntries = () => toRows(svc.query({ where: '1=1', outFields: '*', orderByFields: 'QueryNumber', resultRecordCount: 2000 }, 1)).map(entryFromRow);
+  const entryByNumber = (n) => toRows(svc.query({ where: `QueryNumber = ${n}`, outFields: '*' }, 1)).map(entryFromRow)[0];
+
+  /** Parameters this route consumes itself, so anything else is an attempt to send a definition. */
+  const RESERVED = new Set(['f', 'q', 'queryNumber']);
+
+  /**
+   * Resolve, validate, bind and run — or explain why not. Returns null when no question
+   * was named at all, so the HTML form can be shown without an error on it.
+   */
+  function execute(params) {
+    const raw = params.get('q') ?? params.get('queryNumber');
+    if (raw == null || raw === '') return null;
+
+    const n = Number(raw);
+    if (!Number.isInteger(n)) return restError(400, `'q' must be a query number (got '${raw}')`);
+    const entry = entryByNumber(n);
+    if (!entry) return restError(404, `No question ${n} in the catalog`, ['Discover the catalogue at /FeatureServer/1/query?where=1=1&outFields=*']);
+
+    const spec = paramsOf(entry);
+    const given = {};
+    for (const p of spec) {
+      const v = params.get(p.name);
+      if (v !== null && v !== '') given[p.name] = v;
+    }
+    const uninvited = [...params.keys()].filter((k) => !RESERVED.has(k) && !spec.some((p) => p.name === k));
+    const { entry: bound, values, errors } = bindEntry(entry, given);
+    if (uninvited.length) {
+      errors.push(`${uninvited.map((k) => `'${k}'`).join(', ')} ${uninvited.length > 1 ? 'are not parameters' : 'is not a parameter'} of question ${n}`);
+    }
+    if (errors.length) {
+      return restError(400, `Question ${n} was not run`, [...errors, spec.length
+        ? `Declared: ${spec.map((p) => `${p.name} (${p.type} ${p.min}..${p.max}, default ${p.default})`).join('; ')}`
+        : 'This question declares no parameters.']);
+    }
+
+    const sets = {};
+    const requests = [];
+    for (const r of requestsOf(bound)) {
+      const response = svc.query(r.params, 0);
+      if (response.error) return { error: response.error };
+      sets[r.name] = toRows(response);
+      requests.push({ name: r.name, params: r.params });
+    }
+    const { rows, columns } = finishEntry(bound, sets);
+    return {
+      queryNumber: entry.id,
+      question: entry.question,
+      portability: entry.portability,
+      parameters: values,
+      declared: spec,
+      transforms: [bound.transform ?? []].flat().map((t) => t.type),
+      requests,
+      chart: entry.chart ?? null,
+      columns,
+      rowCount: rows.length,
+      rows,
+    };
+  }
+
+  /** The form, with one input per declared parameter of the question in hand. */
+  function executeForm(params, result) {
+    const q = params.get('q') ?? '';
+    const spec = result && !result.error ? result.declared : paramsOf(entryByNumber(Number(q)) ?? {});
+    const picked = (name, fallback) => esc(params.get(name) ?? fallback);
+    const options = catalogEntries()
+      .map((e) => `<option value="${e.id}" ${String(e.id) === String(q) ? 'selected' : ''}>${esc(`Q${e.id}. ${e.question}`)}${paramsOf(e).length ? ' *' : ''}</option>`)
+      .join('');
+    return `<form method="get"><table class="form">
+<tr><td>Question:</td><td><select name="q" onchange="this.form.submit()"><option value="">— pick a question (* takes parameters) —</option>${options}</select></td></tr>
+${spec.map((p) => `<tr><td>${esc(p.label ?? p.name)}:</td><td><input type="number" name="${esc(p.name)}" value="${picked(p.name, p.default)}" min="${p.min}" max="${p.max}" style="width:100px">
+<span class="note">${esc(p.name)}: ${esc(p.type)} ${p.min}–${p.max}, default ${p.default}${p.help ? ` — ${esc(p.help)}` : ''}</span></td></tr>`).join('')}
+<tr><td>Format:</td><td><select name="f">${['html', 'pjson', 'json'].map((o) => `<option ${params.get('f') === o ? 'selected' : ''}>${o}</option>`).join('')}</select></td></tr>
+<tr><td></td><td><button type="submit">Execute</button></td></tr></table></form>`;
+  }
+
   return function route({ path, params, prefix = '' }) {
     const p = relativeTo(path, prefix).replace(/\/+$/, '') || '/';
     const lp = p.toLowerCase();
@@ -139,7 +231,8 @@ export function createRestRouter(svc, cfg, hooks = {}) {
 
       if (!idMatch[2]) {
         if (f === 'html') {
-          const ops = `<a href="${at(`/${id}/query`)}">Query</a>${id === 0 ? ` | <a href="${at('/0/sql')}">SQL (mock extension)</a>` : ''}`;
+          const extra = { 0: ` | <a href="${at('/0/sql')}">SQL (mock extension)</a>`, 1: ` | <a href="${at('/1/execute')}">Execute (mock extension)</a>` }[id] ?? '';
+          const ops = `<a href="${at(`/${id}/query`)}">Query</a>${extra}`;
           return html(htmlPage(name, crumbs([['Home', `${prefix}/arcgis/rest/services`], [cfg.serviceName, at('')], [name, null]]),
             `<h2>${esc(info.type)}: ${esc(name)} (ID: ${id})</h2><p>Supported Operations: ${ops}</p><pre>${esc(JSON.stringify(info, null, 2))}</pre>`));
         }
@@ -156,6 +249,19 @@ export function createRestRouter(svc, cfg, hooks = {}) {
       const result = svc.query(params, id);
       hooks.onQuery?.({ ms: Date.now() - t0, layerId: id, params, result });
       return json(result, f);
+    }
+
+    if (lp === `${lbase}/1/execute`) {
+      const result = execute(params);
+      if (f === 'html') {
+        return html(htmlPage('Execute', crumbs([['Home', `${prefix}/arcgis/rest/services`], [cfg.serviceName, at('')], ['QueryLibrary', at('/1')], ['execute', null]]),
+          `<h2>Execute a catalogued question (mock extension, not part of ArcGIS REST)</h2>
+<p class="note">The only inputs are a question number and the parameters that question declares.
+A <code>where</code> or <code>outStatistics</code> sent here is refused: this route exists to show
+the executor's input type narrowed back to an identifier.</p>
+${executeForm(params, result)}${result ? `<h3>Result</h3><pre>${esc(JSON.stringify(result, null, 2))}</pre>` : ''}`));
+      }
+      return json(result ?? restError(400, "Missing 'q': the QueryNumber of a catalogued question", ['Discover the catalogue at /FeatureServer/1/query?where=1=1&outFields=*']), f);
     }
 
     if (lp === `${lbase}/0/sql`) {

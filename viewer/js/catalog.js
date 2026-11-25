@@ -11,28 +11,12 @@
  * publishing the catalog as data rather than as code.
  */
 import { CONFIG } from './config.js';
-import { toRows } from '../../sql-library/runner.js';
+import { toRows, entryFromRow } from '../../sql-library/runner.js';
 
-/**
- * A catalog row, reshaped into the entry object runner.js and the panels expect.
- * The Chart* columns become `chart`, the presentation contract the result drawer
- * obeys — so how a question is drawn arrives in the same request as the question.
- */
-const toEntry = (r) => ({
-  id: r.QueryNumber,
-  category: r.Category,
-  question: r.Question,
-  dimension: r.Dimension,
-  layer: r.AnalyticLayer,
-  portability: r.Portability,
-  rest: JSON.parse(r.RestParams),
-  transform: r.TransformSpec ? JSON.parse(r.TransformSpec) : undefined,
-  chart: r.HasChart
-    ? { type: r.ChartType, labels: r.ChartLabelColumn, values: r.ChartValueColumns, series: r.ChartSeriesColumn ?? undefined, annotation: r.ChartAnnotationColumn ?? undefined }
-    : undefined,
-  tsql: r.SqlText,
-  notes: r.Notes ?? undefined,
-});
+// The row -> entry mapping lives in runner.js, because the service's own execute route
+// does the same thing with the same rows (server/restRouter.js) and the two must not
+// drift. The Chart* columns become `chart` and ParamSpec becomes `params`, so how a
+// question is drawn and what may be varied both arrive with the question itself.
 
 /**
  * Fetch the whole catalog.
@@ -43,7 +27,7 @@ export async function fetchCatalog() {
   const res = await fetch(`${CONFIG.catalogUrl}/query`, { method: 'POST', body });
   const json = await res.json();
   if (json.error) throw new Error(`Query catalog unavailable: ${json.error.message}`);
-  const entries = toRows(json).map(toEntry);
+  const entries = toRows(json).map(entryFromRow);
   if (!entries.length) throw new Error('The query catalog (FeatureServer table 1) returned no rows.');
   return { entries, categories: [...new Set(entries.map((e) => e.category))], url: `${CONFIG.catalogUrl}/query` };
 }

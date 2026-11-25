@@ -90,6 +90,15 @@ table.grid td.num { text-align: right; font-variant-numeric: tabular-nums; }
 table.grid td.null { color: #b3bac2; font-style: italic; }
 table.grid tr.clickable:hover td { background: #eef5fb; cursor: pointer; }
 
+/* ------------------------------------------------ bounded parameters (catalog ParamSpec) */
+.params { border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; margin: 8px 0; background: #fcfcfb; }
+.param-inputs { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.params label { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; }
+.params input { width: 76px; padding: 3px 6px; font: 12px Consolas, monospace; }
+.params .note { margin-top: 6px; }
+.params .param-errors:empty { display: none; }
+.params .param-errors { color: #b3261e; }
+
 /* ------------------------------------------------ dashboard */
 .dash-head { display: flex; align-items: flex-start; gap: 8px; }
 .dash-head .scope { flex: 1; word-break: break-word; }

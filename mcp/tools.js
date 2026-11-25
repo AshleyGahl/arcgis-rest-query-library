@@ -26,7 +26,7 @@
  */
 import { FIELDS } from '../server/schema.js';
 import { queryLibrary, getQuery } from '../sql-library/queryLibrary.js';
-import { runEntry, toQueryUrl, toRows } from '../sql-library/runner.js';
+import { runEntry, toQueryUrl, toRows, bindEntry, paramsOf } from '../sql-library/runner.js';
 
 /** Row cap on every tool result: a tool reply becomes tokens in someone's context. */
 export const MAX_ROWS = 200;
@@ -59,7 +59,7 @@ const NO_COMPARE = new Set([50]);
  * response an agent would have received for the same question. Building it here means
  * that lane is the real payload from the real code, not a second implementation of it.
  *
- * @param q          the library entry
+ * @param q          the library entry, bound if it declares parameters (`bindEntry`)
  * @param runResult  what `runEntry(q, fetcher)` resolved to
  * @param tsqlResult optional `{ sqlite, columns, rows } | { error }` from the /sql side
  */
@@ -67,6 +67,9 @@ export function libraryQueryPayload({ q, runResult, tsqlResult }) {
   const dateCols = runResult.requests.flatMap((x) => dateColsOf(x.response));
   const out = {
     id: q.id, question: q.question, portability: q.portability, notes: q.notes,
+    // Present only for a question that declares bounded parameters, and then always:
+    // the reader needs to know which variant of the question these rows answer.
+    ...(q.paramValues ? { parameters: q.paramValues } : {}),
     rest: q.rest, transform: q.transform,
     urls: runResult.requests.map((x) => x.url),
     result: clip(fmtDates(runResult.rows, dateCols)),
@@ -190,18 +193,37 @@ export function createTools({ service, layerUrl }) {
         .filter((q) => (!portability || q.portability === portability)
           && (!category || q.category.toLowerCase().includes(category.toLowerCase()))
           && (!search || `${q.question} ${q.tsql}`.toLowerCase().includes(search.toLowerCase())))
-        .map(({ id, category: c, dimension, layer, portability: p, question }) => ({ id, category: c, dimension, layer, portability: p, question })),
+        .map(({ id, category: c, dimension, layer, portability: p, question, params }) => ({
+          id, category: c, dimension, layer, portability: p, question,
+          // What may be varied, so the list is also the extension contract.
+          ...(params?.length ? { params: params.map(({ name, type, min, max, default: d }) => ({ name, type, min, max, default: d })) } : {}),
+        })),
     },
     {
       name: 'run_library_query',
-      description: 'Run a library entry by id via REST (with its client-side transform). compare=true also runs the original T-SQL for side-by-side checking.',
-      inputSchema: { type: 'object', properties: { id: { type: 'integer' }, compare: { type: 'boolean', default: false } }, required: ['id'] },
-      handler: async ({ id, compare }) => {
+      description: 'Run a library entry by id via REST (with its client-side transform). Some entries declare bounded parameters (list_library shows them) which params may vary within the author\'s declared range; anything outside it is refused. compare=true also runs the original T-SQL for side-by-side checking.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          id: { type: 'integer' },
+          params: { type: 'object', description: 'Values for the entry\'s declared bounded parameters, e.g. {"top": 10}. Omit for the question as published.' },
+          compare: { type: 'boolean', default: false },
+        },
+        required: ['id'],
+      },
+      handler: async ({ id, params, compare }) => {
         const q = getQuery(id);
         if (!q) throw new Error(`No library query ${id}`);
-        const runResult = await runEntry(q, local);
-        const tsqlResult = compare && comparable(q) ? await service.sql(q.tsql) : undefined;
-        return libraryQueryPayload({ q, runResult, tsqlResult });
+        // Bind before running: an out-of-range value is a refusal, not a clamp, and the
+        // declaration travels with the entry so this tool needs no per-question knowledge.
+        const { entry, errors } = bindEntry(q, params ?? {});
+        if (errors.length) {
+          const declared = paramsOf(q).map((p) => `${p.name} (${p.type} ${p.min}..${p.max}, default ${p.default})`).join('; ');
+          throw new Error(`Query ${id} not run: ${errors.join('; ')}.${declared ? ` Declared: ${declared}` : ''}`);
+        }
+        const runResult = await runEntry(entry, local);
+        const tsqlResult = compare && comparable(entry) ? await service.sql(entry.tsql) : undefined;
+        return libraryQueryPayload({ q: entry, runResult, tsqlResult });
       },
     },
     {
