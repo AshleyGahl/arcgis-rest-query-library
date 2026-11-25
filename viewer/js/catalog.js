@@ -13,7 +13,11 @@
 import { CONFIG } from './config.js';
 import { toRows } from '../../sql-library/runner.js';
 
-/** A catalog row, reshaped into the entry object runner.js and the panels expect. */
+/**
+ * A catalog row, reshaped into the entry object runner.js and the panels expect.
+ * The Chart* columns become `chart`, the presentation contract the result drawer
+ * obeys — so how a question is drawn arrives in the same request as the question.
+ */
 const toEntry = (r) => ({
   id: r.QueryNumber,
   category: r.Category,
@@ -23,6 +27,9 @@ const toEntry = (r) => ({
   portability: r.Portability,
   rest: JSON.parse(r.RestParams),
   transform: r.TransformSpec ? JSON.parse(r.TransformSpec) : undefined,
+  chart: r.HasChart
+    ? { type: r.ChartType, labels: r.ChartLabelColumn, values: r.ChartValueColumns, series: r.ChartSeriesColumn ?? undefined, annotation: r.ChartAnnotationColumn ?? undefined }
+    : undefined,
   tsql: r.SqlText,
   notes: r.Notes ?? undefined,
 });

@@ -19,6 +19,14 @@
  * outStatistics / orderByFields / having) rather than a SELECT statement, because
  * that is what a real FeatureServer accepts — see docs/query-catalog.md. `SqlText`
  * carries the equivalent T-SQL alongside it for audit and for the SQL Server path.
+ *
+ * The `Chart*` columns carry the presentation contract in the same row, so one request
+ * tells a client both what the question is and how its answer is drawn. There is no
+ * per-question response type anywhere in this pipeline, so these columns are where the
+ * shape of an answer is declared — docs/catalog-pattern.md section 2. A renderer that
+ * guesses from the shape of the rows instead is making an inference, and an inference
+ * cannot be wrong loudly. `HasChart = 0` is the author saying this result is a figure
+ * or a list of features, not a chart.
  */
 import { queryLibrary } from '../sql-library/queryLibrary.js';
 
@@ -32,6 +40,12 @@ export const CATALOG_FIELDS = [
   { name: 'Portability', type: 'esriFieldTypeString', alias: 'Portability', length: 20 },
   { name: 'RequestCount', type: 'esriFieldTypeSmallInteger', alias: 'REST Requests' },
   { name: 'Transforms', type: 'esriFieldTypeString', alias: 'Client Transforms', length: 100 },
+  { name: 'HasChart', type: 'esriFieldTypeSmallInteger', alias: 'Has Chart' },
+  { name: 'ChartType', type: 'esriFieldTypeString', alias: 'Chart Type', length: 20 },
+  { name: 'ChartLabelColumn', type: 'esriFieldTypeString', alias: 'Chart Label Column', length: 100 },
+  { name: 'ChartValueColumns', type: 'esriFieldTypeString', alias: 'Chart Value Columns', length: 200 },
+  { name: 'ChartSeriesColumn', type: 'esriFieldTypeString', alias: 'Chart Series Column', length: 100 },
+  { name: 'ChartAnnotationColumn', type: 'esriFieldTypeString', alias: 'Chart Annotation Column', length: 100 },
   { name: 'RestParams', type: 'esriFieldTypeString', alias: 'REST Parameters (JSON)', length: 4000 },
   { name: 'TransformSpec', type: 'esriFieldTypeString', alias: 'Transform Spec (JSON)', length: 1000 },
   { name: 'SqlText', type: 'esriFieldTypeString', alias: 'T-SQL', length: 4000 },
@@ -59,6 +73,12 @@ export const catalogRows = () =>
         Portability: e.portability,
         RequestCount: requests.length,
         Transforms: transforms.map((t) => t.type).join(', '),
+        HasChart: e.chart ? 1 : 0,
+        ChartType: e.chart?.type ?? null,
+        ChartLabelColumn: e.chart?.labels ?? null,
+        ChartValueColumns: e.chart?.values ?? null,
+        ChartSeriesColumn: e.chart?.series ?? null,
+        ChartAnnotationColumn: e.chart?.annotation ?? null,
         RestParams: JSON.stringify(Array.isArray(e.rest) ? e.rest : e.rest),
         TransformSpec: transforms.length ? JSON.stringify(transforms) : null,
         SqlText: e.tsql,

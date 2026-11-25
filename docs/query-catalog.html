@@ -23,7 +23,7 @@
   </nav>
 </header>
 <main>
-<nav class="toc" aria-label="On this page"><h2>On this page</h2><ol><li><a href="#why-the-catalog-stores-parameters-not-statements">Why the catalog stores parameters, not statements</a></li><li><a href="#what-this-buys-and-what-it-does-not">What this buys, and what it does not</a></li><li><a href="#adding-a-question">Adding a question</a></li></ol></nav>
+<nav class="toc" aria-label="On this page"><h2>On this page</h2><ol><li><a href="#why-the-catalog-stores-parameters-not-statements">Why the catalog stores parameters, not statements</a></li><li><a href="#what-else-the-row-carries">What else the row carries</a></li><li><a href="#what-this-buys-and-what-it-does-not">What this buys, and what it does not</a></li><li><a href="#adding-a-question">Adding a question</a></li></ol></nav>
 <article>
 <h1>The query catalog as a FeatureServer table</h1>
 <p><em>For developers evaluating this pattern, and for anyone maintaining the library.</em></p>
@@ -45,6 +45,12 @@
                       "outStatisticFieldName": "AvgDays" }],
   "orderByFields": "AvgDays"
 }</code></pre>
+<h2 id="what-else-the-row-carries">What else the row carries</h2>
+<p>A client that has the parameters still has to decide what to do with the rows that come back, and that decision is in the row too. Six <code>Chart*</code> columns say how the author intends the answer to be drawn:</p>
+<pre><code>HasChart = 1, ChartType = 'bar', ChartLabelColumn = 'CategorySub',
+ChartValueColumns = 'AvgDays', ChartAnnotationColumn = 'Closed'</code></pre>
+<p>Forty-four of the seventy questions carry a contract; the rest declare <code>HasChart = 0</code>, because a single figure or a list of features is not a chart. Being data, the contract is queryable like anything else — <code>where=HasChart=1</code> returns the questions a client can draw, and grouping by <code>ChartType</code> counts them by kind, with no reporting code on either side.</p>
+<p>The alternative is for the client to infer the chart from the shape of the result, which this viewer still does for anything with no contract (the SQL console, an edited statement). The difference is not cosmetic: a declared contract can be checked, and <code>test/catalog.test.js</code> checks every one of the forty-four against the columns its question actually returns. An inference cannot be checked, because it has not claimed anything.</p>
 <p><code>SqlText</code> carries the equivalent T-SQL in the same row. It is not dead weight: it is the reference definition the REST request must reproduce, the audit record of what a metric means, and what you execute if you point the same catalog at SQL Server instead (<code>sql/03_vw_QueryLibrary.sql</code> is generated from the same source).</p>
 <h2 id="what-this-buys-and-what-it-does-not">What this buys, and what it does not</h2>
 <p>Measured against the library as it stands — run <code>npm test</code> to re-check every number here.</p>

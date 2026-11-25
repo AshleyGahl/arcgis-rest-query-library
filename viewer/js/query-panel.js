@@ -122,7 +122,7 @@ export function createQueryPanel({ prefix, mode, map, filters, store }) {
         title: `Q${q.id}. ${q.question}`,
         meta: q.transform ? 'with client-side transform' : '',
         urls: r.requests.map((x) => x.url),
-        rows: r.rows, columns: r.columns, dateColumns,
+        rows: r.rows, columns: r.columns, dateColumns, chart: q.chart ?? null,
         onRowClick: (row) => map.highlightIds([row.ObjectID]),
       });
       const ids = r.rows.map((x) => x.ObjectID).filter((x) => x != null);

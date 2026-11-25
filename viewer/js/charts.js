@@ -30,7 +30,10 @@ export function destroyChart(canvasId) {
 /**
  * spec = {
  *   type: 'bar' | 'line', labels: [], datasets: [{ label, data, color | colors }],
- *   horizontal, stacked, yTitle, xTitle, onClick(label, datasetLabel, index), digits
+ *   horizontal, stacked, yTitle, xTitle, onClick(label, datasetLabel, index), digits,
+ *   annotation: { label, values[] }  — a per-category value shown in the tooltip but not
+ *                plotted, so a supporting count can sit beside an average without needing
+ *                a second y-axis
  * }
  */
 export function drawChart(canvasId, spec) {
@@ -93,6 +96,10 @@ export function drawChart(canvasId, spec) {
           borderColor: 'rgba(11,11,11,0.12)', borderWidth: 1, padding: 8, boxPadding: 4, usePointStyle: true,
           callbacks: {
             label: (ctx) => `${multi ? ctx.dataset.label + ': ' : ''}${fmtNum(ctx.parsed[valueAxis], spec.digits ?? (Number.isInteger(ctx.parsed[valueAxis]) ? 0 : 1))}`,
+            afterBody: spec.annotation ? (items) => {
+              const v = spec.annotation.values[items[0].dataIndex];
+              return v == null ? '' : `${spec.annotation.label}: ${fmtNum(v, Number.isInteger(v) ? 0 : 1)}`;
+            } : undefined,
             footer: spec.onClick ? () => 'Click to filter the map' : undefined,
           },
           footerColor: INK.muted, footerFont: { weight: 'normal', size: 10 },

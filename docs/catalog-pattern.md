@@ -282,14 +282,20 @@ the platform replaces the storage, the executor and the serialisation. **It does
 trust boundary.** A tier that refuses to forward a client-supplied predicate is still required if
 the whitelist property matters.
 
-**Missing.** Three things the pattern calls for are absent here, each named against its section:
+**Added since.** The `Chart*` columns of section 2 are now in the catalog: 44 of the 70 questions
+declare how their answer is drawn, 26 declare `HasChart = 0`, and the result drawer obeys the
+contract where there is one, falling back to inferring from the shape of the rows only where there
+is not. The gap that mattered was not the column but that nothing could check the shape of an
+answer: `test/catalog.test.js` now runs every charted question and fails if a declared column is
+missing from its result or is not numeric. That is section 5's load-time contract check standing in
+a test rather than in a process boot — the most this repo can do while the library is source rather
+than stored state.
 
-1. **Chart metadata in the catalog row** (section 2). The chart type is inferred from the shape of
-   the result in `viewer/js/result-chart.js` instead of being declared by the author. That is the
-   third row of the table in section 2 — an inference where there should be a contract.
-2. **Bounded parameterisation** (section 4). There is no way to vary a question within limits its
+**Still missing.** Two things the pattern calls for, each named against its section:
+
+1. **Bounded parameterisation** (section 4). There is no way to vary a question within limits its
    author ratified, so the only choices on offer are the exact question or a free-form query.
-3. **A validated definition cache** (sections 5 and 6). The library is loaded from source at
+2. **A validated definition cache** (sections 5 and 6). The library is loaded from source at
    start-up rather than from a mutable store, so neither the coherence protocol nor the load-time
    contract check has anywhere to live — and the liability in section 7 is correspondingly unguarded.
 

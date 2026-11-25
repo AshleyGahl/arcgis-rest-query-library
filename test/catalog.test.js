@@ -148,8 +148,67 @@ for (const row of catalog) {
     const direct = await runEntry(entry, async (p) => ({ url: '(in-process)', json: svc.query(p) }));
     assert.deepEqual(rows, direct.rows);
     assert.ok(rows.length > 0, 'a catalogued question should return rows');
+
+    // The chart contract has to describe THIS result. A declared column that no longer
+    // exists is exactly the silent failure the catalog is meant to remove: with the type
+    // living in the data, nothing else checks it — see docs/catalog-pattern.md section 8.
+    if (row.HasChart) {
+      const columns = [...new Set(rows.flatMap((r) => Object.keys(r)))];
+      const numeric = (c) => rows.every((r) => r[c] == null || typeof r[c] === 'number');
+      const named = (col) => String(col ?? '').split(',').map((c) => c.trim()).filter(Boolean);
+      const where = (what, c) => `Q${row.QueryNumber} ${what} names ${c}, which the result does not have: [${columns}]`;
+      for (const c of named(row.ChartLabelColumn)) assert.ok(columns.includes(c), where('ChartLabelColumn', c));
+      for (const c of named(row.ChartSeriesColumn)) assert.ok(columns.includes(c), where('ChartSeriesColumn', c));
+      for (const c of named(row.ChartAnnotationColumn)) assert.ok(columns.includes(c), where('ChartAnnotationColumn', c));
+      for (const c of named(row.ChartValueColumns)) {
+        assert.ok(columns.includes(c), where('ChartValueColumns', c));
+        assert.ok(numeric(c), `Q${row.QueryNumber} plots ${c}, which is not numeric`);
+      }
+    }
   });
 }
+
+// ------------------------------------------------------------------ the presentation contract
+/**
+ * With no per-question response type anywhere in this pipeline, the Chart* columns are
+ * where the shape of an answer is declared. These check the contract is well formed; the
+ * loop above checks it still matches the rows the question actually returns.
+ */
+test('every charted row declares a type from the vocabulary and something to plot', () => {
+  const charted = catalog.filter((r) => r.HasChart === 1);
+  assert.equal(charted.length, 44);
+  for (const r of charted) {
+    assert.ok(['bar', 'line'].includes(r.ChartType), `Q${r.QueryNumber} declares ChartType ${r.ChartType}`);
+    assert.ok(r.ChartValueColumns, `Q${r.QueryNumber} has HasChart = 1 but nothing to plot`);
+  }
+});
+
+test('a row with no chart declares no chart columns', () => {
+  // HasChart = 0 is the author saying a single figure or a list of features is not a
+  // chart. It must not leave half a contract behind for a client to half-honour.
+  for (const r of catalog.filter((x) => x.HasChart === 0)) {
+    assert.deepEqual(
+      [r.ChartType, r.ChartLabelColumn, r.ChartValueColumns, r.ChartSeriesColumn, r.ChartAnnotationColumn],
+      [null, null, null, null, null],
+      `Q${r.QueryNumber} has HasChart = 0 but declares chart columns`,
+    );
+  }
+});
+
+test('a client can ask the catalog for just the charted questions', () => {
+  // One request, and the client knows which answers it can draw — the chart contract is
+  // queryable because it is data, like everything else in the row.
+  const rows = attrs(rest(1, { where: 'HasChart = 1', outFields: 'QueryNumber,ChartType,ChartValueColumns', orderByFields: 'QueryNumber' }));
+  assert.equal(rows.length, 44);
+  assert.ok(rows.every((r) => r.ChartValueColumns));
+  const byType = attrs(rest(1, {
+    where: 'HasChart = 1',
+    groupByFieldsForStatistics: 'ChartType',
+    outStatistics: [{ statisticType: 'count', onStatisticField: 'ObjectID', outStatisticFieldName: 'Count' }],
+    orderByFields: 'Count DESC',
+  }));
+  assert.equal(byType.reduce((a, r) => a + r.Count, 0), 44);
+});
 
 test('the catalog advertises exactly the transforms the library needs', () => {
   const needsTransform = catalog.filter((r) => r.Transforms);

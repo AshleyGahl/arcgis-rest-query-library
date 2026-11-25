@@ -62,7 +62,8 @@ server/nodeRuntime.js           Node runtime for the engine (fs + node:sqlite) +
 server/serviceConfig.js         platform-free service defaults, shared with the browser demo
 server/sqlDialect.js            T-SQL / ArcGIS SQL → SQLite rewrites + registered T-SQL functions
 server/schema.js                field list (single source of truth for layer 0's schema)
-server/catalogSchema.js         layer 1: the query library as a non-spatial table (fields + rows)
+server/catalogSchema.js         layer 1: the query library as a non-spatial table (fields + rows,
+                                incl. the Chart* presentation contract)
 sql-library/queryLibrary.js     THE library (70 entries: rest params, transform, tsql, portability)
                                 also the source of layer 1, via server/catalogSchema.js
 sql-library/runner.js           runs entries anywhere + client-side transforms (LAG, running totals…)
@@ -111,6 +112,12 @@ mcp/server.js                   stdio transport over it, for Claude Code (Node o
 - `Status` is `Open` | `In Progress` | `Closed`. "Unresolved" means `Status <> 'Closed'`.
 - Grids default to `ObjectID DESC` (then `Created`, `Received`) when those columns exist.
 - SQL Server data-access objects: always provide **both** a view form and a stored-proc form.
+- **The chart is declared, not guessed.** Layer 1 carries the presentation contract (`HasChart`,
+  `ChartType`, `ChartLabelColumn`, `ChartValueColumns`, `ChartSeriesColumn`, `ChartAnnotationColumn`),
+  set by the `chart` field of a library entry. `viewer/js/result-chart.js` obeys it and only infers
+  from the result's shape when there is no contract (the SQL console, an edited statement). A new
+  charted entry must name columns its result really has: `test/catalog.test.js` runs all 44 and fails
+  otherwise. Several `ChartValueColumns` are allowed only when they share a unit — one y-axis.
 - **Charts:** colours come from `viewer/js/config.js`. It is a validated palette in fixed order, and a colour follows its entity. One y-axis only, more than 8 series fold into "Other", and there is a legend only when there are 2 or more series.
 - The engine is read-only (`PRAGMA query_only` plus a statement filter). Keep it that way.
 - **Two layers, one pipeline.** `svc.query(params, layerId)` serves layer 0 (features) and table 1

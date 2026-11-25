@@ -114,6 +114,12 @@ so `…/FeatureServer/1?f=json` describes it exactly as a real published table w
 | `Portability` | `esriFieldTypeString` | 20 | `standard` · `sql-expression` · `native` · `extension` |
 | `RequestCount` | `esriFieldTypeSmallInteger` | — | REST requests needed (1, or 2 for Q62) |
 | `Transforms` | `esriFieldTypeString` | 100 | names of the client-side steps, comma-separated |
+| `HasChart` | `esriFieldTypeSmallInteger` | — | 1 when the author says this answer is a chart (44 of 70) |
+| `ChartType` | `esriFieldTypeString` | 20 | `bar` or `line` |
+| `ChartLabelColumn` | `esriFieldTypeString` | 100 | the category axis; two columns joined when a label needs both (`Year,Month`) |
+| `ChartValueColumns` | `esriFieldTypeString` | 200 | the measure(s) to plot — several only when they share a unit |
+| `ChartSeriesColumn` | `esriFieldTypeString` | 100 | splits into one dataset per value, or null |
+| `ChartAnnotationColumn` | `esriFieldTypeString` | 100 | carried into the tooltip without being plotted, or null |
 | `RestParams` | `esriFieldTypeString` | 4000 | **the executable payload**: the decomposed query as JSON |
 | `TransformSpec` | `esriFieldTypeString` | 1000 | the transform parameters as JSON, or null |
 | `SqlText` | `esriFieldTypeString` | 4000 | the reference T-SQL statement |
@@ -122,6 +128,15 @@ so `…/FeatureServer/1?f=json` describes it exactly as a real published table w
 `RestParams` holds `where` / `groupByFieldsForStatistics` / `outStatistics` / `having` /
 `orderByFields`, never a `SELECT` — see the [query catalog](query-catalog.md) for why that
 distinction is the whole point of the pattern.
+
+The `Chart*` columns are the presentation contract. No response type is declared for any
+question anywhere in this pipeline, so these columns are the only place the shape of an answer
+is written down: which column is the category axis, which are the measures, what splits into
+series. `viewer/js/result-chart.js` obeys them and falls back to inferring from the shape of
+the rows only for results that have no contract, such as anything run from the SQL console.
+`HasChart = 0` is a statement in its own right — a single figure or a list of features is not
+a chart — and the [catalog pattern](catalog-pattern.md) explains why a declared contract and an
+inferred one are not the same kind of thing.
 
 ### How it is set up in the mock database
 
@@ -165,6 +180,9 @@ columns and the statement itself:
 | `AnalyticalLayer` | `NVARCHAR` | layer 1 calls this `AnalyticLayer` |
 | `Question` | `NVARCHAR` | same value |
 | `SQLText` | `NVARCHAR` | layer 1 calls this `SqlText` |
+| `HasChart` | `INT` | same value |
+| `ChartType`, `ChartLabelColumn`, `ChartValueColumns` | `NVARCHAR(200)` | same values |
+| `ChartSeriesColumn`, `ChartAnnotationColumn` | `NVARCHAR(200)` | same values |
 
 An entry is executed by number, through the proc form in the same script — the T-SQL counterpart
 of replaying a row's `RestParams` against layer 0:
@@ -189,6 +207,11 @@ current. And it is not the same schema as layer 1: it has no `Portability`, `Req
 `Transforms`, `RestParams` or `TransformSpec`, because those describe the *REST* half of an entry
 and mean nothing to a client that already holds a T-SQL statement. The two catalogues are two
 projections of one source, each carrying the columns its own execution path can act on.
+
+The `Chart*` columns are the exception that shows the rule: they appear in both, because they
+describe the *answer* rather than the route taken to it. Whichever way a client resolves query 44
+— replaying `RestParams` against layer 0, or `EXEC dbo.usp_RunLibraryQuery @QueryNumber = 44` —
+it gets the same rows and the same instruction for drawing them.
 
 ## 4. The two REST hops, end to end
 

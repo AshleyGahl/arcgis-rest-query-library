@@ -100,7 +100,7 @@
     So a client needs exactly two requests, and both are the standard ArcGIS <code>query</code>
     operation &mdash; neither is specific to any question:
   </p>
-  <pre><code>GET  …/FeatureServer/1/query?where=1=1&amp;outFields=*        <span class="cmt">&larr; 70 rows: Question, Portability, RestParams, SqlText…</span>
+  <pre><code>GET  …/FeatureServer/1/query?where=1=1&amp;outFields=*        <span class="cmt">&larr; 70 rows: Question, Portability, RestParams, SqlText, ChartType…</span>
 POST …/FeatureServer/0/query  &lt;the RestParams of one row&gt;  <span class="cmt">&larr; the answer, computed in the service's SQL engine</span></code></pre>
   <p>
     There is no analytics controller. Adding a metric is a row, not a deployment: it appears in the

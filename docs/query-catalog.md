@@ -45,6 +45,28 @@ and the service transforms and executes those server-side in its own engine. So 
 }
 ```
 
+## What else the row carries
+
+A client that has the parameters still has to decide what to do with the rows that come back,
+and that decision is in the row too. Six `Chart*` columns say how the author intends the answer
+to be drawn:
+
+```
+HasChart = 1, ChartType = 'bar', ChartLabelColumn = 'CategorySub',
+ChartValueColumns = 'AvgDays', ChartAnnotationColumn = 'Closed'
+```
+
+Forty-four of the seventy questions carry a contract; the rest declare `HasChart = 0`, because a
+single figure or a list of features is not a chart. Being data, the contract is queryable like
+anything else — `where=HasChart=1` returns the questions a client can draw, and grouping by
+`ChartType` counts them by kind, with no reporting code on either side.
+
+The alternative is for the client to infer the chart from the shape of the result, which this
+viewer still does for anything with no contract (the SQL console, an edited statement). The
+difference is not cosmetic: a declared contract can be checked, and `test/catalog.test.js`
+checks every one of the forty-four against the columns its question actually returns. An
+inference cannot be checked, because it has not claimed anything.
+
 `SqlText` carries the equivalent T-SQL in the same row. It is not dead weight: it is the
 reference definition the REST request must reproduce, the audit record of what a metric
 means, and what you execute if you point the same catalog at SQL Server instead

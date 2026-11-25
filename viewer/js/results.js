@@ -79,8 +79,8 @@ function setMode(m) {
   renderBody();
 }
 
-export function showResults({ title, meta = '', urls = [], rows, columns, dateColumns, onRowClick }) {
-  current = { rows, columns, title, dateColumns };
+export function showResults({ title, meta = '', urls = [], rows, columns, dateColumns, chart = null, onRowClick }) {
+  current = { rows, columns, title, dateColumns, chart };
   $('resTitle').textContent = title;
   $('resMeta').textContent = `${rows.length} row${rows.length === 1 ? '' : 's'}${meta ? ' · ' + meta : ''}`;
   $('resRequest').innerHTML = urls.map((u) => `<a href="${esc(u.replace('f=json', 'f=pjson'))}" target="_blank">${esc(decodeURIComponent(u))}</a>`).join('<br>');
