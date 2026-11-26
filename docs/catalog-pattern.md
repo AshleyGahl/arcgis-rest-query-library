@@ -294,7 +294,9 @@ front and the invariant returns, even with every definition published. So publis
 already imposed by accepting a query rather than an id. It discloses little else on a plain service:
 `…/FeatureServer/0?f=json` already publishes every field and type, and `query` already accepts
 arbitrary filters. The reference T-SQL is the one genuine addition, and here it is documentation
-rather than something a client executes.
+rather than something a client executes. That it costs no *enforcement* is not the same as costing
+nothing: a library whose entries reach past the published layer discloses real schema, which is
+limit 4 in [the query catalog page](query-catalog.md).
 
 Two of section 4's four payoffs are what actually go:
 

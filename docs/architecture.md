@@ -324,6 +324,6 @@ it knows nothing about any individual question. The viewer still replays rows ag
 because that is the honest demonstration of what a FeatureServer alone can do; the tier is what
 you add when the bounds have to be enforced rather than published.
 
-See also: [query catalog](query-catalog.md) for the design argument and its three real limits,
+See also: [query catalog](query-catalog.md) for the design argument and its four real limits,
 [data model](data-model.md) for layer 0's fields, [analytics framework](framework.md) for the
 dimensions the catalog columns expose.

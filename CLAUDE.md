@@ -48,7 +48,7 @@ data/service_requests.geojson   the "service" (epoch-ms dates, WGS84 points, met
 docs/architecture.md            component map, layer 1's table schema, the library in both databases
 docs/data-model.md              fields, categories, how the generated data behaves
 docs/framework.md               5W+H dimensions, analytical layers, roadmap
-docs/query-catalog.md           the catalog-as-a-table architecture, and its three real limits
+docs/query-catalog.md           the catalog-as-a-table architecture, and its four real limits
 docs/catalog-pattern.md         the pattern argued platform-free, its costs, this repo scored against it
 docs/overview.md                the front door: what the PoC tests, the architecture, what it shows
 docs/*.html + docs/docs.css     GENERATED from the .md by scripts/build-docs.js (the site’s doc pages)

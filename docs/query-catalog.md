@@ -106,7 +106,7 @@ this library?"* is one `outStatistics` call, no reporting code:
 | `native` | 23 | SQL Server-backed Enterprise, `sqlFormat=native` |
 | `extension` | 1 | this mock only |
 
-**Does not hold.** Three limits are real and worth stating before anyone builds on this:
+**Does not hold.** Four limits are real and worth stating before anyone builds on this:
 
 1. **The `query` operation has no window functions.** Nine entries come back as raw groups
    and are finished on the client by `sql-library/runner.js` — `lag`, `runningTotal`,
@@ -136,6 +136,38 @@ this library?"* is one `outStatistics` call, no reporting code:
    see [the catalog pattern](catalog-pattern.md) for why that one component is what the whole
    invariant hangs on. Layer 0 is unchanged and still accepts anything, which is the point: the
    tier is something you put *in front*, not a setting you switch on.
+
+4. **Publishing the definition is a disclosure decision, and this repo makes the easy version
+   of it.** `RestParams` and `SqlText` are columns of a table any reader of the service can
+   query, so every metric formula in the library is public. Three claims about that need to be
+   kept apart, because they have different answers.
+
+   *It does not cost enforcement.* Withholding the definitions recovers nothing while layer 0
+   accepts a predicate: a reader who cannot see `SqlText` can still send the equivalent `where`
+   by hand. Authority comes from the input type of the executor, not from the definition being
+   secret — [the catalog pattern](catalog-pattern.md) argues that at length. Hiding the menu
+   does not close the kitchen door.
+
+   *The disclosure is near-zero here, and that does not generalise.* Every statement in this
+   library reads `FROM ServiceRequest` and its own CTEs — no lookup table, no second fact table,
+   nothing the service does not already publish, since `…/FeatureServer/0?f=json` lists every
+   field and type anyway. A production library is not like that. One entry that joins a lookup,
+   a staff table, or a view whose `WHERE` encodes an access rule, and `SqlText` discloses schema
+   the service deliberately does not expose. The formulas can be the sensitive part on their own
+   terms, too: how an SLA breach is defined is sometimes a position, not a fact.
+
+   *The fix is a column split, not concealment.* The definition columns are readable by clients
+   only because a FeatureServer cannot execute by identifier, so the client has to replay them.
+   Give it the `/1/execute` tier from limit 3 and the split falls along the trust boundary:
+   `Question`, `Category`, `Portability`, `ParamSpec` and the `Chart*` contract are what a client
+   needs to build its UI and draw an answer, while `RestParams` and `SqlText` exist for the
+   author, the auditor and the SQL Server path. On a real platform that is two published views of
+   the same table — definition columns withheld from the general audience, the full row to an
+   authoring role — rather than anything this pattern has to invent. The costs are honest ones:
+   it does not make the definitions unguessable while layer 0 still takes a `where`, and the
+   audit role loses the "one request discovers everything, no second copy" property that
+   publishing the catalog as one table is for. This repo publishes the full row to everyone,
+   which is the right default for a demo whose whole point is that you can read it.
 
 ## Adding a question
 

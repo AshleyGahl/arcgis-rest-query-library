@@ -83,7 +83,7 @@ behaves the same on the server engine and the in-browser one.
 
 ## Where it breaks down
 
-Three limits are real, and the catalog states them per row rather than hiding them.
+Four limits are real, and the catalog states them per row rather than hiding them.
 
 - **No window functions.** `LAG`, running totals, `RANK`, moving averages and `ROLLUP` have no
   representation in `outStatistics`. Nine of the seventy come back as raw groups and are finished on
@@ -97,6 +97,12 @@ Three limits are real, and the catalog states them per row rather than hiding th
   arbitrary `where` from anyone who can reach it. Publishing a catalog gives you governance of
   *definitions*, not of *access*; the whitelist property needs a tier in front that refuses to
   forward a client-supplied predicate.
+- **Publishing the definition is a disclosure decision.** `RestParams` and `SqlText` are columns
+  anyone who can read the service can query. It costs no enforcement — a reader who cannot see the
+  SQL can still send the equivalent `where` — and it discloses nothing extra *here*, where every
+  statement reads one table the service already publishes. A production library whose entries join
+  a lookup or a restricted view is a different case, and the answer there is to split the
+  definition columns off behind the execute-by-identifier tier, not to hide them.
 
 How far each question travels is itself a column in the catalog, so the service can answer "how
 portable is this library?" with one statistics query:

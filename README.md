@@ -68,7 +68,7 @@ zero compiled-in knowledge of any question gets the same answers as one with all
 
 ### What it does *not* prove
 
-Three limits are real, and the catalog is built to state them per row rather than hide them.
+Four limits are real, and the catalog is built to state them per row rather than hide them.
 `docs/query-catalog.md` has the detail.
 
 1. **The `query` operation has no window functions.** `LAG`, running totals, `RANK`, moving
@@ -95,7 +95,20 @@ Three limits are real, and the catalog is built to state them per row rather tha
    client sending its own predicate and scanning an unindexed column. If you want the whitelist
    property — clients may pass only a query number — you need a tier in front that refuses to
    forward a client-supplied `where`. What you get here is governance of **definitions**, not of
-   **access**.
+   **access**. The mock ships that tier as `…/FeatureServer/1/execute`, which takes a question
+   number and declared parameters only, so its cost can be read rather than guessed at.
+
+4. **Publishing the definition is a disclosure decision.** `RestParams` and `SqlText` are columns
+   of a table any reader of the service can query, so every metric formula is public. It costs no
+   enforcement — a reader who cannot see the SQL can still send the equivalent `where`, because
+   authority comes from the input type of the executor, not from secrecy. And it discloses nothing
+   extra *here*: every statement in the library reads `FROM ServiceRequest` plus its own CTEs, and
+   `…/FeatureServer/0?f=json` already publishes every field and type. A production library is not
+   like that — one entry joining a lookup, a staff table or a view that encodes an access rule and
+   `SqlText` leaks schema the service withholds, quite apart from formulas that are sensitive on
+   their own terms. The answer is to split the definition columns off behind the
+   execute-by-identifier tier, which is where the trust boundary already falls, not to hide them
+   and call that enforcement. `docs/query-catalog.md` works through what that costs.
 
 ### Why a mock, and why T-SQL alongside
 
@@ -113,7 +126,7 @@ a claim you can check rather than assert.
 | | |
 |---|---|
 | [`docs/architecture.md`](docs/architecture.md) | The component map: what references what, layer 1's table schema, and how the library is set up in each database |
-| [`docs/query-catalog.md`](docs/query-catalog.md) | The architecture: the catalog table, why it stores parameters rather than statements, the three limits |
+| [`docs/query-catalog.md`](docs/query-catalog.md) | The architecture: the catalog table, why it stores parameters rather than statements, the four limits |
 | [`docs/data-model.md`](docs/data-model.md) | Fields, categories and sub-categories, how the generated data behaves, the planted defects |
 | [`docs/framework.md`](docs/framework.md) | How the 70 questions are organised: 5W+H dimensions, layers L1–L5, coverage, roadmap |
 | [`rest/catalog.http`](rest/catalog.http) | The discover-then-execute flow as runnable requests |

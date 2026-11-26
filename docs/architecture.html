@@ -179,7 +179,7 @@ EXEC sp_executesql @sql;</code></pre>
   Note over X: runner.js applies the TransformSpec here,&lt;br/&gt;not in the client
   X--&gt;&gt;C: question, parameters, rows, chart contract</div>
 <p><code>/FeatureServer/1/execute</code> is a mock extension, like <code>/0/sql</code>, and it exists to make a point the two generic hops cannot. Its input type is a question number plus the parameters that question declares — a <code>where</code> or an <code>outStatistics</code> sent to it is refused, not ignored. It resolves the row through its own layer 1, binds on the trusted side, executes, and applies the client-side transform before answering. That is the forwarding tier of the <a href="catalog-pattern.html">catalog pattern</a>: it restores the narrow input type the pattern rests on, and it knows nothing about any individual question. The viewer still replays rows against layer 0, because that is the honest demonstration of what a FeatureServer alone can do; the tier is what you add when the bounds have to be enforced rather than published.</p>
-<p>See also: <a href="query-catalog.html">query catalog</a> for the design argument and its three real limits, <a href="data-model.html">data model</a> for layer 0's fields, <a href="framework.html">analytics framework</a> for the dimensions the catalog columns expose.</p>
+<p>See also: <a href="query-catalog.html">query catalog</a> for the design argument and its four real limits, <a href="data-model.html">data model</a> for layer 0's fields, <a href="framework.html">analytics framework</a> for the dimensions the catalog columns expose.</p>
 </article>
 </main>
 <footer>
