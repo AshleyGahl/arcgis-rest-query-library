@@ -10,10 +10,11 @@
 
 Reporting is usually welded to the application tier. Every new metric that operations or
 management asks for — a 90th-percentile resolution time, a backlog breakdown by suburb, a
-month-over-month anomaly check — turns into the same engineering ritual: a new DTO, a new
-repository method, a new controller action, a Swagger update, a release. Analytical definitions
-end up scattered across C# services, JavaScript helpers and ad-hoc SQL, and nobody can say with
-confidence what metrics exist or whether two departments compute the same KPI the same way.
+month-over-month anomaly check — turns into the same engineering ritual: a new response shape, a
+new data-access method, a new endpoint, an API-docs update, a release. The stack does not change
+the ritual, only what the new files are called. Analytical definitions end up scattered across
+server code, frontend helpers and ad-hoc SQL, and nobody can say with confidence what metrics
+exist or whether two teams compute the same KPI the same way.
 
 The alternative is to stop treating analytical questions as code and start treating them as
 **data**: author each one once, store it in a catalog next to the data it queries, and give

@@ -12,12 +12,13 @@ service, each written twice so the answers can be checked.
 
 ## The problem it is testing
 
-In most enterprise and municipal systems, reporting is welded to the application tier. Every metric
-operations asks for — a 90th-percentile resolution time, a backlog breakdown by suburb, a
-month-over-month anomaly check — becomes the same ritual: a new response type, a new repository
-method, a new controller action, a docs update, a release. Analytical definitions scatter across
-server code, frontend helpers and ad-hoc SQL, until nobody can say what metrics exist or whether two
-departments compute the same KPI the same way.
+In most enterprise systems, reporting is welded to the application tier. Every metric operations
+asks for — a 90th-percentile resolution time, a backlog breakdown by suburb, a month-over-month
+anomaly check — becomes the same ritual: a new response shape, a new data-access method, a new
+endpoint, a docs update, a release. The ritual does not depend on the stack: .NET, Node, Python,
+PHP and Java differ in what the files are called, not in the fact that a question needs new ones.
+Analytical definitions scatter across server code, frontend helpers and ad-hoc SQL, until nobody
+can say what metrics exist or whether two teams compute the same KPI the same way.
 
 Handing clients open query flexibility instead just moves the problem: it pushes heavy
 window-function work outward, and exposes the schema to filters that can scan an unindexed column in
