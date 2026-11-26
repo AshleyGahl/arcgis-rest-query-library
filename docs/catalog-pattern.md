@@ -4,7 +4,7 @@
 honest scoring of this repository against it.*
 
 Every other page here describes *this* implementation: a mock ArcGIS FeatureServer, a GeoJSON of
-service requests, a library of 70 questions published as table 1. This page is the one that does
+service requests, a library of 31 questions published as table 1. This page is the one that does
 not. The design predates the platform and survives a change of platform, so it is worth stating on
 its own terms before arguing about whether any particular technology can carry it.
 
@@ -25,7 +25,7 @@ The catalog design has a large fixed cost — a generic executor and a generic r
 harder than any single endpoint — and then a marginal cost of one row.
 
 So this is an amortisation bet, and it is falsifiable. At eight questions that never change, eight
-endpoints are simpler, typed, and easier to debug. At seventy that grow every month, it is not
+endpoints are simpler, typed, and easier to debug. At dozens that grow every month, it is not
 close. **The first question to ask of this architecture is not technical: does the question set keep
 growing?** If it does, the per-question tax is permanent, and buying it out is what this pattern is
 for.
@@ -71,8 +71,8 @@ You can print it out.
 
 Two things follow that are easy to miss:
 
-- **The query set becomes a tractable optimisation target.** A DBA can read all seventy, inspect all
-  seventy plans, and index for exactly them. Nobody can do that for arbitrary client-composed
+- **The query set becomes a tractable optimisation target.** A DBA can read every statement in the
+  library, inspect every plan, and index for exactly them. Nobody can do that for arbitrary client-composed
   predicates, which is why self-service reporting has a structural performance problem rather than a
   tuning failure.
 - **"Which report is right?" is eliminated by construction**, not mitigated. One definition of
@@ -133,7 +133,7 @@ against the live schema, checked that the result columns it declares actually ex
 then refuse to start on a broken catalog.
 
 That matters because it answers the worst liability of the pattern, named in section 7: a renamed
-column breaks seventy strings in a table, and the breakage is found at runtime, by a user, on the
+column breaks every string in the table, and the breakage is found at runtime, by a user, on the
 question nobody runs. Validation at load turns that into a deployment-time failure. It is the
 closest thing this architecture has to a compiler, and the cache is where it naturally lives.
 
@@ -201,7 +201,7 @@ Stated plainly, because none of the above is free:
   path echoes the question number and its definition, all failures look identical — the diagnostic
   value of typed code is lost by default and has to be paid back deliberately.
 - **Schema refactoring loses its safety net.** A compiler finds every response type; nothing finds
-  seventy strings in a table. This is the single biggest liability, and sections 5 and 6 exist to
+  strings in a table. This is the single biggest liability, and sections 5 and 6 exist to
   buy it back.
 - **Authority has a shelf life.** A definition ratified against a business process that has since
   changed returns a confident, well-formed, wrong number — carrying the full weight of "the system
@@ -269,7 +269,7 @@ replace a hand-written API tier. Measured against the sections above:
 **Holds.** The catalog is data, served over the same generic `query` operation as the features
 themselves, so discovery and execution are both standard requests and no question is compiled into
 the client (section 4, partially). More importantly, the test suite already asserts *properties over
-the catalog* rather than behaviour per feature — 70 REST runs, 69 T-SQL runs, a catalog round-trip
+the catalog* rather than behaviour per feature — 31 REST runs, 31 T-SQL runs, a catalog round-trip
 and parity between the two — which is section 8 done properly, and the most architecturally mature
 thing here.
 
@@ -342,7 +342,7 @@ rows against layer 0, deliberately — the demonstration of what a FeatureServer
 the point of the repository, and a tier in the default path would quietly answer the question the
 PoC exists to ask.
 
-**Added since.** The `Chart*` columns of section 2 are now in the catalog: 44 of the 70 questions
+**Added since.** The `Chart*` columns of section 2 are now in the catalog: 23 of the 31 questions
 declare how their answer is drawn, 26 declare `HasChart = 0`, and the result drawer obeys the
 contract where there is one, falling back to inferring from the shape of the rows only where there
 is not. The gap that mattered was not the column but that nothing could check the shape of an

@@ -92,7 +92,6 @@ for (const entry of queryLibrary) {
 }
 
 for (const entry of queryLibrary) {
-  if (entry.id === 50) continue; // not runnable as a single statement on the mock
   test(`Q${entry.id} T-SQL matches node:sqlite`, () => {
     const wasm = wasmSvc.sql(entry.tsql);
     const node = nodeSvc.sql(entry.tsql);

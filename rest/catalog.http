@@ -53,25 +53,25 @@ GET {{cat}}/query?f=pjson&where=1=1&groupByFieldsForStatistics=AnalyticLayer,Dim
 ### How many questions REST cannot finish on its own (they carry a client transform)
 GET {{cat}}/query?f=pjson&where=Transforms IS NOT NULL&outFields=QueryNumber,Question,Transforms&orderByFields=QueryNumber
 
-### One row in full — this is everything a client needs to run Q22
-GET {{cat}}/query?f=pjson&where=QueryNumber = 22&outFields=*
+### One row in full — this is everything a client needs to run Q56
+GET {{cat}}/query?f=pjson&where=QueryNumber = 56&outFields=*
 
 # ---------------------------------------------------------------------------
 # 2. EXECUTE — replay the RestParams the catalog just handed over
 # ---------------------------------------------------------------------------
 # The request below was not written by hand: every parameter is copied verbatim
-# out of the RestParams column of Q22 above. That is the whole claim.
+# out of the RestParams column of Q56 above. That is the whole claim.
 
-### Q22 "Average resolution time by Category", executed from its catalog row
+### Q56 "Channel efficiency (which channel gets closed fastest?)", executed from its catalog row
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
 f=pjson
-&where=DtCompleted IS NOT NULL
+&where=1=1
 &sqlFormat=native
-&groupByFieldsForStatistics=Category
-&outStatistics=[{"statisticType":"avg","onStatisticField":"DATEDIFF(day, DtLogged, DtCompleted)","outStatisticFieldName":"AvgDays"}]
-&orderByFields=AvgDays
+&groupByFieldsForStatistics=Channel
+&outStatistics=[{"statisticType":"count","onStatisticField":"ObjectID","outStatisticFieldName":"Total"},{"statisticType":"avg","onStatisticField":"DATEDIFF(day, DtLogged, DtCompleted)","outStatisticFieldName":"AvgCloseDays"},{"statisticType":"sum","onStatisticField":"CASE WHEN Status <> 'Closed' THEN 1 ELSE 0 END","outStatisticFieldName":"StillOpen"}]
+&orderByFields=AvgCloseDays
 
 ### Q53 "90th percentile resolution time" — the metric that usually needs a new endpoint
 POST {{layer}}/query
@@ -87,7 +87,7 @@ f=pjson
 # ---------------------------------------------------------------------------
 
 ### The reference T-SQL for the same question, served from the same table
-GET {{cat}}/query?f=pjson&where=QueryNumber = 22&outFields=QueryNumber,Question,SqlText
+GET {{cat}}/query?f=pjson&where=QueryNumber = 56&outFields=QueryNumber,Question,SqlText
 
 ### And run it, via the mock's raw-SQL extension (NOT part of ArcGIS REST)
 POST {{layer}}/sql

@@ -1,6 +1,6 @@
 # Service Request Analytics: Query Design Framework
 
-This framework organises the 70 queries in `sql-library/queryLibrary.js`. Each query is also generated
+This framework organises the 31 queries in `sql-library/queryLibrary.js`. Each query is also generated
 into `sql/03_vw_QueryLibrary.sql`.
 
 ## 1. Core question dimensions (5 W's + H)
@@ -26,8 +26,8 @@ into `sql/03_vw_QueryLibrary.sql`.
 
 ## 3. Coverage checklist
 
-Counts & aggregates · time series · performance (mean, median, P90) · distributions and ageing buckets ·
-top-N · filtered subsets · cross-tabs and conditional pivots · duplicate detection · data quality ·
+Counts & aggregates · time series · performance (mean, median, P90) · distributions and bucketing ·
+top-N · filtered subsets · cross-tabs and conditional pivots · data quality ·
 rolling aggregates · ranking · cross-dimension dominance · text analysis · thematic roll-ups · change over time.
 
 ## 4. Enhancement roadmap

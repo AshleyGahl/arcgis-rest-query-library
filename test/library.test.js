@@ -8,9 +8,9 @@ import { runEntry } from '../sql-library/runner.js';
 const svc = createFeatureService(config);
 const local = async (params) => ({ url: '(in-process)', json: svc.query(params) });
 
-test('library has 70 unique entries', () => {
-  assert.equal(queryLibrary.length, 70);
-  assert.equal(new Set(queryLibrary.map((q) => q.id)).size, 70);
+test('library has 31 unique entries', () => {
+  assert.equal(queryLibrary.length, 31);
+  assert.equal(new Set(queryLibrary.map((q) => q.id)).size, 31);
 });
 
 for (const entry of queryLibrary) {
@@ -18,17 +18,15 @@ for (const entry of queryLibrary) {
     const r = await runEntry(entry, local);
     assert.ok(Array.isArray(r.rows));
   });
-  if (entry.id !== 50) {
-    test(`Q${entry.id} T-SQL runs on the mock`, () => {
-      const r = svc.sql(entry.tsql);
-      assert.ok(!r.error, r.error && `${r.error.message} ${r.error.details}`);
-    });
-  }
+  test(`Q${entry.id} T-SQL runs on the mock`, () => {
+    const r = svc.sql(entry.tsql);
+    assert.ok(!r.error, r.error && `${r.error.message} ${r.error.details}`);
+  });
 }
 
 // REST and T-SQL should agree where both are exact equivalents
 const scalar = (rows) => Object.values(rows[0])[0];
-for (const [id, restKey] of [[1, 'count'], [10, 'count'], [18, 'count'], [19, 'count'], [27, 'count'], [30, 'count'], [57, 'count'], [60, 'count']]) {
+for (const [id, restKey] of [[1, 'count'], [18, 'count'], [30, 'count'], [57, 'count']]) {
   test(`Q${id} REST count == T-SQL count`, async () => {
     const entry = queryLibrary.find((q) => q.id === id);
     const rest = await runEntry(entry, local);

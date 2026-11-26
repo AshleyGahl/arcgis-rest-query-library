@@ -48,8 +48,6 @@ export const fmtDates = (rows, dateCols) => rows.map((r) => {
 export const dateColsOf = (json) => (json.fields ?? []).filter((f) => f.type === 'esriFieldTypeDate').map((f) => f.name);
 export const clip = (rows) => ({ rowCount: rows.length, truncated: rows.length > MAX_ROWS, rows: rows.slice(0, MAX_ROWS) });
 
-/** Library entries whose T-SQL has no single-statement equivalent, so `compare` skips them. */
-const NO_COMPARE = new Set([50]);
 
 /**
  * Shape a `run_library_query` payload from an already-executed `runEntry` result.
@@ -74,7 +72,7 @@ export function libraryQueryPayload({ q, runResult, tsqlResult }) {
     urls: runResult.requests.map((x) => x.url),
     result: clip(fmtDates(runResult.rows, dateCols)),
   };
-  if (tsqlResult && !NO_COMPARE.has(q.id)) {
+  if (tsqlResult && comparable(q)) {
     out.tsql = q.tsql;
     out.tsqlResult = tsqlResult.error ? tsqlResult.error : clip(tsqlResult.rows);
   }
@@ -84,12 +82,14 @@ export function libraryQueryPayload({ q, runResult, tsqlResult }) {
 /**
  * Whether this entry's `tsql` can actually be executed against the mock.
  *
- * Two callers, one meaning: `compare` skips these entries, and so does the viewer's
- * Run SQL panel, which disables its button rather than letting the read-only engine
- * reject the statement. Q50's statement is `CREATE VIEW …`, the only entry of the 70
- * that is not a SELECT.
+ * Two callers, one meaning: `compare` skips an entry that fails this, and so does the
+ * viewer's Run SQL panel, which disables its button rather than letting the read-only
+ * engine reject the statement. It is a test of the statement rather than a list of
+ * identifiers, so an entry whose reference definition is DDL is handled by being what
+ * it is, not by being enumerated somewhere else. Every entry in the library today is a
+ * query, so this is true of all of them.
  */
-export const comparable = (q) => !NO_COMPARE.has(q.id);
+export const comparable = (q) => /^\s*(select|with)\b/i.test(q.tsql ?? '');
 
 /**
  * Shape a `run_tsql` payload from an already-executed `/sql` result — the T-SQL
@@ -180,7 +180,7 @@ export function createTools({ service, layerUrl }) {
     },
     {
       name: 'list_library',
-      description: 'List the 70-query Service Request Query Library (id, category, portability, question). Optional filters.',
+      description: 'List the Service Request Query Library (id, category, portability, question). Optional filters.',
       inputSchema: {
         type: 'object',
         properties: {

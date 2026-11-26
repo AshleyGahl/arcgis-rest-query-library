@@ -47,7 +47,7 @@ const parameterised = queryLibrary.filter((e) => paramsOf(e).length);
 
 // ------------------------------------------------------------------ the declaration itself
 test('the library declares bounded parameters on the questions that invite them', () => {
-  assert.ok(parameterised.length >= 6, `only ${parameterised.length} parameterised entries`);
+  assert.ok(parameterised.length >= 4, `only ${parameterised.length} parameterised entries`);
   for (const e of parameterised) {
     for (const p of paramsOf(e)) {
       assert.ok(p.name && /^[a-zA-Z][a-zA-Z0-9]*$/.test(p.name), `Q${e.id} parameter name ${p.name}`);
@@ -121,7 +121,7 @@ test('the bound entry carries the values it was run with', () => {
 });
 
 test('a bound question returns the number of rows it was asked for', async () => {
-  for (const [id, top] of [[41, 3], [42, 2], [55, 4], [61, 3], [65, 2]]) {
+  for (const [id, top] of [[41, 3], [55, 4], [65, 2]]) {
     const { entry } = bindEntry(getQuery(id), { top });
     const r = await runEntry(entry, local);
     assert.equal(r.rows.length, top, `Q${id} with top=${top}`);
@@ -129,7 +129,7 @@ test('a bound question returns the number of rows it was asked for', async () =>
 });
 
 test('REST and T-SQL still agree after binding, which is the point of binding both', async () => {
-  for (const [id, values] of [[41, { top: 3 }], [42, { top: 7 }], [61, { top: 4 }], [65, { top: 3, days: 60 }], [25, { top: 4, minClosed: 20 }]]) {
+  for (const [id, values] of [[41, { top: 3 }], [65, { top: 3, days: 60 }], [25, { top: 4, minClosed: 20 }]]) {
     const { entry } = bindEntry(getQuery(id), values);
     const rest = await runEntry(entry, local);
     const sql = svc.sql(entry.tsql);

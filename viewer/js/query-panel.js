@@ -151,7 +151,7 @@ export function createQueryPanel({ prefix, mode, map, filters, store }) {
       <div class="buttons">
         <button class="primary" id="${id('Run')}"${comparable(q) ? '' : ' disabled'}>Run SQL</button>
       </div>
-      ${comparable(q) ? '' : `<div class="note">This entry's statement is DDL (<code>CREATE VIEW</code>), and the engine is read-only, so there is nothing to run here. Its REST form still works under <strong>Run REST</strong>.</div>`}
+      ${comparable(q) ? '' : `<div class="note">This entry's reference statement is not a query, and the engine is read-only, so there is nothing to run here. Its REST form still works under <strong>Run REST</strong>.</div>`}
       <div id="${id('Workflow')}" class="hidden"></div>
       <details class="wf-sec" open>
         <summary>

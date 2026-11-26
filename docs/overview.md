@@ -4,7 +4,7 @@
 
 Can an ArcGIS REST FeatureServer carry a whole analytics layer — no analytics API, no endpoint per
 metric — by publishing the questions themselves as data? This demo is the test: ~850 synthetic
-public service requests around Cape Town, and 70 analytical questions served as a table on the same
+public service requests around Cape Town, and 31 analytical questions served as a table on the same
 service, each written twice so the answers can be checked.
 
 [Open the GIS viewer](../viewer/) · [REST services directory](../arcgis/rest/services) ·
@@ -36,13 +36,13 @@ The service publishes two things, and the second one is the catalog:
 | Id | Name | Type | |
 |---|---|---|---|
 | `0` | `ServiceRequests` | Feature Layer | the ~850 service requests, as points |
-| `1` | `QueryLibrary` | Table | the 70 analytical questions, as rows |
+| `1` | `QueryLibrary` | Table | the 31 analytical questions, as rows |
 
 So a client needs exactly two requests, and both are the standard ArcGIS `query` operation — neither
 is specific to any question:
 
 ```
-GET  …/FeatureServer/1/query?where=1=1&outFields=*       70 rows: Question, Portability,
+GET  …/FeatureServer/1/query?where=1=1&outFields=*       31 rows: Question, Portability,
                                                          RestParams, SqlText, ChartType…
 POST …/FeatureServer/0/query  <the RestParams of a row>  the answer, computed in the
                                                          service's own SQL engine
@@ -76,7 +76,7 @@ Try it yourself: open the [viewer](../viewer/), go to the Run REST tab and watch
 The question list arrives from `FeatureServer/1/query`; running one fires `FeatureServer/0/query`
 with parameters that came out of that first response.
 
-The repository's test suite asserts the same thing over 400 times — including that all 70 questions
+The repository's test suite asserts the same thing over 200 times — including that all 31 questions
 execute from their catalog row alone and return results identical to running the library directly,
 that every declared chart column exists in the result it describes, and that the whole library
 behaves the same on the server engine and the in-browser one.
@@ -86,7 +86,7 @@ behaves the same on the server engine and the in-browser one.
 Four limits are real, and the catalog states them per row rather than hiding them.
 
 - **No window functions.** `LAG`, running totals, `RANK`, moving averages and `ROLLUP` have no
-  representation in `outStatistics`. Nine of the seventy come back as raw groups and are finished on
+  representation in `outStatistics`. Eight of the thirty-one come back as raw groups and are finished on
   the client — which is the very failure mode this architecture is meant to avoid. The catalog
   declares it in a `Transforms` column, so at least a client knows what it must apply.
 - **Date arithmetic is not portable.** Standardized SQL has no date-difference function, so every
@@ -109,9 +109,9 @@ portable is this library?" with one statistics query:
 
 | Portability | Count | Runs on |
 |---|---|---|
-| `standard` | 32 | any FeatureServer |
-| `sql-expression` | 14 | ArcGIS Online hosted, Enterprise 10.9+ |
-| `native` | 23 | SQL Server-backed Enterprise, `sqlFormat=native` |
+| `standard` | 10 | any FeatureServer |
+| `sql-expression` | 10 | ArcGIS Online hosted, Enterprise 10.9+ |
+| `native` | 10 | SQL Server-backed Enterprise, `sqlFormat=native` |
 | `extension` | 1 | this mock only |
 
 [The query catalog](query-catalog.md) sets all of this out in full.
@@ -134,8 +134,8 @@ the ArcGIS Maps SDK makes. Open the Network tab and you will see genuine `Featur
 |---|---|
 | **Filter** | Build a `where` clause from dropdowns and watch it go to the service; switch basemaps, symbology, clustering and the time slider. |
 | **Dashboard** | KPIs and charts built entirely from REST `outStatistics` requests. Click a bar to cross-filter the map. |
-| **Run REST** | All 70 questions — and the list is not built into the page. It is fetched from `FeatureServer/1/query`, because the query library is published as a table on the same service. Pick one and run it as ArcGIS REST. |
-| **Run SQL** | The same 70 questions, run as their original T-SQL against the same data through `…/FeatureServer/0/sql`, a read-only mock extension. The statement is editable, so the panel is the SQL console too. |
+| **Run REST** | All 31 questions — and the list is not built into the page. It is fetched from `FeatureServer/1/query`, because the query library is published as a table on the same service. Pick one and run it as ArcGIS REST. |
+| **Run SQL** | The same 31 questions, run as their original T-SQL against the same data through `…/FeatureServer/0/sql`, a read-only mock extension. The statement is editable, so the panel is the SQL console too. |
 | **API** | A query console: the raw ArcGIS parameters, and the URL they produce. |
 
 > Both run tabs share one question list, one selection and one catalog request, so picking a
@@ -155,12 +155,12 @@ It is generated from a seed, so the same seed always produces the same file, and
 queries have something real to find: southern-hemisphere seasonality, a realistic open backlog,
 resolution times that vary by sub-category, and deliberate defects for the data-quality queries.
 [The data model](data-model.md) describes it in full, and [the analytics framework](framework.md)
-how the 70 questions are organised.
+how the 31 questions are organised.
 
 ## Running it locally
 
 Node ≥ 22.16, no npm dependencies. `npm start` serves the real mock FeatureServer on
-`http://127.0.0.1:3000`, and `npm test` runs the 70 REST queries, the T-SQL equivalents, their
+`http://127.0.0.1:3000`, and `npm test` runs the 31 REST queries, the T-SQL equivalents, their
 parity assertions, the catalog round-trip, and the whole suite again against the in-browser engine.
 The repository also carries SQL Server scripts that load the identical data, so the T-SQL can be run
 where it was written for.

@@ -104,7 +104,7 @@ test('query_layer caps its rows so a tool reply cannot flood a context', async (
 test('list_library lists everything, and filters', async () => {
   assert.equal((await payload('list_library')).length, queryLibrary.length);
   const std = await payload('list_library', { portability: 'standard' });
-  assert.equal(std.length, 32);
+  assert.equal(std.length, 10);
   assert.ok(std.every((q) => q.portability === 'standard'));
   const found = await payload('list_library', { search: 'percentile' });
   assert.ok(found.length >= 1);

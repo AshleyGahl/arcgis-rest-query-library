@@ -7,7 +7,7 @@ council "report a problem" app collects. The points sit in and around Cape Town.
 - an ArcGIS Maps SDK for JavaScript viewer (`FeatureLayer` on the mock URL), with a Chart.js dashboard
 - a **static deployment** of the same thing: with no server, the engine runs in the page on SQLite Wasm
   and a service worker answers the REST requests (this is what GitHub Pages serves)
-- a **query library**: 70 analytical questions written as ArcGIS REST `query` requests, with T-SQL alongside
+- a **query library**: 31 analytical questions written as ArcGIS REST `query` requests, with T-SQL alongside
 - the library **published as table 1 of the same FeatureServer**, so a client discovers the questions with
   one standard REST request and executes any of them with a second (`docs/query-catalog.md`)
 - SQL Server scripts that load the same GeoJSON so the T-SQL can be compared against identical data
@@ -23,7 +23,7 @@ Keep it that way: no internal system names, staff/contractor fields, ward/admini
 | Task | Command |
 |---|---|
 | Start server | `npm start` |
-| Tests (70 REST + 69 T-SQL + catalog round-trip + parity + parameters + both runtimes) | `npm test` |
+| Tests (31 REST + 31 T-SQL + catalog round-trip + parity + parameters + both runtimes) | `npm test` |
 | List / run a library query | `npm run query -- list` · `npm run query -- 44 --compare` |
 | Ad-hoc REST | `npm run query -- --where "Suburb = 'Sea Point'" --outFields "RequestID,Category,Status" --resultRecordCount 5` |
 | Ad-hoc T-SQL (mock) | `npm run query -- --sql "SELECT TOP 5 Suburb, COUNT(*) n FROM ServiceRequest GROUP BY Suburb ORDER BY n DESC"` |
@@ -69,7 +69,7 @@ server/sqlDialect.js            T-SQL / ArcGIS SQL → SQLite rewrites + registe
 server/schema.js                field list (single source of truth for layer 0's schema)
 server/catalogSchema.js         layer 1: the query library as a non-spatial table (fields + rows,
                                 incl. the Chart* presentation contract)
-sql-library/queryLibrary.js     THE library (70 entries: rest params, transform, tsql, portability)
+sql-library/queryLibrary.js     THE library (31 entries: rest params, transform, tsql, portability)
                                 also the source of layer 1, via server/catalogSchema.js
 sql-library/runner.js           runs entries anywhere + client-side transforms (LAG, running totals…)
                                 also bindEntry/validateParams (bounded parameters) and entryFromRow
@@ -136,7 +136,7 @@ mcp/server.js                   stdio transport over it, for Claude Code (Node o
   `ChartType`, `ChartLabelColumn`, `ChartValueColumns`, `ChartSeriesColumn`, `ChartAnnotationColumn`),
   set by the `chart` field of a library entry. `viewer/js/result-chart.js` obeys it and only infers
   from the result's shape when there is no contract (the SQL console, an edited statement). A new
-  charted entry must name columns its result really has: `test/catalog.test.js` runs all 44 and fails
+  charted entry must name columns its result really has: `test/catalog.test.js` runs all 23 and fails
   otherwise. Several `ChartValueColumns` are allowed only when they share a unit — one y-axis.
 - **A question is varied only by a parameter its author declared.** `params` on a library entry
   declares a typed, bounded parameter and where its value lands; `bindEntry` in
@@ -176,8 +176,9 @@ mcp/server.js                   stdio transport over it, for Claude Code (Node o
   same questions and sharing one selection and one catalog fetch via `js/query-store.js`. Keep it one
   fetch: "one REST request discovers every question" is the point of publishing the catalog as table 1.
   There is no Compare button in the viewer — the MCP `compare: true` argument and the CLI
-  `--compare` flag still do that. Q50's `tsql` is DDL, so Run SQL gates it on `comparable(q)`
-  rather than letting the read-only engine reject it; don't add a second list of such entries.
+  `--compare` flag still do that. Run SQL gates on `comparable(q)` in `mcp/tools.js`, which tests
+  the statement rather than listing identifiers, so an entry whose `tsql` is not a query disables
+  the button instead of being rejected by the read-only engine; keep it a test, not a list.
 - **The viewer must not import `queryLibrary.js` for its UI.** The run panels read the catalog
   over REST (`viewer/js/catalog.js`); that is the whole point of publishing it. Build scripts, the
   MCP server and the CLI may import it directly.

@@ -2,7 +2,7 @@
 /**
  * Run Query Library entries from the terminal.
  *
- *   npm run query -- list                       list all 70 queries
+ *   npm run query -- list                       list every query in the library
  *   npm run query -- 41                         run Q41's REST request in-process
  *   npm run query -- 41 --compare               run REST and T-SQL side by side
  *   npm run query -- 41 --url <layerUrl>        run against any FeatureServer layer over HTTP

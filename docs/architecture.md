@@ -4,7 +4,7 @@
 
 The repository is one pipeline with two front doors. A single query engine answers ArcGIS REST
 requests; everything else is either a producer of its data, a renderer of its answers, or a
-generator kept in step with it. The library of 70 analytical questions is not a module the UI
+generator kept in step with it. The library of 31 analytical questions is not a module the UI
 imports — it is **a table of the service**, discovered over REST like any other table.
 
 ## 1. The whole picture
@@ -18,7 +18,7 @@ Node and in the browser. **Bottom:** the consumers, all of them speaking REST.
 ```mermaid
 flowchart TB
   LIB["sql-library/queryLibrary.js
-  70 entries: id, question, rest,
+  31 entries: id, question, rest,
   transform, tsql, chart, portability"]
   CAT["server/catalogSchema.js
   CATALOG_FIELDS + catalogRows()"]
@@ -128,7 +128,7 @@ flowchart TB
 
 Two of those rules are enforced by tests rather than by convention: `test/deploy.test.js`
 resolves the browser's import closure and fails if a Node-only module enters it, and
-`test/browser-engine.test.js` runs all 70 entries on both runtimes and fails if they diverge.
+`test/browser-engine.test.js` runs all 31 entries on both runtimes and fails if they diverge.
 
 ## 3. The library as a table (layer 1)
 
@@ -137,7 +137,7 @@ The service publishes two layers over one REST surface:
 | Id | Name | Type | Rows | Source |
 |---|---|---|---|---|
 | 0 | `ServiceRequests` | Feature Layer | ~850 points | `data/service_requests.geojson` |
-| 1 | `QueryLibrary` | Table (no geometry) | 70 questions | `catalogRows()` over `queryLibrary.js` |
+| 1 | `QueryLibrary` | Table (no geometry) | 31 questions | `catalogRows()` over `queryLibrary.js` |
 
 `server/catalogSchema.js` declares the table's schema as `CATALOG_FIELDS`, in Esri field terms,
 so `…/FeatureServer/1?f=json` describes it exactly as a real published table would:
@@ -145,7 +145,7 @@ so `…/FeatureServer/1?f=json` describes it exactly as a real published table w
 | Field | Esri type | Length | What it holds |
 |---|---|---|---|
 | `ObjectID` | `esriFieldTypeOID` | — | the query number, reused as the OID |
-| `QueryNumber` | `esriFieldTypeInteger` | — | 1–70, the stable public identifier |
+| `QueryNumber` | `esriFieldTypeInteger` | — | the stable public identifier; not a position, so the set has gaps |
 | `Category` | `esriFieldTypeString` | 60 | one of the eight library sections |
 | `Question` | `esriFieldTypeString` | 200 | the business question, and the display field |
 | `Dimension` | `esriFieldTypeString` | 10 | `WHO` … `HOW` (see [framework](framework.md)) |
@@ -153,7 +153,7 @@ so `…/FeatureServer/1?f=json` describes it exactly as a real published table w
 | `Portability` | `esriFieldTypeString` | 20 | `standard` · `sql-expression` · `native` · `extension` |
 | `RequestCount` | `esriFieldTypeSmallInteger` | — | REST requests needed (1, or 2 for Q62) |
 | `Transforms` | `esriFieldTypeString` | 100 | names of the client-side steps, comma-separated |
-| `HasChart` | `esriFieldTypeSmallInteger` | — | 1 when the author says this answer is a chart (44 of 70) |
+| `HasChart` | `esriFieldTypeSmallInteger` | — | 1 when the author says this answer is a chart (23 of 31) |
 | `ChartType` | `esriFieldTypeString` | 20 | `bar` or `line` |
 | `ChartLabelColumn` | `esriFieldTypeString` | 100 | the category axis; two columns joined when a label needs both (`Year,Month`) |
 | `ChartValueColumns` | `esriFieldTypeString` | 200 | the measure(s) to plot — several only when they share a unit |
@@ -161,7 +161,7 @@ so `…/FeatureServer/1?f=json` describes it exactly as a real published table w
 | `ChartAnnotationColumn` | `esriFieldTypeString` | 100 | carried into the tooltip without being plotted, or null |
 | `RestParams` | `esriFieldTypeString` | 4000 | **the executable payload**: the decomposed query as JSON |
 | `TransformSpec` | `esriFieldTypeString` | 1000 | the transform parameters as JSON, or null |
-| `ParamSpec` | `esriFieldTypeString` | 1000 | the parameters this question may be varied by, as JSON, or null (6 of 70) |
+| `ParamSpec` | `esriFieldTypeString` | 1000 | the parameters this question may be varied by, as JSON, or null (4 of 31) |
 | `SqlText` | `esriFieldTypeString` | 4000 | the reference T-SQL statement |
 | `Notes` | `esriFieldTypeString` | 600 | caveats (for example a `DATEFIRST` assumption), or null |
 
@@ -226,7 +226,7 @@ answer on identical data — so it carries the library in the simplest form that
 |---|---|---|
 | `sql/01_ServiceRequest_table.sql` | `dbo.ServiceRequest`, `dbo.GeoJsonDocument` | tables plus three indexes; `Shape` is a computed `GEOGRAPHY::Point` |
 | `sql/02_import_geojson.sql` | `dbo.vw_ServiceRequest_GeoJson`, `dbo.usp_ImportServiceRequestGeoJson` | view and stored proc over `OPENJSON`, epoch ms to SAST |
-| `sql/03_vw_QueryLibrary.sql` | `dbo.vw_QueryLibrary`, `dbo.usp_RunLibraryQuery` | **generated** view of 70 `SELECT … UNION ALL` literals, plus the proc that runs one by number |
+| `sql/03_vw_QueryLibrary.sql` | `dbo.vw_QueryLibrary`, `dbo.usp_RunLibraryQuery` | **generated** view of 31 `SELECT … UNION ALL` literals, plus the proc that runs one by number |
 
 `vw_QueryLibrary` is a view of constants rather than a physical table, with five descriptive
 columns and the statement itself:
@@ -286,7 +286,7 @@ sequenceDiagram
   participant E as featureService.js
   V->>R: GET /FeatureServer/1/query (where=1=1, outFields=*)
   R->>E: svc.query(params, 1)
-  E-->>V: 70 catalog rows
+  E-->>V: 31 catalog rows
   Note over V: the run panels list them, grouped by Category
   V->>R: POST /FeatureServer/0/query, the RestParams of that row
   R->>E: svc.query(params, 0)

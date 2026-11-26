@@ -7,7 +7,7 @@ The service publishes two things over one REST surface:
 | Id | Name | Type | What it is |
 |---|---|---|---|
 | 0 | `ServiceRequests` | Feature Layer | the ~850 service request points |
-| 1 | `QueryLibrary` | Table | the 70 analytical questions, as data |
+| 1 | `QueryLibrary` | Table | the 31 analytical questions, as data |
 
 A client needs exactly two requests, and both are the standard ArcGIS `query` operation:
 
@@ -19,7 +19,7 @@ A client needs exactly two requests, and both are the standard ArcGIS `query` op
 Nothing about any individual question is compiled into the client. `viewer/js/catalog.js`
 does step 1 at start-up and the run panels render whatever comes back; add a query to
 `sql-library/queryLibrary.js`, restart the service, and it appears in the UI with no change
-to the viewer. `test/catalog.test.js` asserts this for all 70: it reads each row over REST,
+to the viewer. `test/catalog.test.js` asserts this for all 31: it reads each row over REST,
 replays its `RestParams`, and requires the result to equal the library run exactly.
 
 ## Why the catalog stores parameters, not statements
@@ -56,7 +56,7 @@ HasChart = 1, ChartType = 'bar', ChartLabelColumn = 'CategorySub',
 ChartValueColumns = 'AvgDays', ChartAnnotationColumn = 'Closed'
 ```
 
-Forty-four of the seventy questions carry a contract; the rest declare `HasChart = 0`, because a
+Twenty-three of the thirty-one questions carry a contract; the rest declare `HasChart = 0`, because a
 single figure or a list of features is not a chart. Being data, the contract is queryable like
 anything else — `where=HasChart=1` returns the questions a client can draw, and grouping by
 `ChartType` counts them by kind, with no reporting code on either side.
@@ -94,21 +94,21 @@ means, and what you execute if you point the same catalog at SQL Server instead
 Measured against the library as it stands — run `npm test` to re-check every number here.
 
 **Holds.** Adding a metric is a data change, not a deployment. One generic pipeline serves
-70 questions or 700. The catalog is self-documenting by construction: every row carries its
+31 questions or 300. The catalog is self-documenting by construction: every row carries its
 category, its business question and its portability. And because the catalog is a normal
 table, it answers questions about itself with the same `query` operation — *"how portable is
 this library?"* is one `outStatistics` call, no reporting code:
 
 | `Portability` | Count | Runs on |
 |---|---|---|
-| `standard` | 32 | any FeatureServer |
-| `sql-expression` | 14 | ArcGIS Online hosted, Enterprise 10.9+ |
-| `native` | 23 | SQL Server-backed Enterprise, `sqlFormat=native` |
+| `standard` | 10 | any FeatureServer |
+| `sql-expression` | 10 | ArcGIS Online hosted, Enterprise 10.9+ |
+| `native` | 10 | SQL Server-backed Enterprise, `sqlFormat=native` |
 | `extension` | 1 | this mock only |
 
 **Does not hold.** Four limits are real and worth stating before anyone builds on this:
 
-1. **The `query` operation has no window functions.** Nine entries come back as raw groups
+1. **The `query` operation has no window functions.** Eight entries come back as raw groups
    and are finished on the client by `sql-library/runner.js` — `lag`, `runningTotal`,
    `movingAverage` and `rank` stand in for the SQL window functions of the same name, and
    `topPerGroup`, `fullOuterJoin`, `groupCount`, `ratio` and `sort` for the rest. The catalog is
@@ -117,7 +117,7 @@ this library?"* is one `outStatistics` call, no reporting code:
    failure mode this architecture is meant to avoid. There is no `ROLLUP` either, so subtotals
    cost a second request. One entry (Q62) needs two requests and a client-side full outer join.
 
-2. **Date arithmetic is not portable.** 23 of 70 are tagged `native` almost entirely because
+2. **Date arithmetic is not portable.** 10 of 31 are tagged `native` almost entirely because
    standardized SQL has no date-difference function, so every duration and SLA metric needs
    `sqlFormat=native` against a SQL Server-backed service. The descriptive half of the library
    travels anywhere; the performance half — the half management asks for — does not.

@@ -78,7 +78,7 @@ test('the catalog holds one row per library entry', () => {
 
 test('the catalog supports a standard where clause', () => {
   const rows = attrs(rest(1, { where: "Portability = 'standard'", outFields: 'QueryNumber,Portability' }));
-  assert.equal(rows.length, 32);
+  assert.equal(rows.length, 10);
   assert.ok(rows.every((r) => r.Portability === 'standard'));
 });
 
@@ -87,12 +87,13 @@ test('the catalog supports outStatistics, so the catalog can describe itself', (
     where: '1=1',
     groupByFieldsForStatistics: 'Portability',
     outStatistics: [{ statisticType: 'count', onStatisticField: 'ObjectID', outStatisticFieldName: 'Count' }],
-    orderByFields: 'Count DESC',
+    // Three tiers are level at ten, so the secondary key is what makes the order defined.
+    orderByFields: 'Count DESC, Portability',
   }));
   assert.deepEqual(rows, [
-    { Portability: 'standard', Count: 32 },
-    { Portability: 'native', Count: 23 },
-    { Portability: 'sql-expression', Count: 14 },
+    { Portability: 'native', Count: 10 },
+    { Portability: 'sql-expression', Count: 10 },
+    { Portability: 'standard', Count: 10 },
     { Portability: 'extension', Count: 1 },
   ]);
   assert.equal(rows.reduce((a, r) => a + r.Count, 0), queryLibrary.length);
@@ -121,13 +122,13 @@ test('the QueryLibrary view is visible to the raw-SQL extension too', () => {
 /**
  * Catalog-driven execution: read the row over REST, replay its RestParams over
  * REST, and assert the answer is identical to running the library entry directly.
- * If this passes for all 70, the catalog is a sufficient description of the
+ * If this passes for all 31, the catalog is a sufficient description of the
  * analytics — the client needs no compiled-in knowledge of any question.
  */
 const catalog = attrs(rest(1, { where: '1=1', outFields: '*', orderByFields: 'QueryNumber', resultRecordCount: 2000 }));
 
 test('the catalog came back whole', () => {
-  assert.equal(catalog.length, 70);
+  assert.equal(catalog.length, 31);
   assert.ok(catalog.every((r) => r.RestParams && r.SqlText));
 });
 
@@ -176,7 +177,7 @@ for (const row of catalog) {
  */
 test('every charted row declares a type from the vocabulary and something to plot', () => {
   const charted = catalog.filter((r) => r.HasChart === 1);
-  assert.equal(charted.length, 44);
+  assert.equal(charted.length, 23);
   for (const r of charted) {
     assert.ok(['bar', 'line'].includes(r.ChartType), `Q${r.QueryNumber} declares ChartType ${r.ChartType}`);
     assert.ok(r.ChartValueColumns, `Q${r.QueryNumber} has HasChart = 1 but nothing to plot`);
@@ -199,7 +200,7 @@ test('a client can ask the catalog for just the charted questions', () => {
   // One request, and the client knows which answers it can draw — the chart contract is
   // queryable because it is data, like everything else in the row.
   const rows = attrs(rest(1, { where: 'HasChart = 1', outFields: 'QueryNumber,ChartType,ChartValueColumns', orderByFields: 'QueryNumber' }));
-  assert.equal(rows.length, 44);
+  assert.equal(rows.length, 23);
   assert.ok(rows.every((r) => r.ChartValueColumns));
   const byType = attrs(rest(1, {
     where: 'HasChart = 1',
@@ -207,12 +208,12 @@ test('a client can ask the catalog for just the charted questions', () => {
     outStatistics: [{ statisticType: 'count', onStatisticField: 'ObjectID', outStatisticFieldName: 'Count' }],
     orderByFields: 'Count DESC',
   }));
-  assert.equal(byType.reduce((a, r) => a + r.Count, 0), 44);
+  assert.equal(byType.reduce((a, r) => a + r.Count, 0), 23);
 });
 
 test('the catalog advertises exactly the transforms the library needs', () => {
   const needsTransform = catalog.filter((r) => r.Transforms);
-  assert.equal(needsTransform.length, 9);
+  assert.equal(needsTransform.length, 8);
   assert.ok(needsTransform.every((r) => JSON.parse(r.TransformSpec).every((t) => TRANSFORMS[t.type])));
   // Everything else is answered by the REST request alone.
   assert.ok(catalog.filter((r) => !r.Transforms).every((r) => r.TransformSpec === null));
@@ -220,7 +221,7 @@ test('the catalog advertises exactly the transforms the library needs', () => {
 
 test('a client can select a portable subset and run only that', async () => {
   const portable = attrs(rest(1, { where: "Portability = 'standard'", outFields: 'QueryNumber,RestParams,Transforms', orderByFields: 'QueryNumber' }));
-  assert.equal(portable.length, 32);
+  assert.equal(portable.length, 10);
   for (const row of portable) {
     const params = JSON.parse(row.RestParams);
     const json = rest(0, Array.isArray(params) ? params[0].params : params);

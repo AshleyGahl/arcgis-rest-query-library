@@ -29,14 +29,14 @@ It can. The service publishes two things:
 | Id | Name | Type | What it is |
 |---|---|---|---|
 | `0` | `ServiceRequests` | Feature Layer | ~850 synthetic public service requests, as points |
-| `1` | `QueryLibrary` | Table | the 70 analytical questions, as rows |
+| `1` | `QueryLibrary` | Table | the 31 analytical questions, as rows |
 
 and a client needs exactly two requests — both of them the **standard ArcGIS `query`
 operation**, neither of them specific to any question:
 
 ```
 1. discover   GET  …/FeatureServer/1/query?where=1=1&outFields=*
-                   → 70 rows: Question, Category, Portability, RestParams, SqlText …
+                   → 31 rows: Question, Category, Portability, RestParams, SqlText …
 
 2. execute    POST …/FeatureServer/0/query
                    ← the RestParams of the row you chose, replayed verbatim
@@ -55,9 +55,9 @@ query but nothing about *which* queries exist.
 
 | What is asserted | Where |
 |---|---|
-| All **70** questions execute from their catalog row alone, and return results identical to running the library directly | `test/catalog.test.js` |
+| All **31** questions execute from their catalog row alone, and return results identical to running the library directly | `test/catalog.test.js` |
 | REST and T-SQL agree wherever they are exact equivalents (counts, top-N, median, MoM percentages) | `test/library.test.js` |
-| All 69 reference T-SQL statements run against the same data | `test/library.test.js` |
+| All 31 reference T-SQL statements run against the same data | `test/library.test.js` |
 | The catalog and the whole library behave identically on `node:sqlite` and on SQLite Wasm, so the published demo cannot drift from the server | `test/browser-engine.test.js` |
 | The catalog is read-only and rejects writes and multi-statement input | `test/catalog.test.js` |
 
@@ -72,22 +72,22 @@ Four limits are real, and the catalog is built to state them per row rather than
 `docs/query-catalog.md` has the detail.
 
 1. **The `query` operation has no window functions.** `LAG`, running totals, `RANK`, moving
-   averages and `ROLLUP` have no representation in `outStatistics`. Nine of the seventy come back
+   averages and `ROLLUP` have no representation in `outStatistics`. Eight of the thirty-one come back
    as raw groups and are finished on the client by `sql-library/runner.js`. The catalog declares
    this honestly in its `Transforms` column — but the compute has moved to the client, which is
    the very failure mode this architecture is supposed to avoid. One entry needs two requests and
    a client-side full outer join.
 
-2. **Date arithmetic is not portable.** 23 of 70 need `sqlFormat=native` against a SQL
+2. **Date arithmetic is not portable.** 10 of 31 need `sqlFormat=native` against a SQL
    Server-backed service, almost entirely because standardized SQL has no date-difference
    function. The descriptive half of the library runs on any FeatureServer; the performance half —
    the half management asks for — does not.
 
    | `Portability` | Count | Runs on |
    |---|---|---|
-   | `standard` | 32 | any FeatureServer |
-   | `sql-expression` | 14 | ArcGIS Online hosted, Enterprise 10.9+ |
-   | `native` | 23 | SQL Server-backed Enterprise, `sqlFormat=native` |
+   | `standard` | 10 | any FeatureServer |
+   | `sql-expression` | 10 | ArcGIS Online hosted, Enterprise 10.9+ |
+   | `native` | 10 | SQL Server-backed Enterprise, `sqlFormat=native` |
    | `extension` | 1 | this mock only |
 
 3. **The catalog is a convention, not an access control.** `FeatureServer/0/query` still accepts
@@ -128,7 +128,7 @@ a claim you can check rather than assert.
 | [`docs/architecture.md`](docs/architecture.md) | The component map: what references what, layer 1's table schema, and how the library is set up in each database |
 | [`docs/query-catalog.md`](docs/query-catalog.md) | The architecture: the catalog table, why it stores parameters rather than statements, the four limits |
 | [`docs/data-model.md`](docs/data-model.md) | Fields, categories and sub-categories, how the generated data behaves, the planted defects |
-| [`docs/framework.md`](docs/framework.md) | How the 70 questions are organised: 5W+H dimensions, layers L1–L5, coverage, roadmap |
+| [`docs/framework.md`](docs/framework.md) | How the 31 questions are organised: 5W+H dimensions, layers L1–L5, coverage, roadmap |
 | [`rest/catalog.http`](rest/catalog.http) | The discover-then-execute flow as runnable requests |
 | `CLAUDE.md` | Conventions and layout, for working on the repository |
 
@@ -149,7 +149,7 @@ You don't need `npm install`: there are no dependencies.
 |---|---|
 | F5 · *▶ Run Service Request GIS* | Server and browser |
 | Run and Debug › *Server + debug viewer (Edge / Chrome)* | Breakpoints in the viewer's JS and the server together |
-| Run and Debug › *Run library query…* | Prompts for an id (1–70), runs REST and T-SQL side by side |
+| Run and Debug › *Run library query…* | Prompts for a query number, runs REST and T-SQL side by side |
 | Run and Debug › *Run tests* · *Regenerate data* | |
 | Ctrl+Shift+B | Rebuild `rest/library.http`, `sql/03_vw_QueryLibrary.sql` and `docs/*.html` |
 | `rest/*.http` › **Send Request** | Fire any REST query from the editor (REST Client) |
@@ -174,7 +174,7 @@ The published demo is a static site, but it is not a cut-down version: the mock 
 **inside the viewer page** on [SQLite Wasm](https://sqlite.org/wasm), and a service worker answers
 the `/arcgis/rest/…` requests the ArcGIS Maps SDK makes. Open DevTools and you will see real
 `FeatureServer/0/query` and `FeatureServer/1/query` requests returning real Esri JSON. The
-dashboard, all 70 library queries and their T-SQL work exactly as they do locally.
+dashboard, all 31 library queries and their T-SQL work exactly as they do locally.
 
 It is the same engine either way. `server/featureService.js`, `server/sqlDialect.js`,
 `server/catalogSchema.js`, `server/schema.js` and `server/restRouter.js` take no platform
@@ -267,8 +267,8 @@ on 127.0.0.1.
 Five tabs, and the tab is the verb:
 - **Filter:** builds a where clause and applies it to the map. Colour by theme, status or channel, or switch to a heatmap; clustering and a time slider.
 - **Dashboard:** KPI tiles and six charts, all driven by REST statistics queries. Click a bar or a month to add that value to the map filter.
-- **Run REST:** the 70 questions, **fetched from table 1 rather than built into the page**. Pick one and run it as ArcGIS REST.
-- **Run SQL:** the same 70 questions, run as their original T-SQL against the same data. The statement is editable, so this is the SQL console too.
+- **Run REST:** the 31 questions, **fetched from table 1 rather than built into the page**. Pick one and run it as ArcGIS REST.
+- **Run SQL:** the same 31 questions, run as their original T-SQL against the same data. The statement is editable, so this is the SQL console too.
 - **API:** an ad-hoc query console, including drawn-polygon queries.
 
 The two run tabs share one question list, one selection and one catalog request, so picking a
@@ -281,7 +281,7 @@ Every result switches between **Table** and **Chart**; a single-value result sho
 
 ## The query library
 
-`sql-library/queryLibrary.js` holds the 70 entries, organised by
+`sql-library/queryLibrary.js` holds the 31 entries, organised by
 [`docs/framework.md`](docs/framework.md) into 5W+H dimensions, layers L1–L5 and 12 categories. Each
 entry has `rest` parameters, an optional client-side `transform`, the reference `tsql`, and a
 portability tag. `server/catalogSchema.js` derives table 1 from this file at load time, so there is
@@ -329,7 +329,7 @@ process — so publishing this repository exposes the source, not a running endp
 Run in order:
 1. `sql/01_ServiceRequest_table.sql` — the table.
 2. `sql/02_import_geojson.sql` — the view `vw_ServiceRequest_GeoJson` and the procedure `usp_ImportServiceRequestGeoJson @GeoJson`.
-3. `sql/03_vw_QueryLibrary.sql` — the generated catalog of all 70 T-SQL statements. This is the
+3. `sql/03_vw_QueryLibrary.sql` — the generated catalog of all 31 T-SQL statements. This is the
    same catalog as table 1, in its SQL Server form.
 
 ## Pointing it at a real service
