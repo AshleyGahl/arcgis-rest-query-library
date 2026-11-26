@@ -15,17 +15,10 @@ export async function createMap() {
   ]);
   if (CONFIG.apiKey) esriConfig.apiKey = CONFIG.apiKey;
 
-  const carto = (style, title) => () => new Basemap({
-    title,
-    baseLayers: [new WebTileLayer({
-      urlTemplate: `https://{subDomain}.basemaps.cartocdn.com/${style}/{level}/{col}/{row}.png`,
-      subDomains: ['a', 'b', 'c', 'd'],
-      copyright: '© OpenStreetMap contributors © CARTO',
-    })],
-  });
   // Ordered: the first that loads becomes the default. Each is built explicitly rather than
   // with Basemap.fromId(), whose well-known ids resolve through the web-map JSON layer factory.
   const basemaps = [
+    { id: 'imagery', title: 'Esri World Imagery', make: () => new Basemap({ title: 'Imagery', baseLayers: [new TileLayer({ url: 'https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer' })] }) },
     { id: 'osm', title: 'OpenStreetMap', make: () => new Basemap({
       title: 'OpenStreetMap',
       baseLayers: [new WebTileLayer({
@@ -33,9 +26,6 @@ export async function createMap() {
         copyright: '© OpenStreetMap contributors',
       })],
     }) },
-    { id: 'light', title: 'Light (CARTO)', make: carto('light_all', 'Light') },
-    { id: 'dark', title: 'Dark (CARTO)', make: carto('dark_all', 'Dark') },
-    { id: 'imagery', title: 'Esri World Imagery', make: () => new Basemap({ title: 'Imagery', baseLayers: [new TileLayer({ url: 'https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer' })] }) },
     ...(CONFIG.apiKey ? [
       { id: 'gray-vector', title: 'Esri Light Gray', make: () => Basemap.fromId('gray-vector') },
       { id: 'streets-navigation-vector', title: 'Esri Navigation', make: () => Basemap.fromId('streets-navigation-vector') },

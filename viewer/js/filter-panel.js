@@ -64,6 +64,7 @@ export function initFilterPanel(map) {
   };
 
   const applyRenderer = () => map.setRenderer($('renderer').value, $('cluster').checked);
+  applyRenderer();  // the markup ships with clustering on, so the layer must start that way
   $('renderer').onchange = applyRenderer;
   $('cluster').onchange = applyRenderer;
   $('basemap').onchange = () => map.setBasemap($('basemap').value);

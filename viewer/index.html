@@ -75,7 +75,7 @@
         </label>
         <label>Basemap <select id="basemap"></select></label>
       </div>
-      <label class="check"><input type="checkbox" id="cluster"> Cluster points</label>
+      <label class="check"><input type="checkbox" id="cluster" checked> Cluster points</label>
       <label class="check"><input type="checkbox" id="timeSliderToggle"> Time slider (sends <code>time=</code> to the service)</label>
     </section>
 
@@ -177,9 +177,9 @@
       <header>
         <strong id="resTitle">Results</strong>
         <span id="resMeta" class="hint"></span>
-        <span class="spacer"></span>
         <span class="seg"><button id="resViewTable" class="on">Table</button><button id="resViewChart">Chart</button></span>
         <button id="resCsv" title="Download CSV">CSV</button>
+        <span class="spacer"></span>
         <button id="resToggle" title="Show / hide">▾</button>
       </header>
       <div id="resRequest" class="hint mono"></div>
