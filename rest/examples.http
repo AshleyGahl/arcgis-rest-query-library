@@ -1,10 +1,10 @@
 # Hand-written examples against the mock FeatureServer. Start it first (F5 in VS Code, or `npm start`).
 # All 70 library requests are in library.http.
 
-@layer = http://127.0.0.1:3000/arcgis/rest/services/ServiceRequests/FeatureServer/0
+@layer = http://127.0.0.1:3001/arcgis/rest/services/ServiceRequests/FeatureServer/0
 
 ### Service directory
-GET http://127.0.0.1:3000/arcgis/rest/services?f=pjson
+GET http://127.0.0.1:3001/arcgis/rest/services?f=pjson
 
 ### Layer definition (fields, extent, capabilities)
 GET {{layer}}?f=pjson

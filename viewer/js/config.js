@@ -2,7 +2,7 @@
 // schema and the whole viewer (filters, dashboard, library, console) works against it unchanged.
 
 // Where the site is mounted. '' when served from the origin root (the Node server,
-// http://127.0.0.1:3000/viewer/); '/<repo>' on a GitHub Pages project site, where the
+// http://127.0.0.1:3001/viewer/); '/<repo>' on a GitHub Pages project site, where the
 // viewer lives at https://<user>.github.io/<repo>/viewer/.
 // Derived from this module's own URL so nothing has to be configured per deployment.
 export const SITE_BASE = new URL('../../', import.meta.url).pathname.replace(/\/$/, '');

@@ -8,7 +8,7 @@
       "request": "launch",
       "program": "${workspaceFolder}/server/start.js",
       "cwd": "${workspaceFolder}",
-      "env": { "PORT": "3000", "CLOCK": "snapshot" },
+      "env": { "PORT": "3001", "CLOCK": "snapshot" },
       "console": "integratedTerminal",
       "skipFiles": ["<node_internals>/**"],
       "serverReadyAction": { "pattern": "GIS viewer:\\s+(https?://\\S+)", "uriFormat": "%s", "action": "openExternally" }
@@ -19,7 +19,7 @@
       "request": "launch",
       "program": "${workspaceFolder}/server/start.js",
       "cwd": "${workspaceFolder}",
-      "env": { "PORT": "3000" },
+      "env": { "PORT": "3001" },
       "console": "integratedTerminal",
       "skipFiles": ["<node_internals>/**"]
     },
@@ -27,14 +27,14 @@
       "name": "Debug viewer in Edge",
       "type": "msedge",
       "request": "launch",
-      "url": "http://127.0.0.1:3000/viewer/",
+      "url": "http://127.0.0.1:3001/viewer/",
       "webRoot": "${workspaceFolder}/viewer"
     },
     {
       "name": "Debug viewer in Chrome",
       "type": "chrome",
       "request": "launch",
-      "url": "http://127.0.0.1:3000/viewer/",
+      "url": "http://127.0.0.1:3001/viewer/",
       "webRoot": "${workspaceFolder}/viewer"
     },
     {
@@ -44,6 +44,7 @@
       "program": "${workspaceFolder}/scripts/run-query.js",
       "runtimeArgs": ["--disable-warning=ExperimentalWarning"],
       "args": ["${input:queryId}", "--compare"],
+      "env": { "PORT": "3001" },
       "console": "integratedTerminal"
     },
     {

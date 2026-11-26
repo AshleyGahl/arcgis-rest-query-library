@@ -15,7 +15,7 @@
 #
 # Start the server first: `npm start`.
 
-@svc   = http://127.0.0.1:3000/arcgis/rest/services/ServiceRequests/FeatureServer
+@svc   = http://127.0.0.1:3001/arcgis/rest/services/ServiceRequests/FeatureServer
 @cat   = {{svc}}/1
 @layer = {{svc}}/0
 

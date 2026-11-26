@@ -16,7 +16,7 @@ The data model is deliberately generic (`docs/data-model.md`). **Core facts: `Dt
 Keep it that way: no internal system names, staff/contractor fields, ward/administrative codes or complainant contact data.
 
 ## Run (VS Code first)
-- **F5** runs "▶ Run Service Request GIS". It starts `server/start.js` and opens http://127.0.0.1:3000/viewer/.
+- **F5** runs "▶ Run Service Request GIS". It starts `server/start.js` and opens http://127.0.0.1:3001/viewer/.
 - Ctrl+Shift+D lists the other configurations: server only, Edge or Chrome viewer debugging (compounds), run a library query, run tests, regenerate data.
 - **Terminal › Run Task** (Ctrl+Shift+B rebuilds the `.http` file, `vw_QueryLibrary.sql` and `docs/*.html`).
 

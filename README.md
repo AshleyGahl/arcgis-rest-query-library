@@ -140,7 +140,7 @@ regenerates them.
 
 1. Install **Node.js 22.16 or newer** and restart VS Code.
 2. **File › Open Folder…** and choose this folder (or open `service-request-gis.code-workspace`). Accept the recommended extensions: Claude Code, REST Client and SQL Server.
-3. Press **F5**. *▶ Run Service Request GIS* starts the server and opens **http://127.0.0.1:3000/viewer/**.
+3. Press **F5**. *▶ Run Service Request GIS* starts the server and opens **http://127.0.0.1:3001/viewer/**.
 4. Stop it with the red ■ on the debug toolbar.
 
 You don't need `npm install`: there are no dependencies.

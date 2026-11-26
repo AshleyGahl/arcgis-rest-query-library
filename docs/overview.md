@@ -160,7 +160,7 @@ how the 31 questions are organised.
 ## Running it locally
 
 Node ≥ 22.16, no npm dependencies. `npm start` serves the real mock FeatureServer on
-`http://127.0.0.1:3000`, and `npm test` runs the 31 REST queries, the T-SQL equivalents, their
+`http://127.0.0.1:3001`, and `npm test` runs the 31 REST queries, the T-SQL equivalents, their
 parity assertions, the catalog round-trip, and the whole suite again against the in-browser engine.
 The repository also carries SQL Server scripts that load the identical data, so the T-SQL can be run
 where it was written for.

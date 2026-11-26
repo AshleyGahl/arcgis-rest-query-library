@@ -1,10 +1,10 @@
 /**
  * HTTP host for the mock ArcGIS REST service + static viewer.
  *
- *   http://127.0.0.1:3000/                                                   -> landing page
- *   http://127.0.0.1:3000/arcgis/rest/services                               -> services directory
- *   http://127.0.0.1:3000/arcgis/rest/services/ServiceRequests/FeatureServer/0/query
- *   http://127.0.0.1:3000/arcgis/rest/services/ServiceRequests/FeatureServer/0/sql   (mock extension)
+ *   http://127.0.0.1:3001/                                                   -> landing page
+ *   http://127.0.0.1:3001/arcgis/rest/services                               -> services directory
+ *   http://127.0.0.1:3001/arcgis/rest/services/ServiceRequests/FeatureServer/0/query
+ *   http://127.0.0.1:3001/arcgis/rest/services/ServiceRequests/FeatureServer/0/sql   (mock extension)
  *
  * The REST surface itself lives in `server/restRouter.js`, which the static
  * browser demo serves through a service worker instead of a socket.

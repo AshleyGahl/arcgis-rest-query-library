@@ -6,7 +6,7 @@
       "Bash(npm run build:http)",
       "Bash(npm run generate:*)",
       "Bash(node --check:*)",
-      "Bash(curl -s http://127.0.0.1:3000/*)",
+      "Bash(curl -s http://127.0.0.1:3001/*)",
       "mcp__servicerequests__describe_layer",
       "mcp__servicerequests__query_layer",
       "mcp__servicerequests__list_library",
