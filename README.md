@@ -78,8 +78,8 @@ Four limits are real, and the catalog is built to state them per row rather than
    the very failure mode this architecture is supposed to avoid. One entry needs two requests and
    a client-side full outer join.
 
-2. **Date arithmetic is not portable.** 10 of 31 need `sqlFormat=native` against a SQL
-   Server-backed service, almost entirely because standardized SQL has no date-difference
+2. **Date arithmetic is not portable.** 10 of 31 need `sqlFormat=native` against an
+   RDBMS-backed service, almost entirely because standardized SQL has no date-difference
    function. The descriptive half of the library runs on any FeatureServer; the performance half —
    the half management asks for — does not.
 
@@ -87,7 +87,7 @@ Four limits are real, and the catalog is built to state them per row rather than
    |---|---|---|
    | `standard` | 10 | any FeatureServer |
    | `sql-expression` | 10 | ArcGIS Online hosted, Enterprise 10.9+ |
-   | `native` | 10 | SQL Server-backed Enterprise, `sqlFormat=native` |
+   | `native` | 10 | RDBMS-backed Enterprise, `sqlFormat=native` |
    | `extension` | 1 | this mock only |
 
 3. **The catalog is a convention, not an access control.** `FeatureServer/0/query` still accepts
@@ -115,10 +115,11 @@ Four limits are real, and the catalog is built to state them per row rather than
 The point is to compare, so both halves have to be real. `server/featureService.js` loads the
 GeoJSON into in-memory SQLite and implements ArcGIS query semantics over it — `where`,
 `outStatistics`, `groupByFieldsForStatistics`, `having`, spatial filters, paging — with a T-SQL
-dialect layer (`server/sqlDialect.js`) that mirrors how a SQL Server-backed Enterprise service
-behaves when called with `sqlFormat=native`. Every library entry carries the reference T-SQL
-statement its REST request must reproduce, and `sql/` loads the identical data into SQL Server so
-the statements can be run where they were written for. That is what makes "REST can express this"
+dialect layer (`server/sqlDialect.js`) that mirrors how an RDBMS-backed Enterprise service
+behaves when called with `sqlFormat=native`. Every library entry carries the reference SQL
+statement its REST request must reproduce, written in the dialect of this repo's example database —
+SQL Server — and `sql/` loads the identical data into that database so the statements can be run
+where they were written for. That is what makes "REST can express this"
 a claim you can check rather than assert.
 
 ## Documentation
@@ -139,7 +140,7 @@ regenerates them.
 ## Run it from VS Code
 
 1. Install **Node.js 22.16 or newer** and restart VS Code.
-2. **File › Open Folder…** and choose this folder (or open `service-request-gis.code-workspace`). Accept the recommended extensions: Claude Code, REST Client and SQL Server.
+2. **File › Open Folder…** and choose this folder (or open `service-request-gis.code-workspace`). Accept the recommended extensions: Claude Code, REST Client and MSSQL (the example database's client).
 3. Press **F5**. *▶ Run Service Request GIS* starts the server and opens **http://127.0.0.1:3001/viewer/**.
 4. Stop it with the red ■ on the debug toolbar.
 
@@ -324,13 +325,14 @@ someone points their own AI client at their own copy of this server, that is the
 not yours. `mcp/server.js` has no network listener at all — it is spawned as a local child
 process — so publishing this repository exposes the source, not a running endpoint.
 
-## SQL Server
+## The relational database (example: SQL Server)
 
-Run in order:
+The engine is interchangeable — PostgreSQL or Oracle would do as well — and these scripts are the
+SQL Server rendering of it. Run in order:
 1. `sql/01_ServiceRequest_table.sql` — the table.
 2. `sql/02_import_geojson.sql` — the view `vw_ServiceRequest_GeoJson` and the procedure `usp_ImportServiceRequestGeoJson @GeoJson`.
 3. `sql/03_vw_QueryLibrary.sql` — the generated catalog of all 31 T-SQL statements. This is the
-   same catalog as table 1, in its SQL Server form.
+   same catalog as table 1, in its relational-database form.
 
 ## Pointing it at a real service
 

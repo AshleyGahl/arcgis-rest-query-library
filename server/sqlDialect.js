@@ -3,11 +3,12 @@
  *
  * The mock FeatureServer stores the GeoJSON in an in-memory SQLite table. To make
  * where clauses, statistic expressions and the original T-SQL library behave as they
- * would against a SQL Server-backed ArcGIS Enterprise service (sqlFormat=native),
+ * would against an RDBMS-backed ArcGIS Enterprise service (sqlFormat=native) — SQL
+ * Server is this repo's example database, hence the T-SQL dialect —
  * we (1) rewrite a handful of syntax differences and (2) register T-SQL functions.
  *
  * Dates are stored as 'YYYY-MM-DD HH:MM:SS' strings in SAST (UTC+2), mirroring a
- * SQL Server datetime column holding local time.
+ * datetime column holding local time.
  */
 
 const DAY = 86400000;

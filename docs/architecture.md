@@ -217,10 +217,12 @@ read-only (`PRAGMA query_only` plus a statement filter), both layers alike.
 So **adding a question changes one array**. The table's rows, the `.http` file and the T-SQL
 catalogue all follow from `npm run build`, and nothing in the viewer changes at all.
 
-### How it is set up in SQL Server
+### How it is set up in the relational database
 
-The SQL Server side exists for comparison — proving the T-SQL and the REST request give the same
-answer on identical data — so it carries the library in the simplest form that supports that:
+The relational side exists for comparison — proving the reference SQL and the REST request give the
+same answer on identical data — so it carries the library in the simplest form that supports that.
+The pattern does not depend on a particular engine; the scripts here are written for one example
+database, SQL Server, and a PostgreSQL or Oracle port would change the dialect, not the shape:
 
 | Script | Object | Form |
 |---|---|---|

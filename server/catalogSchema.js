@@ -18,7 +18,7 @@
  * `RestParams` holds the decomposed query (where / groupByFieldsForStatistics /
  * outStatistics / orderByFields / having) rather than a SELECT statement, because
  * that is what a real FeatureServer accepts — see docs/query-catalog.md. `SqlText`
- * carries the equivalent T-SQL alongside it for audit and for the SQL Server path.
+ * carries the equivalent reference SQL alongside it for audit and for the relational-database path.
  *
  * The `Chart*` columns carry the presentation contract in the same row, so one request
  * tells a client both what the question is and how its answer is drawn. There is no

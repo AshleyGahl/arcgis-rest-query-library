@@ -90,9 +90,9 @@ Four limits are real, and the catalog states them per row rather than hiding the
   the client — which is the very failure mode this architecture is meant to avoid. The catalog
   declares it in a `Transforms` column, so at least a client knows what it must apply.
 - **Date arithmetic is not portable.** Standardized SQL has no date-difference function, so every
-  duration and SLA metric needs a SQL Server-backed service called with `sqlFormat=native`. The
-  descriptive half of the library runs anywhere; the performance half — the half management asks
-  for — does not.
+  duration and SLA metric needs an RDBMS-backed service called with `sqlFormat=native` — SQL Server
+  here, as the example database. The descriptive half of the library runs anywhere; the performance
+  half — the half management asks for — does not.
 - **The catalog is a convention, not an access control.** `FeatureServer/0/query` still accepts an
   arbitrary `where` from anyone who can reach it. Publishing a catalog gives you governance of
   *definitions*, not of *access*; the whitelist property needs a tier in front that refuses to
@@ -111,7 +111,7 @@ portable is this library?" with one statistics query:
 |---|---|---|
 | `standard` | 10 | any FeatureServer |
 | `sql-expression` | 10 | ArcGIS Online hosted, Enterprise 10.9+ |
-| `native` | 10 | SQL Server-backed Enterprise, `sqlFormat=native` |
+| `native` | 10 | RDBMS-backed Enterprise, `sqlFormat=native` |
 | `extension` | 1 | this mock only |
 
 [The query catalog](query-catalog.md) sets all of this out in full.
@@ -162,5 +162,5 @@ how the 31 questions are organised.
 Node ≥ 22.16, no npm dependencies. `npm start` serves the real mock FeatureServer on
 `http://127.0.0.1:3001`, and `npm test` runs the 31 REST queries, the T-SQL equivalents, their
 parity assertions, the catalog round-trip, and the whole suite again against the in-browser engine.
-The repository also carries SQL Server scripts that load the identical data, so the T-SQL can be run
-where it was written for.
+The repository also carries relational-database scripts that load the identical data — written for
+SQL Server, this repo's example database — so the reference SQL can be run where it was written for.

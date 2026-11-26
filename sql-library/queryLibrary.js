@@ -18,7 +18,7 @@
  *       sql-expression  standardized SQL functions (EXTRACT, CAST, CASE, CHAR_LENGTH, FLOOR) inside
  *                       groupBy / onStatisticField. Needs supportsSqlExpression (ArcGIS Online hosted, Enterprise 10.9+)
  *       native          T-SQL functions (DATEDIFF, DATEPART, FORMAT, LEN...). Needs sqlFormat=native on a
- *                       SQL Server-backed Enterprise service with useStandardizedQueries=false
+ *                       RDBMS-backed Enterprise service with useStandardizedQueries=false
  *       extension       mock-only feature (statisticType "countdistinct")
  *   dimension   : WHO | WHAT | WHEN | WHERE | WHY | HOW      (docs/framework.md §1)
  *   layer       : L1 Descriptive … L5 Advanced               (docs/framework.md §2)

@@ -382,5 +382,5 @@ anywhere to live — and the liability in section 7 is correspondingly unguarded
 demonstration, not an argument against the pattern. What to do about it is a separate decision.
 
 **Not evidence.** The mock's `/0/sql` route and the MCP `run_tsql` tool both accept a statement from
-the caller. They are deliberate conveniences for comparing this engine against SQL Server, and they
+the caller. They are deliberate conveniences for comparing this engine against a relational database, and they
 sit outside the claim this page makes — nothing about them should be read as the pattern working.

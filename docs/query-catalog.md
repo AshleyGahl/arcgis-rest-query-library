@@ -86,8 +86,9 @@ both verbs.
 
 `SqlText` carries the equivalent T-SQL in the same row. It is not dead weight: it is the
 reference definition the REST request must reproduce, the audit record of what a metric
-means, and what you execute if you point the same catalog at SQL Server instead
-(`sql/03_vw_QueryLibrary.sql` is generated from the same source).
+means, and what you execute if you point the same catalog at a relational database instead —
+SQL Server here, as the example database (`sql/03_vw_QueryLibrary.sql` is generated from the same
+source).
 
 ## What this buys, and what it does not
 
@@ -103,7 +104,7 @@ this library?"* is one `outStatistics` call, no reporting code:
 |---|---|---|
 | `standard` | 10 | any FeatureServer |
 | `sql-expression` | 10 | ArcGIS Online hosted, Enterprise 10.9+ |
-| `native` | 10 | SQL Server-backed Enterprise, `sqlFormat=native` |
+| `native` | 10 | RDBMS-backed Enterprise, `sqlFormat=native` |
 | `extension` | 1 | this mock only |
 
 **Does not hold.** Four limits are real and worth stating before anyone builds on this:
@@ -119,7 +120,7 @@ this library?"* is one `outStatistics` call, no reporting code:
 
 2. **Date arithmetic is not portable.** 10 of 31 are tagged `native` almost entirely because
    standardized SQL has no date-difference function, so every duration and SLA metric needs
-   `sqlFormat=native` against a SQL Server-backed service. The descriptive half of the library
+   `sqlFormat=native` against an RDBMS-backed service. The descriptive half of the library
    travels anywhere; the performance half — the half management asks for — does not.
 
 3. **The catalog is a convention, not an access control.** `FeatureServer/0/query` still
@@ -161,7 +162,7 @@ this library?"* is one `outStatistics` call, no reporting code:
    Give it the `/1/execute` tier from limit 3 and the split falls along the trust boundary:
    `Question`, `Category`, `Portability`, `ParamSpec` and the `Chart*` contract are what a client
    needs to build its UI and draw an answer, while `RestParams` and `SqlText` exist for the
-   author, the auditor and the SQL Server path. On a real platform that is two published views of
+   author, the auditor and the relational-database path. On a real platform that is two published views of
    the same table — definition columns withheld from the general audience, the full row to an
    authoring role — rather than anything this pattern has to invent. The costs are honest ones:
    it does not make the definitions unguessable while layer 0 still takes a `where`, and the

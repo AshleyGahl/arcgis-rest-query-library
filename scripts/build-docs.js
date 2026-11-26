@@ -22,7 +22,7 @@ const docsDir = path.join(root, 'docs');
 /** Order on the nav bar and the docs index. `blurb` is shown on the index only. */
 const PAGES = [
   { file: 'overview.md', nav: 'Overview', blurb: 'What this proof of concept is testing, the two-request architecture, what the demo shows and the three places it breaks down — the front door of the site.' },
-  { file: 'architecture.md', nav: 'Architecture', blurb: 'The components and how they reference one another: one library source, three derivations, one engine on two runtimes — and the query library as table 1 of the service and as a view in SQL Server.' },
+  { file: 'architecture.md', nav: 'Architecture', blurb: 'The components and how they reference one another: one library source, three derivations, one engine on two runtimes — and the query library as table 1 of the service and as a view in the relational database.' },
   { file: 'data-model.md', nav: 'Data model', blurb: 'The fields, the categories and sub-categories, how the generated data behaves, and the defects planted for the data-quality queries.' },
   { file: 'framework.md', nav: 'Analytics framework', blurb: 'How the 70 questions are organised: the 5W+H dimensions, the five analytical layers, the coverage checklist and what comes next.' },
   { file: 'query-catalog.md', nav: 'Query catalog', blurb: 'The architecture: the query library published as a FeatureServer table, why it stores parameters rather than statements, and the three places the pattern does not hold.' },
@@ -255,7 +255,7 @@ ${cards}
 <tr><td><code>sql-library/queryLibrary.js</code></td><td>The 70 entries themselves: REST parameters, client transform, T-SQL and portability tag.</td></tr>
 <tr><td><code>rest/catalog.http</code></td><td>The discover-then-execute flow as runnable requests.</td></tr>
 <tr><td><code>rest/library.http</code></td><td>All 70 library requests, generated.</td></tr>
-<tr><td><code>sql/</code></td><td>SQL Server scripts that load the same GeoJSON, so the T-SQL can be run where it was written for.</td></tr>
+<tr><td><code>sql/</code></td><td>Relational-database scripts (SQL Server as the example database) that load the same GeoJSON, so the reference SQL can be run where it was written for.</td></tr>
 <tr><td><code>CLAUDE.md</code></td><td>Conventions and layout, for working on the repository.</td></tr>
 </tbody>
 </table></div>`,

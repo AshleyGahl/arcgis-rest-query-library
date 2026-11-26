@@ -10,7 +10,8 @@ council "report a problem" app collects. The points sit in and around Cape Town.
 - a **query library**: 31 analytical questions written as ArcGIS REST `query` requests, with T-SQL alongside
 - the library **published as table 1 of the same FeatureServer**, so a client discovers the questions with
   one standard REST request and executes any of them with a second (`docs/query-catalog.md`)
-- SQL Server scripts that load the same GeoJSON so the T-SQL can be compared against identical data
+- relational-database scripts (SQL Server is the example database) that load the same GeoJSON so the
+  reference SQL can be compared against identical data
 
 The data model is deliberately generic (`docs/data-model.md`). **Core facts: `DtLogged`, `DtCompleted`, `Category`.**
 Keep it that way: no internal system names, staff/contractor fields, ward/administrative codes or complainant contact data.
@@ -122,7 +123,7 @@ mcp/server.js                   stdio transport over it, for Claude Code (Node o
 - **The portability tag is mandatory and must be honest:**
   - `standard`: works on any FeatureServer.
   - `sql-expression`: uses EXTRACT/CAST/CASE/CHAR_LENGTH/FLOOR in groupBy or stats.
-  - `native`: uses T-SQL functions; needs `sqlFormat=native` on a SQL Server-backed Enterprise service.
+  - `native`: uses the database's own date/string functions; needs `sqlFormat=native` on an RDBMS-backed Enterprise service.
   - `extension`: works on this mock only.
   - Prefer the most portable form that gives the same answer.
 - `"expr AS Alias"` in `groupByFieldsForStatistics` and `outFields` is a mock convenience.
@@ -131,7 +132,7 @@ mcp/server.js                   stdio transport over it, for Claude Code (Node o
 - `GETDATE()` returns the dataset's `asOf` snapshot by default (`CLOCK=system` uses wall time).
 - `Status` is `Open` | `In Progress` | `Closed`. "Unresolved" means `Status <> 'Closed'`.
 - Grids default to `ObjectID DESC` (then `Created`, `Received`) when those columns exist.
-- SQL Server data-access objects: always provide **both** a view form and a stored-proc form.
+- Relational data-access objects: always provide **both** a view form and a stored-proc form.
 - **The chart is declared, not guessed.** Layer 1 carries the presentation contract (`HasChart`,
   `ChartType`, `ChartLabelColumn`, `ChartValueColumns`, `ChartSeriesColumn`, `ChartAnnotationColumn`),
   set by the `chart` field of a library entry. `viewer/js/result-chart.js` obeys it and only infers
