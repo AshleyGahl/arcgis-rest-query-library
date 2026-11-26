@@ -8,9 +8,9 @@ import { runEntry } from '../sql-library/runner.js';
 const svc = createFeatureService(config);
 const local = async (params) => ({ url: '(in-process)', json: svc.query(params) });
 
-test('library has 31 unique entries', () => {
-  assert.equal(queryLibrary.length, 31);
-  assert.equal(new Set(queryLibrary.map((q) => q.id)).size, 31);
+test('library has 30 unique entries', () => {
+  assert.equal(queryLibrary.length, 30);
+  assert.equal(new Set(queryLibrary.map((q) => q.id)).size, 30);
 });
 
 for (const entry of queryLibrary) {
@@ -26,7 +26,7 @@ for (const entry of queryLibrary) {
 
 // REST and T-SQL should agree where both are exact equivalents
 const scalar = (rows) => Object.values(rows[0])[0];
-for (const [id, restKey] of [[0, 'count'], [7, 'count'], [10, 'count'], [23, 'count']]) {
+for (const [id, restKey] of [[0, 'count'], [7, 'count'], [10, 'count'], [22, 'count']]) {
   test(`Q${id} REST count == T-SQL count`, async () => {
     const entry = queryLibrary.find((q) => q.id === id);
     const rest = await runEntry(entry, local);

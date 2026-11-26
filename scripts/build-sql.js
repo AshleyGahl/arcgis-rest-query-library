@@ -19,7 +19,7 @@ const qj = (o) => (o?.length ? q(JSON.stringify(o)) : 'CAST(NULL AS NVARCHAR(100
 const ids = queryLibrary.map((e) => e.id);
 const lines = [
   '-- ============================================================================',
-  '-- 03  vw_QueryLibrary — the 70 analytical queries as a T-SQL catalogue.',
+  '-- 03  vw_QueryLibrary — the 30 analytical queries as a T-SQL catalogue.',
   '--     Each row carries the question, its statement, the chart contract for its result and',
   '--     the parameters it may be varied by, so one lookup tells a caller how to draw the answer',
   '--     and what a user is allowed to change about the question.',

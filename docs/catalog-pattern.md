@@ -4,7 +4,7 @@
 honest scoring of this repository against it.*
 
 Every other page here describes *this* implementation: a mock ArcGIS FeatureServer, a GeoJSON of
-service requests, a library of 31 questions published as table 1. This page is the one that does
+service requests, a library of 30 questions published as table 1. This page is the one that does
 not. The design predates the platform and survives a change of platform, so it is worth stating on
 its own terms before arguing about whether any particular technology can carry it.
 
@@ -269,7 +269,7 @@ replace a hand-written API tier. Measured against the sections above:
 **Holds.** The catalog is data, served over the same generic `query` operation as the features
 themselves, so discovery and execution are both standard requests and no question is compiled into
 the client (section 4, partially). More importantly, the test suite already asserts *properties over
-the catalog* rather than behaviour per feature — 31 REST runs, 31 T-SQL runs, a catalog round-trip
+the catalog* rather than behaviour per feature — 30 REST runs, 30 T-SQL runs, a catalog round-trip
 and parity between the two — which is section 8 done properly, and the most architecturally mature
 thing here.
 
@@ -331,7 +331,7 @@ single authoritative cache in one move. The pattern survives the platform change
 not, and the gap is one component wide.
 
 That tier is now in the repository, as a mock extension beside `/0/sql` rather than as anything
-ArcGIS would recognise: `…/FeatureServer/1/execute?q=27&top=3&days=90`. It accepts a question number
+ArcGIS would recognise: `…/FeatureServer/1/execute?q=26&top=3&days=90`. It accepts a question number
 and the parameters that question declares, refuses a `where` or an `outStatistics` rather than
 ignoring it, resolves the row through its own layer 1, binds the values on the trusted side and
 executes — about sixty lines that know no individual question. Two things worth taking from it. It
@@ -342,7 +342,7 @@ rows against layer 0, deliberately — the demonstration of what a FeatureServer
 the point of the repository, and a tier in the default path would quietly answer the question the
 PoC exists to ask.
 
-**Added since.** The `Chart*` columns of section 2 are now in the catalog: 23 of the 31 questions
+**Added since.** The `Chart*` columns of section 2 are now in the catalog: 22 of the 30 questions
 declare how their answer is drawn, 26 declare `HasChart = 0`, and the result drawer obeys the
 contract where there is one, falling back to inferring from the shape of the rows only where there
 is not. The gap that mattered was not the column but that nothing could check the shape of an

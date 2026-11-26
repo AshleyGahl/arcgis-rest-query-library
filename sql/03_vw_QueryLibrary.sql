@@ -1,5 +1,5 @@
 -- ============================================================================
--- 03  vw_QueryLibrary — the 70 analytical queries as a T-SQL catalogue.
+-- 03  vw_QueryLibrary — the 30 analytical queries as a T-SQL catalogue.
 --     Each row carries the question, its statement, the chart contract for its result and
 --     the parameters it may be varied by, so one lookup tells a caller how to draw the answer
 --     and what a user is allowed to change about the question.
@@ -162,76 +162,69 @@ SELECT 20 AS QueryNumber, N'Thematic / Hierarchical Groupings' AS Category, N'WH
        N'Count' AS ChartValueColumns, CAST(NULL AS NVARCHAR(200)) AS ChartSeriesColumn, N'AvgResolutionDays' AS ChartAnnotationColumn,
        CAST(NULL AS NVARCHAR(1000)) AS ParamSpec,
        N'SELECT CASE WHEN Category IN (''Water Supply'', ''Wastewater & Stormwater'', ''Flooding'') THEN ''Three Waters'' WHEN Category IN (''Roads & Footpaths'', ''Streetlights'', ''Abandoned Vehicles'') THEN ''Transport'' WHEN Category IN (''Rubbish & Recycling'', ''Illegal Dumping'') THEN ''Waste'' WHEN Category IN (''Parks & Reserves'', ''Trees'') THEN ''Parks & Open Space'' WHEN Category IN (''Noise'', ''Animals'', ''Graffiti'') THEN ''Community & Regulatory'' ELSE ''Other'' END AS Theme, COUNT(*) AS Count, AVG(CAST(DATEDIFF(day, DtLogged, DtCompleted) AS FLOAT)) AS AvgResolutionDays FROM ServiceRequest GROUP BY CASE WHEN Category IN (''Water Supply'', ''Wastewater & Stormwater'', ''Flooding'') THEN ''Three Waters'' WHEN Category IN (''Roads & Footpaths'', ''Streetlights'', ''Abandoned Vehicles'') THEN ''Transport'' WHEN Category IN (''Rubbish & Recycling'', ''Illegal Dumping'') THEN ''Waste'' WHEN Category IN (''Parks & Reserves'', ''Trees'') THEN ''Parks & Open Space'' WHEN Category IN (''Noise'', ''Animals'', ''Graffiti'') THEN ''Community & Regulatory'' ELSE ''Other'' END ORDER BY Count DESC;' AS SQLText
--- ---------------------------------------------------------------- Hotspots & Channel Performance (21–22)
+-- ---------------------------------------------------------------- Channel Performance (21–21)
 UNION ALL
-SELECT 21 AS QueryNumber, N'Hotspots & Channel Performance' AS Category, N'WHERE' AS Dimension, N'L5' AS AnalyticalLayer,
-       N'Top 10 suburb hotspots (volume, variety, first and last report)' AS Question,
-       1 AS HasChart, N'bar' AS ChartType, N'Suburb' AS ChartLabelColumn,
-       N'RequestCount' AS ChartValueColumns, CAST(NULL AS NVARCHAR(200)) AS ChartSeriesColumn, N'DistinctTypes' AS ChartAnnotationColumn,
-       N'[{"name":"top","label":"Rows","type":"int","min":1,"max":25,"default":10,"binds":[{"in":"rest","key":"resultRecordCount"},{"in":"tsql","find":"TOP 10","template":"TOP {v}"}]}]' AS ParamSpec,
-       N'SELECT TOP 10 Suburb, COUNT(*) AS RequestCount, COUNT(DISTINCT CategorySub) AS DistinctTypes, MIN(DtLogged) AS FirstRequest, MAX(DtLogged) AS LastRequest FROM ServiceRequest WHERE Suburb IS NOT NULL GROUP BY Suburb ORDER BY RequestCount DESC;' AS SQLText
-UNION ALL
-SELECT 22 AS QueryNumber, N'Hotspots & Channel Performance' AS Category, N'HOW' AS Dimension, N'L3' AS AnalyticalLayer,
+SELECT 21 AS QueryNumber, N'Channel Performance' AS Category, N'HOW' AS Dimension, N'L3' AS AnalyticalLayer,
        N'Channel efficiency (which channel gets closed fastest?)' AS Question,
        1 AS HasChart, N'bar' AS ChartType, N'Channel' AS ChartLabelColumn,
        N'Total,StillOpen' AS ChartValueColumns, CAST(NULL AS NVARCHAR(200)) AS ChartSeriesColumn, N'AvgCloseDays' AS ChartAnnotationColumn,
        CAST(NULL AS NVARCHAR(1000)) AS ParamSpec,
        N'SELECT Channel, COUNT(*) AS Total, AVG(CAST(DATEDIFF(day, DtLogged, DtCompleted) AS FLOAT)) AS AvgCloseDays, SUM(CASE WHEN Status <> ''Closed'' THEN 1 ELSE 0 END) AS StillOpen FROM ServiceRequest GROUP BY Channel ORDER BY AvgCloseDays;' AS SQLText
--- ---------------------------------------------------------------- Data Quality & Integrity Checks (23–24)
+-- ---------------------------------------------------------------- Data Quality & Integrity Checks (22–23)
 UNION ALL
-SELECT 23 AS QueryNumber, N'Data Quality & Integrity Checks' AS Category, N'WHY' AS Dimension, N'L4' AS AnalyticalLayer,
+SELECT 22 AS QueryNumber, N'Data Quality & Integrity Checks' AS Category, N'WHY' AS Dimension, N'L4' AS AnalyticalLayer,
        N'Invalid dates (completed before logged)' AS Question,
        0 AS HasChart, CAST(NULL AS NVARCHAR(200)) AS ChartType, CAST(NULL AS NVARCHAR(200)) AS ChartLabelColumn,
        CAST(NULL AS NVARCHAR(200)) AS ChartValueColumns, CAST(NULL AS NVARCHAR(200)) AS ChartSeriesColumn, CAST(NULL AS NVARCHAR(200)) AS ChartAnnotationColumn,
        CAST(NULL AS NVARCHAR(1000)) AS ParamSpec,
        N'SELECT COUNT(*) AS DataErrors FROM ServiceRequest WHERE DtCompleted IS NOT NULL AND DtCompleted < DtLogged;' AS SQLText
 UNION ALL
-SELECT 24 AS QueryNumber, N'Data Quality & Integrity Checks' AS Category, N'WHERE' AS Dimension, N'L4' AS AnalyticalLayer,
+SELECT 23 AS QueryNumber, N'Data Quality & Integrity Checks' AS Category, N'WHERE' AS Dimension, N'L4' AS AnalyticalLayer,
        N'Requests with missing fields (Suburb, CategorySub, Description)' AS Question,
        1 AS HasChart, N'bar' AS ChartType, CAST(NULL AS NVARCHAR(200)) AS ChartLabelColumn,
        N'MissingSuburb,MissingCategorySub,MissingDescription' AS ChartValueColumns, CAST(NULL AS NVARCHAR(200)) AS ChartSeriesColumn, CAST(NULL AS NVARCHAR(200)) AS ChartAnnotationColumn,
        CAST(NULL AS NVARCHAR(1000)) AS ParamSpec,
        N'SELECT SUM(CASE WHEN Suburb IS NULL THEN 1 ELSE 0 END) AS MissingSuburb, SUM(CASE WHEN CategorySub IS NULL OR CategorySub = '''' THEN 1 ELSE 0 END) AS MissingCategorySub, SUM(CASE WHEN Description IS NULL OR Description = '''' THEN 1 ELSE 0 END) AS MissingDescription FROM ServiceRequest;' AS SQLText
--- ---------------------------------------------------------------- Operational & Workload Insights (25–28)
+-- ---------------------------------------------------------------- Operational & Workload Insights (24–27)
 UNION ALL
-SELECT 25 AS QueryNumber, N'Operational & Workload Insights' AS Category, N'HOW' AS Dimension, N'L5' AS AnalyticalLayer,
+SELECT 24 AS QueryNumber, N'Operational & Workload Insights' AS Category, N'HOW' AS Dimension, N'L5' AS AnalyticalLayer,
        N'Monthly throughput (logged vs completed side by side)' AS Question,
        1 AS HasChart, N'bar' AS ChartType, N'Year,Month' AS ChartLabelColumn,
        N'Logged,Completed' AS ChartValueColumns, CAST(NULL AS NVARCHAR(200)) AS ChartSeriesColumn, N'NetBacklogChange' AS ChartAnnotationColumn,
        CAST(NULL AS NVARCHAR(1000)) AS ParamSpec,
        N'WITH MonthlyLogs AS (SELECT YEAR(DtLogged) AS Yr, MONTH(DtLogged) AS Mo, COUNT(*) AS Logged FROM ServiceRequest GROUP BY YEAR(DtLogged), MONTH(DtLogged)), MonthlyCompletes AS (SELECT YEAR(DtCompleted) AS Yr, MONTH(DtCompleted) AS Mo, COUNT(*) AS Completed FROM ServiceRequest WHERE DtCompleted IS NOT NULL GROUP BY YEAR(DtCompleted), MONTH(DtCompleted)) SELECT ISNULL(L.Yr, C.Yr) AS [Year], ISNULL(L.Mo, C.Mo) AS [Month], ISNULL(L.Logged, 0) AS Logged, ISNULL(C.Completed, 0) AS Completed, ISNULL(L.Logged, 0) - ISNULL(C.Completed, 0) AS NetBacklogChange FROM MonthlyLogs L FULL OUTER JOIN MonthlyCompletes C ON L.Yr = C.Yr AND L.Mo = C.Mo ORDER BY [Year], [Month];' AS SQLText
 UNION ALL
-SELECT 26 AS QueryNumber, N'Operational & Workload Insights' AS Category, N'WHO' AS Dimension, N'L1' AS AnalyticalLayer,
+SELECT 25 AS QueryNumber, N'Operational & Workload Insights' AS Category, N'WHO' AS Dimension, N'L1' AS AnalyticalLayer,
        N'Pivot: Channel vs Status (conditional aggregation)' AS Question,
        1 AS HasChart, N'bar' AS ChartType, N'Channel' AS ChartLabelColumn,
        N'OpenCount,InProgress,Closed' AS ChartValueColumns, CAST(NULL AS NVARCHAR(200)) AS ChartSeriesColumn, N'Total' AS ChartAnnotationColumn,
        CAST(NULL AS NVARCHAR(1000)) AS ParamSpec,
        N'SELECT Channel, COUNT(*) AS Total, SUM(CASE WHEN Status = ''Open'' THEN 1 ELSE 0 END) AS OpenCount, SUM(CASE WHEN Status = ''In Progress'' THEN 1 ELSE 0 END) AS InProgress, SUM(CASE WHEN Status = ''Closed'' THEN 1 ELSE 0 END) AS Closed FROM ServiceRequest GROUP BY Channel ORDER BY Channel;' AS SQLText
 UNION ALL
-SELECT 27 AS QueryNumber, N'Operational & Workload Insights' AS Category, N'WHY' AS Dimension, N'L4' AS AnalyticalLayer,
+SELECT 26 AS QueryNumber, N'Operational & Workload Insights' AS Category, N'WHY' AS Dimension, N'L4' AS AnalyticalLayer,
        N'Which categories have the most requests stuck open for more than 30 days?' AS Question,
        1 AS HasChart, N'bar' AS ChartType, N'Category' AS ChartLabelColumn,
        N'StuckCount' AS ChartValueColumns, CAST(NULL AS NVARCHAR(200)) AS ChartSeriesColumn, CAST(NULL AS NVARCHAR(200)) AS ChartAnnotationColumn,
        N'[{"name":"top","label":"Rows","type":"int","min":1,"max":25,"default":5,"binds":[{"in":"rest","key":"resultRecordCount"},{"in":"tsql","find":"TOP 5","template":"TOP {v}"}]},{"name":"days","label":"Open longer than (days)","type":"int","min":1,"max":365,"default":30,"binds":[{"in":"rest","key":"where","template":"Status <> ''Closed'' AND DATEDIFF(day, DtLogged, GETDATE()) > {v}"},{"in":"tsql","find":"DATEDIFF(day, DtLogged, GETDATE()) > 30","template":"DATEDIFF(day, DtLogged, GETDATE()) > {v}"}],"help":"The age at which an open request counts as stuck"}]' AS ParamSpec,
        N'SELECT TOP 5 Category, COUNT(*) AS StuckCount FROM ServiceRequest WHERE Status <> ''Closed'' AND DATEDIFF(day, DtLogged, GETDATE()) > 30 GROUP BY Category ORDER BY StuckCount DESC;' AS SQLText
 UNION ALL
-SELECT 28 AS QueryNumber, N'Operational & Workload Insights' AS Category, N'WHERE' AS Dimension, N'L5' AS AnalyticalLayer,
+SELECT 27 AS QueryNumber, N'Operational & Workload Insights' AS Category, N'WHERE' AS Dimension, N'L5' AS AnalyticalLayer,
        N'Which category dominates each suburb?' AS Question,
        1 AS HasChart, N'bar' AS ChartType, N'Suburb' AS ChartLabelColumn,
        N'Requests' AS ChartValueColumns, N'Category' AS ChartSeriesColumn, CAST(NULL AS NVARCHAR(200)) AS ChartAnnotationColumn,
        CAST(NULL AS NVARCHAR(1000)) AS ParamSpec,
        N'WITH SuburbCategoryCounts AS (SELECT Suburb, Category, COUNT(*) AS Cnt, ROW_NUMBER() OVER (PARTITION BY Suburb ORDER BY COUNT(*) DESC, Category) AS rn FROM ServiceRequest WHERE Suburb IS NOT NULL GROUP BY Suburb, Category) SELECT Suburb, Category AS TopCategory, Cnt AS Requests FROM SuburbCategoryCounts WHERE rn = 1 ORDER BY Suburb;' AS SQLText
--- ---------------------------------------------------------------- Text Mining & Description Analysis (29–29)
+-- ---------------------------------------------------------------- Text Mining & Description Analysis (28–28)
 UNION ALL
-SELECT 29 AS QueryNumber, N'Text Mining & Description Analysis' AS Category, N'WHAT' AS Dimension, N'L4' AS AnalyticalLayer,
+SELECT 28 AS QueryNumber, N'Text Mining & Description Analysis' AS Category, N'WHAT' AS Dimension, N'L4' AS AnalyticalLayer,
        N'Average description length per Category' AS Question,
        1 AS HasChart, N'bar' AS ChartType, N'Category' AS ChartLabelColumn,
        N'AvgDescLength' AS ChartValueColumns, CAST(NULL AS NVARCHAR(200)) AS ChartSeriesColumn, N'Count' AS ChartAnnotationColumn,
        CAST(NULL AS NVARCHAR(1000)) AS ParamSpec,
        N'SELECT Category, AVG(CAST(LEN(Description) AS FLOAT)) AS AvgDescLength, COUNT(*) AS Count FROM ServiceRequest WHERE Description IS NOT NULL GROUP BY Category HAVING COUNT(*) > 10 ORDER BY AvgDescLength DESC;' AS SQLText
--- ---------------------------------------------------------------- Trend & Forecasting Prep (30–30)
+-- ---------------------------------------------------------------- Trend & Forecasting Prep (29–29)
 UNION ALL
-SELECT 30 AS QueryNumber, N'Trend & Forecasting Prep' AS Category, N'WHEN' AS Dimension, N'L5' AS AnalyticalLayer,
+SELECT 29 AS QueryNumber, N'Trend & Forecasting Prep' AS Category, N'WHEN' AS Dimension, N'L5' AS AnalyticalLayer,
        N'Moving 7-day average of new requests (to smooth daily noise)' AS Question,
        1 AS HasChart, N'line' AS ChartType, N'LogDate' AS ChartLabelColumn,
        N'DailyTotal,MovingAvg7Days' AS ChartValueColumns, CAST(NULL AS NVARCHAR(200)) AS ChartSeriesColumn, CAST(NULL AS NVARCHAR(200)) AS ChartAnnotationColumn,
@@ -256,7 +249,7 @@ BEGIN
     WHERE l.QueryNumber = @QueryNumber;
 
     IF @sql IS NULL
-        THROW 50010, N'@QueryNumber is not in dbo.vw_QueryLibrary (valid range: 0-30).', 1;
+        THROW 50010, N'@QueryNumber is not in dbo.vw_QueryLibrary (valid range: 0-29).', 1;
 
     IF @Execute = 0
     BEGIN

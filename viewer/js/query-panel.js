@@ -1,7 +1,7 @@
 /**
  * The Run REST and Run SQL panels — one implementation, two instances.
  *
- * Both list the same 70 questions, and the tab is the verb: pick a question under
+ * Both list the same 30 questions, and the tab is the verb: pick a question under
  * Run REST and it goes to `…/FeatureServer/0/query`; pick it under Run SQL and its
  * statement goes to `…/FeatureServer/0/sql`. There is no Compare button, because with
  * each verb on its own tab a control that quietly does both is the odd one out.

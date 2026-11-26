@@ -1,6 +1,6 @@
 # Service Request Analytics: Query Design Framework
 
-This framework organises the 31 queries in `sql-library/queryLibrary.js`. Each query is also generated
+This framework organises the 30 queries in `sql-library/queryLibrary.js`. Each query is also generated
 into `sql/03_vw_QueryLibrary.sql`.
 
 ## 1. Core question dimensions (5 W's + H)

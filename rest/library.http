@@ -217,18 +217,7 @@ f=pjson
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Count%22%7D%2C%7B%22statisticType%22%3A%22avg%22%2C%22onStatisticField%22%3A%22DATEDIFF(day%2C%20DtLogged%2C%20DtCompleted)%22%2C%22outStatisticFieldName%22%3A%22AvgResolutionDays%22%7D%5D
 &orderByFields=Count%20DESC
 
-### Q21 — Top 10 suburb hotspots (volume, variety, first and last report)  [extension]
-POST {{layer}}/query
-Content-Type: application/x-www-form-urlencoded
-
-f=pjson
-&where=Suburb%20IS%20NOT%20NULL
-&groupByFieldsForStatistics=Suburb
-&outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22RequestCount%22%7D%2C%7B%22statisticType%22%3A%22countdistinct%22%2C%22onStatisticField%22%3A%22CategorySub%22%2C%22outStatisticFieldName%22%3A%22DistinctTypes%22%7D%2C%7B%22statisticType%22%3A%22min%22%2C%22onStatisticField%22%3A%22DtLogged%22%2C%22outStatisticFieldName%22%3A%22FirstRequest%22%7D%2C%7B%22statisticType%22%3A%22max%22%2C%22onStatisticField%22%3A%22DtLogged%22%2C%22outStatisticFieldName%22%3A%22LastRequest%22%7D%5D
-&orderByFields=RequestCount%20DESC
-&resultRecordCount=10
-
-### Q22 — Channel efficiency (which channel gets closed fastest?)  [native]
+### Q21 — Channel efficiency (which channel gets closed fastest?)  [native]
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
@@ -239,7 +228,7 @@ f=pjson
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Total%22%7D%2C%7B%22statisticType%22%3A%22avg%22%2C%22onStatisticField%22%3A%22DATEDIFF(day%2C%20DtLogged%2C%20DtCompleted)%22%2C%22outStatisticFieldName%22%3A%22AvgCloseDays%22%7D%2C%7B%22statisticType%22%3A%22sum%22%2C%22onStatisticField%22%3A%22CASE%20WHEN%20Status%20%3C%3E%20'Closed'%20THEN%201%20ELSE%200%20END%22%2C%22outStatisticFieldName%22%3A%22StillOpen%22%7D%5D
 &orderByFields=AvgCloseDays
 
-### Q23 — Invalid dates (completed before logged)  [standard]
+### Q22 — Invalid dates (completed before logged)  [standard]
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
@@ -247,7 +236,7 @@ f=pjson
 &where=DtCompleted%20IS%20NOT%20NULL%20AND%20DtCompleted%20%3C%20DtLogged
 &returnCountOnly=true
 
-### Q24 — Requests with missing fields (Suburb, CategorySub, Description)  [sql-expression]
+### Q23 — Requests with missing fields (Suburb, CategorySub, Description)  [sql-expression]
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
@@ -255,7 +244,7 @@ f=pjson
 &where=1%3D1
 &outStatistics=%5B%7B%22statisticType%22%3A%22sum%22%2C%22onStatisticField%22%3A%22CASE%20WHEN%20Suburb%20IS%20NULL%20THEN%201%20ELSE%200%20END%22%2C%22outStatisticFieldName%22%3A%22MissingSuburb%22%7D%2C%7B%22statisticType%22%3A%22sum%22%2C%22onStatisticField%22%3A%22CASE%20WHEN%20CategorySub%20IS%20NULL%20OR%20CategorySub%20%3D%20''%20THEN%201%20ELSE%200%20END%22%2C%22outStatisticFieldName%22%3A%22MissingCategorySub%22%7D%2C%7B%22statisticType%22%3A%22sum%22%2C%22onStatisticField%22%3A%22CASE%20WHEN%20Description%20IS%20NULL%20OR%20Description%20%3D%20''%20THEN%201%20ELSE%200%20END%22%2C%22outStatisticFieldName%22%3A%22MissingDescription%22%7D%5D
 
-### Q25 (logged) — Monthly throughput (logged vs completed side by side)  [sql-expression]
+### Q24 (logged) — Monthly throughput (logged vs completed side by side)  [sql-expression]
 # client-side transform: fullOuterJoin
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
@@ -266,7 +255,7 @@ f=pjson
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Logged%22%7D%5D
 &orderByFields=Year%2C%20Month
 
-### Q25 (completed) — Monthly throughput (logged vs completed side by side)  [sql-expression]
+### Q24 (completed) — Monthly throughput (logged vs completed side by side)  [sql-expression]
 # client-side transform: fullOuterJoin
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
@@ -277,7 +266,7 @@ f=pjson
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Completed%22%7D%5D
 &orderByFields=Year%2C%20Month
 
-### Q26 — Pivot: Channel vs Status (conditional aggregation)  [sql-expression]
+### Q25 — Pivot: Channel vs Status (conditional aggregation)  [sql-expression]
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
@@ -287,7 +276,7 @@ f=pjson
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Total%22%7D%2C%7B%22statisticType%22%3A%22sum%22%2C%22onStatisticField%22%3A%22CASE%20WHEN%20Status%20%3D%20'Open'%20THEN%201%20ELSE%200%20END%22%2C%22outStatisticFieldName%22%3A%22OpenCount%22%7D%2C%7B%22statisticType%22%3A%22sum%22%2C%22onStatisticField%22%3A%22CASE%20WHEN%20Status%20%3D%20'In%20Progress'%20THEN%201%20ELSE%200%20END%22%2C%22outStatisticFieldName%22%3A%22InProgress%22%7D%2C%7B%22statisticType%22%3A%22sum%22%2C%22onStatisticField%22%3A%22CASE%20WHEN%20Status%20%3D%20'Closed'%20THEN%201%20ELSE%200%20END%22%2C%22outStatisticFieldName%22%3A%22Closed%22%7D%5D
 &orderByFields=Channel
 
-### Q27 — Which categories have the most requests stuck open for more than 30 days?  [native]
+### Q26 — Which categories have the most requests stuck open for more than 30 days?  [native]
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
@@ -299,7 +288,7 @@ f=pjson
 &orderByFields=StuckCount%20DESC
 &resultRecordCount=5
 
-### Q28 — Which category dominates each suburb?  [standard]
+### Q27 — Which category dominates each suburb?  [standard]
 # client-side transform: topPerGroup
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
@@ -310,7 +299,7 @@ f=pjson
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Requests%22%7D%5D
 &orderByFields=Suburb%2C%20Requests%20DESC%2C%20Category
 
-### Q29 — Average description length per Category  [sql-expression]
+### Q28 — Average description length per Category  [sql-expression]
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
@@ -321,7 +310,7 @@ f=pjson
 &having=COUNT(ObjectID)%20%3E%2010
 &orderByFields=AvgDescLength%20DESC
 
-### Q30 — Moving 7-day average of new requests (to smooth daily noise)  [sql-expression]
+### Q29 — Moving 7-day average of new requests (to smooth daily noise)  [sql-expression]
 # client-side transform: movingAverage -> sort
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded

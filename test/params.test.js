@@ -47,7 +47,7 @@ const parameterised = queryLibrary.filter((e) => paramsOf(e).length);
 
 // ------------------------------------------------------------------ the declaration itself
 test('the library declares bounded parameters on the questions that invite them', () => {
-  assert.ok(parameterised.length >= 4, `only ${parameterised.length} parameterised entries`);
+  assert.ok(parameterised.length >= 3, `only ${parameterised.length} parameterised entries`);
   for (const e of parameterised) {
     for (const p of paramsOf(e)) {
       assert.ok(p.name && /^[a-zA-Z][a-zA-Z0-9]*$/.test(p.name), `Q${e.id} parameter name ${p.name}`);
@@ -106,13 +106,13 @@ test('a bound value lands in both the REST request and the T-SQL', () => {
   assert.equal(entry.rest.resultRecordCount, 3);
   assert.match(entry.tsql, /SELECT TOP 3 Category/);
 
-  const q27 = bindEntry(getQuery(27), { top: 2, days: 90 }).entry;
-  assert.equal(q27.rest.resultRecordCount, 2);
-  assert.match(q27.rest.where, /GETDATE\(\)\) > 90$/);
-  assert.match(q27.tsql, /SELECT TOP 2 Category/);
-  assert.match(q27.tsql, /GETDATE\(\)\) > 90 GROUP BY/);
+  const q26 = bindEntry(getQuery(26), { top: 2, days: 90 }).entry;
+  assert.equal(q26.rest.resultRecordCount, 2);
+  assert.match(q26.rest.where, /GETDATE\(\)\) > 90$/);
+  assert.match(q26.tsql, /SELECT TOP 2 Category/);
+  assert.match(q26.tsql, /GETDATE\(\)\) > 90 GROUP BY/);
   // The template rebuilt the clause rather than appending to it.
-  assert.equal((q27.rest.where.match(/GETDATE/g) ?? []).length, 1);
+  assert.equal((q26.rest.where.match(/GETDATE/g) ?? []).length, 1);
 });
 
 test('the bound entry carries the values it was run with', () => {
@@ -121,7 +121,7 @@ test('the bound entry carries the values it was run with', () => {
 });
 
 test('a bound question returns the number of rows it was asked for', async () => {
-  for (const [id, top] of [[12, 3], [21, 4], [27, 2]]) {
+  for (const [id, top] of [[12, 3], [26, 2], [8, 4]]) {
     const { entry } = bindEntry(getQuery(id), { top });
     const r = await runEntry(entry, local);
     assert.equal(r.rows.length, top, `Q${id} with top=${top}`);
@@ -129,7 +129,7 @@ test('a bound question returns the number of rows it was asked for', async () =>
 });
 
 test('REST and T-SQL still agree after binding, which is the point of binding both', async () => {
-  for (const [id, values] of [[12, { top: 3 }], [27, { top: 3, days: 60 }], [8, { top: 4, minClosed: 20 }]]) {
+  for (const [id, values] of [[12, { top: 3 }], [26, { top: 3, days: 60 }], [8, { top: 4, minClosed: 20 }]]) {
     const { entry } = bindEntry(getQuery(id), values);
     const rest = await runEntry(entry, local);
     const sql = svc.sql(entry.tsql);
@@ -144,7 +144,7 @@ test('REST and T-SQL still agree after binding, which is the point of binding bo
 });
 
 test('a wider bound includes the narrower one: the parameter means what it says', async () => {
-  const rows = async (values) => (await runEntry(bindEntry(getQuery(27), values).entry, local)).rows;
+  const rows = async (values) => (await runEntry(bindEntry(getQuery(26), values).entry, local)).rows;
   const strict = await rows({ top: 25, days: 180 });
   const loose = await rows({ top: 25, days: 30 });
   const total = (rs) => rs.reduce((a, r) => a + r.StuckCount, 0);
@@ -168,7 +168,7 @@ test('a value of the wrong type, or a name nobody declared, is refused', () => {
 });
 
 test('validateParams fills defaults for everything left out', () => {
-  const spec = paramsOf(getQuery(27));
+  const spec = paramsOf(getQuery(26));
   assert.deepEqual(validateParams(spec, {}).values, { top: 5, days: 30 });
   assert.deepEqual(validateParams(spec, { days: 7 }).values, { top: 5, days: 7 });
   assert.deepEqual(validateParams(spec, { days: '' }).values, { top: 5, days: 30 }, 'an empty input is not a value');
@@ -219,7 +219,7 @@ test('the execute route runs a question from its identifier alone', () => {
 
 test('the execute route honours a declared parameter', () => {
   assert.equal(execute({ q: '12', top: '10' }).rowCount, 10);
-  const r = execute({ q: '27', top: '3', days: '90' });
+  const r = execute({ q: '26', top: '3', days: '90' });
   assert.deepEqual(r.parameters, { top: 3, days: 90 });
   assert.equal(r.rowCount, 3);
   assert.match(r.requests[0].params.where, /> 90$/);
@@ -264,7 +264,7 @@ test('every catalogued question runs by identifier, as a tier would forward it',
 });
 
 test('executing by identifier and replaying the row give the same answer', async () => {
-  for (const [id, values] of [[12, { top: 9 }], [8, { top: 3, minClosed: 15 }], [13, {}], [25, {}]]) {
+  for (const [id, values] of [[12, { top: 9 }], [8, { top: 3, minClosed: 15 }], [13, {}], [24, {}]]) {
     const { entry } = bindEntry(entryFromRow(catalogRow(id)), values);
     const replayed = await runEntry(entry, local);
     const tiered = execute({ q: String(id), ...values });
@@ -274,7 +274,7 @@ test('executing by identifier and replaying the row give the same answer', async
 });
 
 test('the HTML form offers an input per declared parameter', () => {
-  const res = route({ path: `${base}/1/execute`, params: new URLSearchParams({ q: '27' }) });
+  const res = route({ path: `${base}/1/execute`, params: new URLSearchParams({ q: '26' }) });
   assert.match(res.contentType, /text\/html/);
   assert.match(res.body, /name="top"[^>]*min="1"[^>]*max="25"/);
   assert.match(res.body, /name="days"[^>]*min="1"[^>]*max="365"/);

@@ -7,7 +7,7 @@ The service publishes two things over one REST surface:
 | Id | Name | Type | What it is |
 |---|---|---|---|
 | 0 | `ServiceRequests` | Feature Layer | the ~850 service request points |
-| 1 | `QueryLibrary` | Table | the 31 analytical questions, as data |
+| 1 | `QueryLibrary` | Table | the 30 analytical questions, as data |
 
 A client needs exactly two requests, and both are the standard ArcGIS `query` operation:
 
@@ -19,7 +19,7 @@ A client needs exactly two requests, and both are the standard ArcGIS `query` op
 Nothing about any individual question is compiled into the client. `viewer/js/catalog.js`
 does step 1 at start-up and the run panels render whatever comes back; add a query to
 `sql-library/queryLibrary.js`, restart the service, and it appears in the UI with no change
-to the viewer. `test/catalog.test.js` asserts this for all 31: it reads each row over REST,
+to the viewer. `test/catalog.test.js` asserts this for all 30: it reads each row over REST,
 replays its `RestParams`, and requires the result to equal the library run exactly.
 
 ## Why the catalog stores parameters, not statements
@@ -56,7 +56,7 @@ HasChart = 1, ChartType = 'bar', ChartLabelColumn = 'CategorySub',
 ChartValueColumns = 'AvgDays', ChartAnnotationColumn = 'Closed'
 ```
 
-Twenty-three of the thirty-one questions carry a contract; the rest declare `HasChart = 0`, because a
+Twenty-two of the thirty questions carry a contract; the rest declare `HasChart = 0`, because a
 single figure or a list of features is not a chart. Being data, the contract is queryable like
 anything else — `where=HasChart=1` returns the questions a client can draw, and grouping by
 `ChartType` counts them by kind, with no reporting code on either side.
@@ -72,7 +72,7 @@ bounded parameter with the range its author ratified and a declaration of where 
 in the definition.
 
 ```
-ParamSpec of Q27 = [{ name: 'top',  type: 'int', min: 1, max:  25, default:  5, binds: […] },
+ParamSpec of Q26 = [{ name: 'top',  type: 'int', min: 1, max:  25, default:  5, binds: […] },
                     { name: 'days', type: 'int', min: 1, max: 365, default: 30, binds: […] }]
 ```
 
@@ -95,7 +95,7 @@ source).
 Measured against the library as it stands — run `npm test` to re-check every number here.
 
 **Holds.** Adding a metric is a data change, not a deployment. One generic pipeline serves
-31 questions or 300. The catalog is self-documenting by construction: every row carries its
+30 questions or 300. The catalog is self-documenting by construction: every row carries its
 category, its business question and its portability. And because the catalog is a normal
 table, it answers questions about itself with the same `query` operation — *"how portable is
 this library?"* is one `outStatistics` call, no reporting code:
@@ -105,7 +105,6 @@ this library?"* is one `outStatistics` call, no reporting code:
 | `standard` | 10 | any FeatureServer |
 | `sql-expression` | 10 | ArcGIS Online hosted, Enterprise 10.9+ |
 | `native` | 10 | RDBMS-backed Enterprise, `sqlFormat=native` |
-| `extension` | 1 | this mock only |
 
 **Does not hold.** Four limits are real and worth stating before anyone builds on this:
 
@@ -116,9 +115,9 @@ this library?"* is one `outStatistics` call, no reporting code:
    honest about it — the `Transforms` and `TransformSpec` columns name the step, so a client
    knows what it must apply — but the compute has moved to the client, which is the very
    failure mode this architecture is meant to avoid. There is no `ROLLUP` either, so subtotals
-   cost a second request. One entry (Q25) needs two requests and a client-side full outer join.
+   cost a second request. One entry (Q24) needs two requests and a client-side full outer join.
 
-2. **Date arithmetic is not portable.** 10 of 31 are tagged `native` almost entirely because
+2. **Date arithmetic is not portable.** 10 of 30 are tagged `native` almost entirely because
    standardized SQL has no date-difference function, so every duration and SLA metric needs
    `sqlFormat=native` against an RDBMS-backed service. The descriptive half of the library
    travels anywhere; the performance half — the half management asks for — does not.
@@ -131,7 +130,7 @@ this library?"* is one `outStatistics` call, no reporting code:
    for you. What the catalog gives you here is governance of *definitions*, not of *access*.
 
    The mock now ships that tier, as a mock extension rather than as ArcGIS REST, so the cost can
-   be read rather than guessed at: `…/FeatureServer/1/execute?q=27&top=3&days=90` accepts a
+   be read rather than guessed at: `…/FeatureServer/1/execute?q=26&top=3&days=90` accepts a
    question number and declared parameters only, resolves the row through layer 1, enforces the
    `ParamSpec` bounds and executes. It is about sixty lines and it knows no individual question —
    see [the catalog pattern](catalog-pattern.md) for why that one component is what the whole

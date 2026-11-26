@@ -7,7 +7,7 @@ council "report a problem" app collects. The points sit in and around Cape Town.
 - an ArcGIS Maps SDK for JavaScript viewer (`FeatureLayer` on the mock URL), with a Chart.js dashboard
 - a **static deployment** of the same thing: with no server, the engine runs in the page on SQLite Wasm
   and a service worker answers the REST requests (this is what GitHub Pages serves)
-- a **query library**: 31 analytical questions written as ArcGIS REST `query` requests, with T-SQL alongside
+- a **query library**: 30 analytical questions written as ArcGIS REST `query` requests, with T-SQL alongside
 - the library **published as table 1 of the same FeatureServer**, so a client discovers the questions with
   one standard REST request and executes any of them with a second (`docs/query-catalog.md`)
 - relational-database scripts (SQL Server is the example database) that load the same GeoJSON so the
@@ -24,7 +24,7 @@ Keep it that way: no internal system names, staff/contractor fields, ward/admini
 | Task | Command |
 |---|---|
 | Start server | `npm start` |
-| Tests (31 REST + 31 T-SQL + catalog round-trip + parity + parameters + both runtimes) | `npm test` |
+| Tests (30 REST + 30 T-SQL + catalog round-trip + parity + parameters + both runtimes) | `npm test` |
 | List / run a library query | `npm run query -- list` · `npm run query -- 14 --compare` |
 | Ad-hoc REST | `npm run query -- --where "Suburb = 'Sea Point'" --outFields "RequestID,Category,Status" --resultRecordCount 5` |
 | Ad-hoc T-SQL (mock) | `npm run query -- --sql "SELECT TOP 5 Suburb, COUNT(*) n FROM ServiceRequest GROUP BY Suburb ORDER BY n DESC"` |
@@ -70,7 +70,7 @@ server/sqlDialect.js            T-SQL / ArcGIS SQL → SQLite rewrites + registe
 server/schema.js                field list (single source of truth for layer 0's schema)
 server/catalogSchema.js         layer 1: the query library as a non-spatial table (fields + rows,
                                 incl. the Chart* presentation contract)
-sql-library/queryLibrary.js     THE library (31 entries: rest params, transform, tsql, portability)
+sql-library/queryLibrary.js     THE library (30 entries: rest params, transform, tsql, portability)
                                 also the source of layer 1, via server/catalogSchema.js
 sql-library/runner.js           runs entries anywhere + client-side transforms (LAG, running totals…)
                                 also bindEntry/validateParams (bounded parameters) and entryFromRow
@@ -124,7 +124,7 @@ mcp/server.js                   stdio transport over it, for Claude Code (Node o
   - `standard`: works on any FeatureServer.
   - `sql-expression`: uses EXTRACT/CAST/CASE/CHAR_LENGTH/FLOOR in groupBy or stats.
   - `native`: uses the database's own date/string functions; needs `sqlFormat=native` on an RDBMS-backed Enterprise service.
-  - `extension`: works on this mock only.
+  - `extension`: works on this mock only. No entry carries it — the library is ten per tier.
   - Prefer the most portable form that gives the same answer.
 - `"expr AS Alias"` in `groupByFieldsForStatistics` and `outFields` is a mock convenience.
 - T-SQL averages of `DATEDIFF` cast to FLOAT so SQL Server doesn't truncate to an integer.

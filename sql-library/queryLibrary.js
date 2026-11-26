@@ -1,5 +1,5 @@
 /**
- * Service Request Query Library — 70 analytical questions, each as an ArcGIS REST
+ * Service Request Query Library — 30 analytical questions (0–29), each as an ArcGIS REST
  * FeatureServer `query` request with the equivalent T-SQL alongside.
  *
  * Schema (generic council "report a problem" model — docs/data-model.md):
@@ -17,9 +17,10 @@
  *       standard        plain fields, standard where clause — any ArcGIS FeatureServer
  *       sql-expression  standardized SQL functions (EXTRACT, CAST, CASE, CHAR_LENGTH, FLOOR) inside
  *                       groupBy / onStatisticField. Needs supportsSqlExpression (ArcGIS Online hosted, Enterprise 10.9+)
- *       native          T-SQL functions (DATEDIFF, DATEPART, FORMAT, LEN...). Needs sqlFormat=native on a
+ *       native          T-SQL functions (DATEDIFF, DATEPART, FORMAT, LEN...). Needs sqlFormat=native on an
  *                       RDBMS-backed Enterprise service with useStandardizedQueries=false
- *       extension       mock-only feature (statisticType "countdistinct")
+ *       extension       mock-only feature (statisticType "countdistinct"). No entry carries it:
+ *                       a published library has nowhere to run it. The tag stays for one that would.
  *   dimension   : WHO | WHAT | WHEN | WHERE | WHY | HOW      (docs/framework.md §1)
  *   layer       : L1 Descriptive … L5 Advanced               (docs/framework.md §2)
  *
@@ -79,10 +80,10 @@ const groupCount = (groupBy, orderByFields = 'Count DESC', extra = {}) => ({ whe
 export const CATEGORIES = [
   'Basic Counts & Distribution', 'Time-Based Aggregations', 'Duration & Performance Metrics',
   'Filtered Queries (Specific Criteria)', 'Advanced Analytics (Ranking, Windows, etc.)', 'Service Levels & Thresholds',
-  'Thematic / Hierarchical Groupings', 'Hotspots & Channel Performance', 'Data Quality & Integrity Checks',
+  'Thematic / Hierarchical Groupings', 'Channel Performance', 'Data Quality & Integrity Checks',
   'Operational & Workload Insights', 'Text Mining & Description Analysis', 'Trend & Forecasting Prep',
 ];
-const [BASIC, TIME, DURATION, FILTERED, ADVANCED, SLA, THEMATIC, HOTSPOT, DQ, OPS, TEXT, TREND] = CATEGORIES;
+const [BASIC, TIME, DURATION, FILTERED, ADVANCED, SLA, THEMATIC, CHANNEL, DQ, OPS, TEXT, TREND] = CATEGORIES;
 
 export const queryLibrary = [
   // ======================================================================= 1. BASIC COUNTS (0, 1, 2)
@@ -207,29 +208,20 @@ export const queryLibrary = [
       outStatistics: [count(), stat('avg', RES, 'AvgResolutionDays')], orderByFields: 'Count DESC' },
     tsql: `SELECT ${THEME_CASE} AS Theme, COUNT(*) AS Count, AVG(CAST(DATEDIFF(day, DtLogged, DtCompleted) AS FLOAT)) AS AvgResolutionDays FROM ServiceRequest GROUP BY ${THEME_CASE} ORDER BY Count DESC;` },
 
-  // ======================================================================= 8. HOTSPOTS & CHANNELS (21, 22)
-  { id: 21, category: HOTSPOT, dimension: 'WHERE', layer: 'L5', portability: 'extension',
-    question: 'Top 10 suburb hotspots (volume, variety, first and last report)',
-    chart: chart('bar', 'Suburb', 'RequestCount', { annotation: 'DistinctTypes' }),
-    params: [topN(10)],
-    notes: "statisticType 'countdistinct' is a mock extension. On a real service drop DistinctTypes or run a second groupBy Suburb,CategorySub query.",
-    rest: { where: 'Suburb IS NOT NULL', groupByFieldsForStatistics: 'Suburb',
-      outStatistics: [count('RequestCount'), stat('countdistinct', 'CategorySub', 'DistinctTypes'), stat('min', 'DtLogged', 'FirstRequest'), stat('max', 'DtLogged', 'LastRequest')],
-      orderByFields: 'RequestCount DESC', resultRecordCount: 10 },
-    tsql: `SELECT TOP 10 Suburb, COUNT(*) AS RequestCount, COUNT(DISTINCT CategorySub) AS DistinctTypes, MIN(DtLogged) AS FirstRequest, MAX(DtLogged) AS LastRequest FROM ServiceRequest WHERE Suburb IS NOT NULL GROUP BY Suburb ORDER BY RequestCount DESC;` },
-  { id: 22, category: HOTSPOT, dimension: 'HOW', layer: 'L3', portability: 'native',
+  // ======================================================================= 8. CHANNEL PERFORMANCE (21)
+  { id: 21, category: CHANNEL, dimension: 'HOW', layer: 'L3', portability: 'native',
     question: 'Channel efficiency (which channel gets closed fastest?)',
     chart: chart('bar', 'Channel', 'Total,StillOpen', { annotation: 'AvgCloseDays' }),
     rest: { where: '1=1', sqlFormat: 'native', groupByFieldsForStatistics: 'Channel',
       outStatistics: [count('Total'), stat('avg', RES, 'AvgCloseDays'), stat('sum', "CASE WHEN Status <> 'Closed' THEN 1 ELSE 0 END", 'StillOpen')], orderByFields: 'AvgCloseDays' },
     tsql: `SELECT Channel, COUNT(*) AS Total, AVG(CAST(DATEDIFF(day, DtLogged, DtCompleted) AS FLOAT)) AS AvgCloseDays, SUM(CASE WHEN Status <> 'Closed' THEN 1 ELSE 0 END) AS StillOpen FROM ServiceRequest GROUP BY Channel ORDER BY AvgCloseDays;` },
 
-  // ======================================================================= 9. DATA QUALITY (23, 24)
-  { id: 23, category: DQ, dimension: 'WHY', layer: 'L4', portability: 'standard',
+  // ======================================================================= 9. DATA QUALITY (22, 23)
+  { id: 22, category: DQ, dimension: 'WHY', layer: 'L4', portability: 'standard',
     question: 'Invalid dates (completed before logged)',
     rest: { where: 'DtCompleted IS NOT NULL AND DtCompleted < DtLogged', returnCountOnly: true },
     tsql: `SELECT COUNT(*) AS DataErrors FROM ServiceRequest WHERE DtCompleted IS NOT NULL AND DtCompleted < DtLogged;` },
-  { id: 24, category: DQ, dimension: 'WHERE', layer: 'L4', portability: 'sql-expression',
+  { id: 23, category: DQ, dimension: 'WHERE', layer: 'L4', portability: 'sql-expression',
     question: 'Requests with missing fields (Suburb, CategorySub, Description)',
     chart: chart('bar', null, 'MissingSuburb,MissingCategorySub,MissingDescription'),
     rest: { where: '1=1', outStatistics: [
@@ -237,8 +229,8 @@ export const queryLibrary = [
       stat('sum', "CASE WHEN CategorySub IS NULL OR CategorySub = '' THEN 1 ELSE 0 END", 'MissingCategorySub'),
       stat('sum', "CASE WHEN Description IS NULL OR Description = '' THEN 1 ELSE 0 END", 'MissingDescription')] },
     tsql: `SELECT SUM(CASE WHEN Suburb IS NULL THEN 1 ELSE 0 END) AS MissingSuburb, SUM(CASE WHEN CategorySub IS NULL OR CategorySub = '' THEN 1 ELSE 0 END) AS MissingCategorySub, SUM(CASE WHEN Description IS NULL OR Description = '' THEN 1 ELSE 0 END) AS MissingDescription FROM ServiceRequest;` },
-  // ======================================================================= 10. OPERATIONAL (25, 26, 27, 28)
-  { id: 25, category: OPS, dimension: 'HOW', layer: 'L5', portability: 'sql-expression',
+  // ======================================================================= 10. OPERATIONAL (24, 25, 26, 27)
+  { id: 24, category: OPS, dimension: 'HOW', layer: 'L5', portability: 'sql-expression',
     question: 'Monthly throughput (logged vs completed side by side)',
     chart: chart('bar', 'Year,Month', 'Logged,Completed', { annotation: 'NetBacklogChange' }),
     rest: [
@@ -247,7 +239,7 @@ export const queryLibrary = [
     ],
     transform: { type: 'fullOuterJoin', left: 'logged', right: 'completed', on: ['Year', 'Month'], fill0: ['Logged', 'Completed'], diff: { as: 'NetBacklogChange', a: 'Logged', b: 'Completed' } },
     tsql: `WITH MonthlyLogs AS (SELECT YEAR(DtLogged) AS Yr, MONTH(DtLogged) AS Mo, COUNT(*) AS Logged FROM ServiceRequest GROUP BY YEAR(DtLogged), MONTH(DtLogged)), MonthlyCompletes AS (SELECT YEAR(DtCompleted) AS Yr, MONTH(DtCompleted) AS Mo, COUNT(*) AS Completed FROM ServiceRequest WHERE DtCompleted IS NOT NULL GROUP BY YEAR(DtCompleted), MONTH(DtCompleted)) SELECT ISNULL(L.Yr, C.Yr) AS [Year], ISNULL(L.Mo, C.Mo) AS [Month], ISNULL(L.Logged, 0) AS Logged, ISNULL(C.Completed, 0) AS Completed, ISNULL(L.Logged, 0) - ISNULL(C.Completed, 0) AS NetBacklogChange FROM MonthlyLogs L FULL OUTER JOIN MonthlyCompletes C ON L.Yr = C.Yr AND L.Mo = C.Mo ORDER BY [Year], [Month];` },
-  { id: 26, category: OPS, dimension: 'WHO', layer: 'L1', portability: 'sql-expression',
+  { id: 25, category: OPS, dimension: 'WHO', layer: 'L1', portability: 'sql-expression',
     question: 'Pivot: Channel vs Status (conditional aggregation)',
     chart: chart('bar', 'Channel', 'OpenCount,InProgress,Closed', { annotation: 'Total' }),
     rest: { where: '1=1', groupByFieldsForStatistics: 'Channel', outStatistics: [
@@ -256,7 +248,7 @@ export const queryLibrary = [
       stat('sum', "CASE WHEN Status = 'In Progress' THEN 1 ELSE 0 END", 'InProgress'),
       stat('sum', "CASE WHEN Status = 'Closed' THEN 1 ELSE 0 END", 'Closed')], orderByFields: 'Channel' },
     tsql: `SELECT Channel, COUNT(*) AS Total, SUM(CASE WHEN Status = 'Open' THEN 1 ELSE 0 END) AS OpenCount, SUM(CASE WHEN Status = 'In Progress' THEN 1 ELSE 0 END) AS InProgress, SUM(CASE WHEN Status = 'Closed' THEN 1 ELSE 0 END) AS Closed FROM ServiceRequest GROUP BY Channel ORDER BY Channel;` },
-  { id: 27, category: OPS, dimension: 'WHY', layer: 'L4', portability: 'native',
+  { id: 26, category: OPS, dimension: 'WHY', layer: 'L4', portability: 'native',
     question: 'Which categories have the most requests stuck open for more than 30 days?',
     chart: chart('bar', 'Category', 'StuckCount'),
     params: [topN(5), param('days', { label: 'Open longer than (days)', min: 1, max: 365, default: 30,
@@ -265,22 +257,22 @@ export const queryLibrary = [
         { in: 'tsql', find: 'DATEDIFF(day, DtLogged, GETDATE()) > 30', template: 'DATEDIFF(day, DtLogged, GETDATE()) > {v}' }] })],
     rest: { where: `${OPEN} AND ${AGE} > 30`, sqlFormat: 'native', groupByFieldsForStatistics: 'Category', outStatistics: [count('StuckCount')], orderByFields: 'StuckCount DESC', resultRecordCount: 5 },
     tsql: `SELECT TOP 5 Category, COUNT(*) AS StuckCount FROM ServiceRequest WHERE Status <> 'Closed' AND DATEDIFF(day, DtLogged, GETDATE()) > 30 GROUP BY Category ORDER BY StuckCount DESC;` },
-  { id: 28, category: OPS, dimension: 'WHERE', layer: 'L5', portability: 'standard',
+  { id: 27, category: OPS, dimension: 'WHERE', layer: 'L5', portability: 'standard',
     question: 'Which category dominates each suburb?',
     chart: chart('bar', 'Suburb', 'Requests', { series: 'Category' }),
     rest: { where: 'Suburb IS NOT NULL', groupByFieldsForStatistics: 'Suburb,Category', outStatistics: [count('Requests')], orderByFields: 'Suburb, Requests DESC, Category' },
     transform: { type: 'topPerGroup', partition: 'Suburb', orderBy: 'Requests' },
     tsql: `WITH SuburbCategoryCounts AS (SELECT Suburb, Category, COUNT(*) AS Cnt, ROW_NUMBER() OVER (PARTITION BY Suburb ORDER BY COUNT(*) DESC, Category) AS rn FROM ServiceRequest WHERE Suburb IS NOT NULL GROUP BY Suburb, Category) SELECT Suburb, Category AS TopCategory, Cnt AS Requests FROM SuburbCategoryCounts WHERE rn = 1 ORDER BY Suburb;` },
 
-  // ======================================================================= 11. TEXT MINING (29)
-  { id: 29, category: TEXT, dimension: 'WHAT', layer: 'L4', portability: 'sql-expression',
+  // ======================================================================= 11. TEXT MINING (28)
+  { id: 28, category: TEXT, dimension: 'WHAT', layer: 'L4', portability: 'sql-expression',
     question: 'Average description length per Category',
     chart: chart('bar', 'Category', 'AvgDescLength', { annotation: 'Count' }),
     rest: { where: 'Description IS NOT NULL', groupByFieldsForStatistics: 'Category', outStatistics: [stat('avg', 'CHAR_LENGTH(Description)', 'AvgDescLength'), count()], having: 'COUNT(ObjectID) > 10', orderByFields: 'AvgDescLength DESC' },
     tsql: `SELECT Category, AVG(CAST(LEN(Description) AS FLOAT)) AS AvgDescLength, COUNT(*) AS Count FROM ServiceRequest WHERE Description IS NOT NULL GROUP BY Category HAVING COUNT(*) > 10 ORDER BY AvgDescLength DESC;` },
 
-  // ======================================================================= 12. TREND (30)
-  { id: 30, category: TREND, dimension: 'WHEN', layer: 'L5', portability: 'sql-expression',
+  // ======================================================================= 12. TREND (29)
+  { id: 29, category: TREND, dimension: 'WHEN', layer: 'L5', portability: 'sql-expression',
     question: 'Moving 7-day average of new requests (to smooth daily noise)',
     chart: chart('line', 'LogDate', 'DailyTotal,MovingAvg7Days'),
     notes: 'The window is 7 rows (days with requests), not 7 calendar days.',

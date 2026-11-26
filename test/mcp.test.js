@@ -173,7 +173,7 @@ test('libraryQueryPayload is what run_library_query returns, so the viewer canno
   // The panel binds every entry before running it, so the comparison binds too: for a
   // question with no parameters that is the entry itself, and for one with parameters it
   // is the variant actually on screen.
-  for (const [id, params] of [[1, {}], [14, {}], [25, {}], [12, {}], [12, { top: 9 }], [27, { top: 2, days: 45 }]]) {
+  for (const [id, params] of [[1, {}], [14, {}], [24, {}], [12, {}], [12, { top: 9 }], [26, { top: 2, days: 45 }]]) {
     const { entry, errors } = bindEntry(getQuery(id), params);
     assert.deepEqual(errors, [], `entry ${id}`);
     const runResult = await runEntry(entry, local);
@@ -200,7 +200,7 @@ test('tsqlPayload is what run_tsql returns, so the Run SQL lane cannot drift', a
 });
 
 test('the tools/call envelope is shaped in exactly one place', async () => {
-  const r = await call('list_library', { portability: 'extension' });
+  const r = await call('list_library', { portability: 'native' });
   assert.deepEqual(r, toolContent(JSON.parse(r.content[0].text)));
 });
 

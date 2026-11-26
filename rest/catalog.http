@@ -53,16 +53,16 @@ GET {{cat}}/query?f=pjson&where=1=1&groupByFieldsForStatistics=AnalyticLayer,Dim
 ### How many questions REST cannot finish on its own (they carry a client transform)
 GET {{cat}}/query?f=pjson&where=Transforms IS NOT NULL&outFields=QueryNumber,Question,Transforms&orderByFields=QueryNumber
 
-### One row in full — this is everything a client needs to run Q22
-GET {{cat}}/query?f=pjson&where=QueryNumber = 22&outFields=*
+### One row in full — this is everything a client needs to run Q21
+GET {{cat}}/query?f=pjson&where=QueryNumber = 21&outFields=*
 
 # ---------------------------------------------------------------------------
 # 2. EXECUTE — replay the RestParams the catalog just handed over
 # ---------------------------------------------------------------------------
 # The request below was not written by hand: every parameter is copied verbatim
-# out of the RestParams column of Q22 above. That is the whole claim.
+# out of the RestParams column of Q21 above. That is the whole claim.
 
-### Q22 "Channel efficiency (which channel gets closed fastest?)", executed from its catalog row
+### Q21 "Channel efficiency (which channel gets closed fastest?)", executed from its catalog row
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
@@ -87,7 +87,7 @@ f=pjson
 # ---------------------------------------------------------------------------
 
 ### The reference T-SQL for the same question, served from the same table
-GET {{cat}}/query?f=pjson&where=QueryNumber = 22&outFields=QueryNumber,Question,SqlText
+GET {{cat}}/query?f=pjson&where=QueryNumber = 21&outFields=QueryNumber,Question,SqlText
 
 ### And run it, via the mock's raw-SQL extension (NOT part of ArcGIS REST)
 POST {{layer}}/sql
@@ -144,7 +144,7 @@ GET {{cat}}/execute?f=pjson&q=12
 GET {{cat}}/execute?f=pjson&q=12&top=10
 
 ### Two parameters: the rows, and the age at which an open request counts as stuck
-GET {{cat}}/execute?f=pjson&q=27&top=3&days=90
+GET {{cat}}/execute?f=pjson&q=26&top=3&days=90
 
 ### Outside the ratified range: refused, with the declaration in the details
 GET {{cat}}/execute?f=pjson&q=12&top=500
