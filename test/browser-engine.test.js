@@ -126,11 +126,11 @@ test('executing a question by identifier works on the browser runtime', () => {
   const wasmRoute = createRestRouter(wasmSvc, cfg);
   const nodeRoute = createRestRouter(nodeSvc, config);
   const path = '/arcgis/rest/services/ServiceRequests/FeatureServer/1/execute';
-  for (const qs of [{ q: '41' }, { q: '41', top: '9' }, { q: '65', top: '2', days: '120' }, { q: '43' }, { q: '41', top: '900' }, { q: '41', where: '1=1' }]) {
+  for (const qs of [{ q: '12' }, { q: '12', top: '9' }, { q: '27', top: '2', days: '120' }, { q: '13' }, { q: '12', top: '900' }, { q: '12', where: '1=1' }]) {
     const params = new URLSearchParams({ f: 'json', ...qs });
     assert.deepEqual(wasmRoute({ path, params }), nodeRoute({ path, params }), JSON.stringify(qs));
   }
-  const ran = JSON.parse(wasmRoute({ path, params: new URLSearchParams({ f: 'json', q: '41', top: '9' }) }).body);
+  const ran = JSON.parse(wasmRoute({ path, params: new URLSearchParams({ f: 'json', q: '12', top: '9' }) }).body);
   assert.equal(ran.rowCount, 9);
   assert.deepEqual(ran.parameters, { top: 9 });
 });

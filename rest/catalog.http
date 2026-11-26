@@ -53,16 +53,16 @@ GET {{cat}}/query?f=pjson&where=1=1&groupByFieldsForStatistics=AnalyticLayer,Dim
 ### How many questions REST cannot finish on its own (they carry a client transform)
 GET {{cat}}/query?f=pjson&where=Transforms IS NOT NULL&outFields=QueryNumber,Question,Transforms&orderByFields=QueryNumber
 
-### One row in full — this is everything a client needs to run Q56
-GET {{cat}}/query?f=pjson&where=QueryNumber = 56&outFields=*
+### One row in full — this is everything a client needs to run Q22
+GET {{cat}}/query?f=pjson&where=QueryNumber = 22&outFields=*
 
 # ---------------------------------------------------------------------------
 # 2. EXECUTE — replay the RestParams the catalog just handed over
 # ---------------------------------------------------------------------------
 # The request below was not written by hand: every parameter is copied verbatim
-# out of the RestParams column of Q56 above. That is the whole claim.
+# out of the RestParams column of Q22 above. That is the whole claim.
 
-### Q56 "Channel efficiency (which channel gets closed fastest?)", executed from its catalog row
+### Q22 "Channel efficiency (which channel gets closed fastest?)", executed from its catalog row
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
@@ -73,7 +73,7 @@ f=pjson
 &outStatistics=[{"statisticType":"count","onStatisticField":"ObjectID","outStatisticFieldName":"Total"},{"statisticType":"avg","onStatisticField":"DATEDIFF(day, DtLogged, DtCompleted)","outStatisticFieldName":"AvgCloseDays"},{"statisticType":"sum","onStatisticField":"CASE WHEN Status <> 'Closed' THEN 1 ELSE 0 END","outStatisticFieldName":"StillOpen"}]
 &orderByFields=AvgCloseDays
 
-### Q53 "90th percentile resolution time" — the metric that usually needs a new endpoint
+### Q19 "90th percentile resolution time" — the metric that usually needs a new endpoint
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
@@ -87,7 +87,7 @@ f=pjson
 # ---------------------------------------------------------------------------
 
 ### The reference T-SQL for the same question, served from the same table
-GET {{cat}}/query?f=pjson&where=QueryNumber = 56&outFields=QueryNumber,Question,SqlText
+GET {{cat}}/query?f=pjson&where=QueryNumber = 22&outFields=QueryNumber,Question,SqlText
 
 ### And run it, via the mock's raw-SQL extension (NOT part of ArcGIS REST)
 POST {{layer}}/sql
@@ -108,7 +108,7 @@ POST {{layer}}/sql
 Content-Type: application/x-www-form-urlencoded
 
 f=pjson
-&q=UPDATE QueryLibrary SET Question = 'nope' WHERE QueryNumber = 1;
+&q=UPDATE QueryLibrary SET Question = 'nope' WHERE QueryNumber = 0;
 
 # ---------------------------------------------------------------------------
 # 3. EXTEND — vary a question within the bounds its author ratified
@@ -117,8 +117,8 @@ f=pjson
 ### Which questions can be varied, and how (the published extension contract)
 GET {{cat}}/query?f=pjson&where=ParamSpec IS NOT NULL&outFields=QueryNumber,Question,ParamSpec&orderByFields=QueryNumber
 
-### Q41 as published — "Top 5 categories", the ratified default
-GET {{cat}}/query?f=pjson&where=QueryNumber = 41&outFields=QueryNumber,Question,ParamSpec,RestParams
+### Q12 as published — "Top 5 categories", the ratified default
+GET {{cat}}/query?f=pjson&where=QueryNumber = 12&outFields=QueryNumber,Question,ParamSpec,RestParams
 
 ### Replay it with the parameter bound client-side: resultRecordCount is where `top` lands
 POST {{layer}}/query
@@ -137,21 +137,21 @@ f=pjson
 # so the catalog is enforced here rather than merely published — docs/catalog-pattern.md.
 # ---------------------------------------------------------------------------
 
-### Run Q41 as published: no parameters, no definition, just the reference
-GET {{cat}}/execute?f=pjson&q=41
+### Run Q12 as published: no parameters, no definition, just the reference
+GET {{cat}}/execute?f=pjson&q=12
 
 ### Run it with ten rows instead of five
-GET {{cat}}/execute?f=pjson&q=41&top=10
+GET {{cat}}/execute?f=pjson&q=12&top=10
 
 ### Two parameters: the rows, and the age at which an open request counts as stuck
-GET {{cat}}/execute?f=pjson&q=65&top=3&days=90
+GET {{cat}}/execute?f=pjson&q=27&top=3&days=90
 
 ### Outside the ratified range: refused, with the declaration in the details
-GET {{cat}}/execute?f=pjson&q=41&top=500
+GET {{cat}}/execute?f=pjson&q=12&top=500
 
 ### A definition sent to this route is refused rather than ignored
-GET {{cat}}/execute?f=pjson&q=41&where=1=1
+GET {{cat}}/execute?f=pjson&q=12&where=1=1
 
 ### A question that declares nothing still runs by identifier — and its client-side
 ### transform is applied on the service side, which replay cannot do
-GET {{cat}}/execute?f=pjson&q=43
+GET {{cat}}/execute?f=pjson&q=13

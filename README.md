@@ -161,10 +161,10 @@ Without VS Code, `npm start` does the same thing.
 |---|---|
 | Start the server | `npm start` |
 | Tests | `npm test` |
-| List / run a library query | `npm run query -- list` · `npm run query -- 44 --compare` |
+| List / run a library query | `npm run query -- list` · `npm run query -- 14 --compare` |
 | Ad-hoc REST | `npm run query -- --where "Suburb = 'Sea Point'" --outFields "RequestID,Category" --resultRecordCount 5` |
 | Ad-hoc T-SQL | `npm run query -- --sql "SELECT TOP 5 Suburb, COUNT(*) n FROM ServiceRequest GROUP BY Suburb ORDER BY n DESC"` |
-| Against a real layer | `npm run query -- 41 --url https://<host>/server/rest/services/<svc>/FeatureServer/0` |
+| Against a real layer | `npm run query -- 12 --url https://<host>/server/rest/services/<svc>/FeatureServer/0` |
 | Regenerate the data | `npm run generate -- --count 900 --seed 42` |
 | Rebuild generated artifacts | `npm run build` |
 
@@ -275,7 +275,7 @@ The two run tabs share one question list, one selection and one catalog request,
 question under Run REST keeps your place when you switch to Run SQL — only the verb changes. Each
 traces what it did and shows the MCP `tools/call` that wraps the same work (below). There is no
 Compare button: with each verb on its own tab, a control that quietly does both is the odd one out.
-`npm run query -- 44 --compare` and the `compare: true` tool argument still do it side by side.
+`npm run query -- 14 --compare` and the `compare: true` tool argument still do it side by side.
 
 Every result switches between **Table** and **Chart**; a single-value result shows as a large figure.
 

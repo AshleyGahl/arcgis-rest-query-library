@@ -24,10 +24,10 @@ Keep it that way: no internal system names, staff/contractor fields, ward/admini
 |---|---|
 | Start server | `npm start` |
 | Tests (31 REST + 31 T-SQL + catalog round-trip + parity + parameters + both runtimes) | `npm test` |
-| List / run a library query | `npm run query -- list` · `npm run query -- 44 --compare` |
+| List / run a library query | `npm run query -- list` · `npm run query -- 14 --compare` |
 | Ad-hoc REST | `npm run query -- --where "Suburb = 'Sea Point'" --outFields "RequestID,Category,Status" --resultRecordCount 5` |
 | Ad-hoc T-SQL (mock) | `npm run query -- --sql "SELECT TOP 5 Suburb, COUNT(*) n FROM ServiceRequest GROUP BY Suburb ORDER BY n DESC"` |
-| Same against a real layer | `npm run query -- 41 --url https://<host>/server/rest/services/<svc>/FeatureServer/0` |
+| Same against a real layer | `npm run query -- 12 --url https://<host>/server/rest/services/<svc>/FeatureServer/0` |
 | Regenerate data | `npm run generate -- --count 900 --seed 42` |
 | Rebuild generated artifacts | `npm run build` (after editing the library or any `docs/*.md`) |
 

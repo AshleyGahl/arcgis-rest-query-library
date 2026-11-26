@@ -69,7 +69,7 @@
     { "name": "Server + debug viewer (Chrome)", "configurations": ["Server (no browser)", "Debug viewer in Chrome"], "stopAll": true }
   ],
   "inputs": [
-    { "id": "queryId", "type": "promptString", "description": "Library query number", "default": "44" },
+    { "id": "queryId", "type": "promptString", "description": "Library query number", "default": "14" },
     { "id": "featureCount", "type": "promptString", "description": "Number of features (500-1000)", "default": "850" }
   ]
 }

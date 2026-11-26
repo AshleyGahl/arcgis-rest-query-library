@@ -301,7 +301,7 @@ limit 4 in [the query catalog page](query-catalog.md).
 Two of section 4's four payoffs are what actually go:
 
 - **Per-question telemetry.** The service logs the definition it received, not the reference, so it
-  cannot tell question 44 from a hand-written lookalike. Fidelity improves — the log says literally
+  cannot tell question 14 from a hand-written lookalike. Fidelity improves — the log says literally
   what ran — while aggregation by question disappears, and that was the half which tells you what to
   index and what to retire.
 - **Cache coherence.** Section 6 assumes one cache with one writer, invalidated by a loop inside the
@@ -331,7 +331,7 @@ single authoritative cache in one move. The pattern survives the platform change
 not, and the gap is one component wide.
 
 That tier is now in the repository, as a mock extension beside `/0/sql` rather than as anything
-ArcGIS would recognise: `…/FeatureServer/1/execute?q=65&top=3&days=90`. It accepts a question number
+ArcGIS would recognise: `…/FeatureServer/1/execute?q=27&top=3&days=90`. It accepts a question number
 and the parameters that question declares, refuses a `where` or an `outStatistics` rather than
 ignoring it, resolves the row through its own layer 1, binds the values on the trusted side and
 executes — about sixty lines that know no individual question. Two things worth taking from it. It

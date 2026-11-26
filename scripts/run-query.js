@@ -3,9 +3,9 @@
  * Run Query Library entries from the terminal.
  *
  *   npm run query -- list                       list every query in the library
- *   npm run query -- 41                         run Q41's REST request in-process
- *   npm run query -- 41 --compare               run REST and T-SQL side by side
- *   npm run query -- 41 --url <layerUrl>        run against any FeatureServer layer over HTTP
+ *   npm run query -- 12                         run Q12's REST request in-process
+ *   npm run query -- 12 --compare               run REST and T-SQL side by side
+ *   npm run query -- 12 --url <layerUrl>        run against any FeatureServer layer over HTTP
  *   npm run query -- --where "Suburb = 'Sea Point'" --outFields "RequestID,Category,Status" --resultRecordCount 5
  *   npm run query -- --sql "SELECT TOP 5 Suburb, COUNT(*) AS n FROM ServiceRequest GROUP BY Suburb ORDER BY n DESC"
  */
@@ -13,6 +13,7 @@ import { createFeatureService } from '../server/nodeRuntime.js';
 import { config } from '../server/config.js';
 import { queryLibrary, getQuery } from '../sql-library/queryLibrary.js';
 import { runEntry, httpFetcher, toQueryUrl, toRows } from '../sql-library/runner.js';
+import { comparable } from '../mcp/tools.js';
 
 const argv = process.argv.slice(2);
 const flags = {};
@@ -57,7 +58,7 @@ if (positional[0] === 'list') {
     if (entry.transform) console.log(`Client transform: ${[entry.transform].flat().map((t) => t.type).join(' -> ')}`);
     show(r.rows, 'REST');
   } catch (e) { console.error('REST error:', e.message); process.exitCode = 1; }
-  if (flags.compare && entry.id !== 50) {
+  if (flags.compare && comparable(entry)) {
     const t = svc.sql(entry.tsql);
     if (t.error) console.error('T-SQL error:', t.error.message);
     else show(t.rows, 'T-SQL');

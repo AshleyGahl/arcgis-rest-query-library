@@ -72,7 +72,7 @@ bounded parameter with the range its author ratified and a declaration of where 
 in the definition.
 
 ```
-ParamSpec of Q65 = [{ name: 'top',  type: 'int', min: 1, max:  25, default:  5, binds: […] },
+ParamSpec of Q27 = [{ name: 'top',  type: 'int', min: 1, max:  25, default:  5, binds: […] },
                     { name: 'days', type: 'int', min: 1, max: 365, default: 30, binds: […] }]
 ```
 
@@ -115,7 +115,7 @@ this library?"* is one `outStatistics` call, no reporting code:
    honest about it — the `Transforms` and `TransformSpec` columns name the step, so a client
    knows what it must apply — but the compute has moved to the client, which is the very
    failure mode this architecture is meant to avoid. There is no `ROLLUP` either, so subtotals
-   cost a second request. One entry (Q62) needs two requests and a client-side full outer join.
+   cost a second request. One entry (Q25) needs two requests and a client-side full outer join.
 
 2. **Date arithmetic is not portable.** 10 of 31 are tagged `native` almost entirely because
    standardized SQL has no date-difference function, so every duration and SLA metric needs
@@ -130,7 +130,7 @@ this library?"* is one `outStatistics` call, no reporting code:
    for you. What the catalog gives you here is governance of *definitions*, not of *access*.
 
    The mock now ships that tier, as a mock extension rather than as ArcGIS REST, so the cost can
-   be read rather than guessed at: `…/FeatureServer/1/execute?q=65&top=3&days=90` accepts a
+   be read rather than guessed at: `…/FeatureServer/1/execute?q=27&top=3&days=90` accepts a
    question number and declared parameters only, resolves the row through layer 1, enforces the
    `ParamSpec` bounds and executes. It is about sixty lines and it knows no individual question —
    see [the catalog pattern](catalog-pattern.md) for why that one component is what the whole

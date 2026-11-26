@@ -93,7 +93,7 @@ test('binding the declared defaults reproduces the published question exactly', 
 });
 
 test('an entry that declares no parameters is returned untouched', () => {
-  const e = getQuery(2);
+  const e = getQuery(1);
   const { entry, errors } = bindEntry(e);
   assert.equal(entry, e, 'the same object, so no consumer can see a difference');
   assert.deepEqual(errors, []);
@@ -102,26 +102,26 @@ test('an entry that declares no parameters is returned untouched', () => {
 
 // ------------------------------------------------------------------ binding does what it says
 test('a bound value lands in both the REST request and the T-SQL', () => {
-  const { entry } = bindEntry(getQuery(41), { top: 3 });
+  const { entry } = bindEntry(getQuery(12), { top: 3 });
   assert.equal(entry.rest.resultRecordCount, 3);
   assert.match(entry.tsql, /SELECT TOP 3 Category/);
 
-  const q65 = bindEntry(getQuery(65), { top: 2, days: 90 }).entry;
-  assert.equal(q65.rest.resultRecordCount, 2);
-  assert.match(q65.rest.where, /GETDATE\(\)\) > 90$/);
-  assert.match(q65.tsql, /SELECT TOP 2 Category/);
-  assert.match(q65.tsql, /GETDATE\(\)\) > 90 GROUP BY/);
+  const q27 = bindEntry(getQuery(27), { top: 2, days: 90 }).entry;
+  assert.equal(q27.rest.resultRecordCount, 2);
+  assert.match(q27.rest.where, /GETDATE\(\)\) > 90$/);
+  assert.match(q27.tsql, /SELECT TOP 2 Category/);
+  assert.match(q27.tsql, /GETDATE\(\)\) > 90 GROUP BY/);
   // The template rebuilt the clause rather than appending to it.
-  assert.equal((q65.rest.where.match(/GETDATE/g) ?? []).length, 1);
+  assert.equal((q27.rest.where.match(/GETDATE/g) ?? []).length, 1);
 });
 
 test('the bound entry carries the values it was run with', () => {
-  assert.deepEqual(bindEntry(getQuery(25), { top: 4 }).entry.paramValues, { top: 4, minClosed: 10 });
-  assert.equal(getQuery(25).paramValues, undefined, 'the library entry itself is not mutated');
+  assert.deepEqual(bindEntry(getQuery(8), { top: 4 }).entry.paramValues, { top: 4, minClosed: 10 });
+  assert.equal(getQuery(8).paramValues, undefined, 'the library entry itself is not mutated');
 });
 
 test('a bound question returns the number of rows it was asked for', async () => {
-  for (const [id, top] of [[41, 3], [55, 4], [65, 2]]) {
+  for (const [id, top] of [[12, 3], [21, 4], [27, 2]]) {
     const { entry } = bindEntry(getQuery(id), { top });
     const r = await runEntry(entry, local);
     assert.equal(r.rows.length, top, `Q${id} with top=${top}`);
@@ -129,7 +129,7 @@ test('a bound question returns the number of rows it was asked for', async () =>
 });
 
 test('REST and T-SQL still agree after binding, which is the point of binding both', async () => {
-  for (const [id, values] of [[41, { top: 3 }], [65, { top: 3, days: 60 }], [25, { top: 4, minClosed: 20 }]]) {
+  for (const [id, values] of [[12, { top: 3 }], [27, { top: 3, days: 60 }], [8, { top: 4, minClosed: 20 }]]) {
     const { entry } = bindEntry(getQuery(id), values);
     const rest = await runEntry(entry, local);
     const sql = svc.sql(entry.tsql);
@@ -144,7 +144,7 @@ test('REST and T-SQL still agree after binding, which is the point of binding bo
 });
 
 test('a wider bound includes the narrower one: the parameter means what it says', async () => {
-  const rows = async (values) => (await runEntry(bindEntry(getQuery(65), values).entry, local)).rows;
+  const rows = async (values) => (await runEntry(bindEntry(getQuery(27), values).entry, local)).rows;
   const strict = await rows({ top: 25, days: 180 });
   const loose = await rows({ top: 25, days: 30 });
   const total = (rs) => rs.reduce((a, r) => a + r.StuckCount, 0);
@@ -154,21 +154,21 @@ test('a wider bound includes the narrower one: the parameter means what it says'
 // ------------------------------------------------------------------ refusals
 test('a value outside the ratified range is refused, not clamped', () => {
   for (const bad of [{ top: 0 }, { top: 26 }, { top: -1 }, { top: 1000 }]) {
-    const { entry, errors } = bindEntry(getQuery(41), bad);
+    const { entry, errors } = bindEntry(getQuery(12), bad);
     assert.equal(errors.length, 1, JSON.stringify(bad));
     assert.match(errors[0], /'top' must be/);
-    assert.deepEqual(entry.rest, getQuery(41).rest, 'the unbound question comes back, never a half-applied one');
+    assert.deepEqual(entry.rest, getQuery(12).rest, 'the unbound question comes back, never a half-applied one');
   }
 });
 
 test('a value of the wrong type, or a name nobody declared, is refused', () => {
-  assert.match(bindEntry(getQuery(41), { top: 'five' }).errors[0], /whole number/);
-  assert.match(bindEntry(getQuery(41), { top: 2.5 }).errors[0], /whole number/);
-  assert.match(bindEntry(getQuery(41), { limit: 5 }).errors[0], /not a parameter/);
+  assert.match(bindEntry(getQuery(12), { top: 'five' }).errors[0], /whole number/);
+  assert.match(bindEntry(getQuery(12), { top: 2.5 }).errors[0], /whole number/);
+  assert.match(bindEntry(getQuery(12), { limit: 5 }).errors[0], /not a parameter/);
 });
 
 test('validateParams fills defaults for everything left out', () => {
-  const spec = paramsOf(getQuery(65));
+  const spec = paramsOf(getQuery(27));
   assert.deepEqual(validateParams(spec, {}).values, { top: 5, days: 30 });
   assert.deepEqual(validateParams(spec, { days: 7 }).values, { top: 5, days: 7 });
   assert.deepEqual(validateParams(spec, { days: '' }).values, { top: 5, days: 30 }, 'an empty input is not a value');
@@ -196,8 +196,8 @@ test('a client can ask the catalog what may be varied', () => {
 });
 
 test('a catalog row alone is enough to run a variant: no library import anywhere', async () => {
-  const entry = entryFromRow(catalogRow(41));
-  assert.deepEqual(entry.params, paramsOf(getQuery(41)));
+  const entry = entryFromRow(catalogRow(12));
+  assert.deepEqual(entry.params, paramsOf(getQuery(12)));
   const { entry: bound, errors } = bindEntry(entry, { top: 8 });
   assert.deepEqual(errors, []);
   const r = await runEntry(bound, local);
@@ -208,8 +208,8 @@ test('a catalog row alone is enough to run a variant: no library import anywhere
 
 // ------------------------------------------------------------------ property 2: the enforcing tier
 test('the execute route runs a question from its identifier alone', () => {
-  const r = execute({ q: '41' });
-  assert.equal(r.queryNumber, 41);
+  const r = execute({ q: '12' });
+  assert.equal(r.queryNumber, 12);
   assert.equal(r.question, 'Top 5 categories with most requests');
   assert.deepEqual(r.parameters, { top: 5 }, 'the ratified default, applied by the service');
   assert.equal(r.rowCount, 5);
@@ -218,15 +218,15 @@ test('the execute route runs a question from its identifier alone', () => {
 });
 
 test('the execute route honours a declared parameter', () => {
-  assert.equal(execute({ q: '41', top: '10' }).rowCount, 10);
-  const r = execute({ q: '65', top: '3', days: '90' });
+  assert.equal(execute({ q: '12', top: '10' }).rowCount, 10);
+  const r = execute({ q: '27', top: '3', days: '90' });
   assert.deepEqual(r.parameters, { top: 3, days: 90 });
   assert.equal(r.rowCount, 3);
   assert.match(r.requests[0].params.where, /> 90$/);
 });
 
 test('the execute route enforces the bounds the client could ignore', () => {
-  const r = execute({ q: '41', top: '500' });
+  const r = execute({ q: '12', top: '500' });
   assert.equal(r.error.code, 400);
   assert.match(r.error.details.join(' '), /'top' must be at most 25/);
   assert.match(r.error.details.join(' '), /Declared: top \(int 1\.\.25, default 5\)/);
@@ -235,7 +235,7 @@ test('the execute route enforces the bounds the client could ignore', () => {
 
 test('the execute route refuses a definition rather than ignoring it', () => {
   for (const sent of [{ where: '1=1' }, { outStatistics: '[]' }, { resultRecordCount: '500' }, { groupByFieldsForStatistics: 'Suburb' }]) {
-    const r = execute({ q: '41', ...sent });
+    const r = execute({ q: '12', ...sent });
     assert.equal(r.error?.code, 400, `${Object.keys(sent)[0]} was not refused`);
     assert.match(r.error.details.join(' '), new RegExp(`'${Object.keys(sent)[0]}' is not a parameter`));
   }
@@ -248,7 +248,7 @@ test('the execute route reports an unknown or missing identifier', () => {
 });
 
 test('the execute route applies the client-side transform on the service side', () => {
-  const r = execute({ q: '43' });
+  const r = execute({ q: '13' });
   assert.deepEqual(r.transforms, ['runningTotal']);
   assert.ok(r.columns.includes('RunningTotal'), 'the transform ran, so the client gets a finished answer');
   assert.ok(r.rows.at(-1).RunningTotal > r.rows[0].RunningTotal);
@@ -264,7 +264,7 @@ test('every catalogued question runs by identifier, as a tier would forward it',
 });
 
 test('executing by identifier and replaying the row give the same answer', async () => {
-  for (const [id, values] of [[41, { top: 9 }], [25, { top: 3, minClosed: 15 }], [43, {}], [62, {}]]) {
+  for (const [id, values] of [[12, { top: 9 }], [8, { top: 3, minClosed: 15 }], [13, {}], [25, {}]]) {
     const { entry } = bindEntry(entryFromRow(catalogRow(id)), values);
     const replayed = await runEntry(entry, local);
     const tiered = execute({ q: String(id), ...values });
@@ -274,7 +274,7 @@ test('executing by identifier and replaying the row give the same answer', async
 });
 
 test('the HTML form offers an input per declared parameter', () => {
-  const res = route({ path: `${base}/1/execute`, params: new URLSearchParams({ q: '65' }) });
+  const res = route({ path: `${base}/1/execute`, params: new URLSearchParams({ q: '27' }) });
   assert.match(res.contentType, /text\/html/);
   assert.match(res.body, /name="top"[^>]*min="1"[^>]*max="25"/);
   assert.match(res.body, /name="days"[^>]*min="1"[^>]*max="365"/);

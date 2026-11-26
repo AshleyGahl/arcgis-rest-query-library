@@ -4,7 +4,7 @@
 
 @layer = http://127.0.0.1:3000/arcgis/rest/services/ServiceRequests/FeatureServer/0
 
-### Q1 — Total number of service requests  [standard]
+### Q0 — Total number of service requests  [standard]
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
@@ -12,7 +12,7 @@ f=pjson
 &where=1%3D1
 &returnCountOnly=true
 
-### Q2 — Count by Category  [standard]
+### Q1 — Count by Category  [standard]
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
@@ -22,7 +22,7 @@ f=pjson
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Count%22%7D%5D
 &orderByFields=Count%20DESC
 
-### Q7 — Count by Category and Status (cross-tab)  [standard]
+### Q2 — Count by Category and Status (cross-tab)  [standard]
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
@@ -32,7 +32,7 @@ f=pjson
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Count%22%7D%5D
 &orderByFields=Category%2C%20Status
 
-### Q11 — Requests by logged date (day)  [sql-expression]
+### Q3 — Requests by logged date (day)  [sql-expression]
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
@@ -42,7 +42,7 @@ f=pjson
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Count%22%7D%5D
 &orderByFields=LogDate
 
-### Q12 — Requests by logged month and year  [sql-expression]
+### Q4 — Requests by logged month and year  [sql-expression]
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
@@ -52,7 +52,7 @@ f=pjson
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Count%22%7D%5D
 &orderByFields=LogYear%2C%20LogMonth
 
-### Q14 — Requests by hour of day  [sql-expression]
+### Q5 — Requests by hour of day  [sql-expression]
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
@@ -62,7 +62,7 @@ f=pjson
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Count%22%7D%5D
 &orderByFields=LogHour
 
-### Q17 — Weekly trend (ISO week, ISO year)  [native]
+### Q6 — Weekly trend (ISO week, ISO year)  [native]
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
@@ -73,7 +73,7 @@ f=pjson
 &orderByFields=ISOYear%2C%20ISOWeek
 &sqlFormat=native
 
-### Q18 — Count requests logged in the last 7 days  [standard]
+### Q7 — Count requests logged in the last 7 days  [standard]
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
@@ -81,7 +81,7 @@ f=pjson
 &where=DtLogged%20%3E%3D%20CURRENT_TIMESTAMP%20-%20INTERVAL%20'7'%20DAY
 &returnCountOnly=true
 
-### Q25 — Ten slowest sub-categories (average days to close, min 10 closed)  [native]
+### Q8 — Ten slowest sub-categories (average days to close, min 10 closed)  [native]
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
@@ -94,7 +94,7 @@ f=pjson
 &orderByFields=AvgDays%20DESC
 &resultRecordCount=10
 
-### Q26 — Median resolution time (using PERCENTILE_CONT)  [native]
+### Q9 — Median resolution time (using PERCENTILE_CONT)  [native]
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
@@ -103,7 +103,7 @@ f=pjson
 &sqlFormat=native
 &outStatistics=%5B%7B%22statisticType%22%3A%22percentile_cont%22%2C%22onStatisticField%22%3A%22DATEDIFF(day%2C%20DtLogged%2C%20DtCompleted)%22%2C%22outStatisticFieldName%22%3A%22MedianDays%22%2C%22statisticParameters%22%3A%7B%22value%22%3A0.5%7D%7D%5D
 
-### Q30 — Requests completed on the same day they were logged  [standard]
+### Q10 — Requests completed on the same day they were logged  [standard]
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
@@ -111,7 +111,7 @@ f=pjson
 &where=DtCompleted%20IS%20NOT%20NULL%20AND%20CAST(DtLogged%20AS%20DATE)%20%3D%20CAST(DtCompleted%20AS%20DATE)
 &returnCountOnly=true
 
-### Q33 — Open requests in Khayelitsha  [standard]
+### Q11 — Open requests in Khayelitsha  [standard]
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
@@ -120,7 +120,7 @@ f=pjson
 &outFields=*
 &orderByFields=ObjectID%20DESC
 
-### Q41 — Top 5 categories with most requests  [standard]
+### Q12 — Top 5 categories with most requests  [standard]
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
@@ -131,7 +131,7 @@ f=pjson
 &orderByFields=Count%20DESC
 &resultRecordCount=5
 
-### Q43 — Running total of requests per day (cumulative)  [sql-expression]
+### Q13 — Running total of requests per day (cumulative)  [sql-expression]
 # client-side transform: runningTotal
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
@@ -142,7 +142,7 @@ f=pjson
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22DailyCount%22%7D%5D
 &orderByFields=LogDate
 
-### Q44 — Month-over-month percentage change in request volume  [sql-expression]
+### Q14 — Month-over-month percentage change in request volume  [sql-expression]
 # client-side transform: lag
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
@@ -153,7 +153,7 @@ f=pjson
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Cnt%22%7D%5D
 &orderByFields=Yr%2C%20Mo
 
-### Q45 — Rank categories by average completion time (fastest first)  [native]
+### Q15 — Rank categories by average completion time (fastest first)  [native]
 # client-side transform: rank
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
@@ -165,7 +165,7 @@ f=pjson
 &outStatistics=%5B%7B%22statisticType%22%3A%22avg%22%2C%22onStatisticField%22%3A%22DATEDIFF(day%2C%20DtLogged%2C%20DtCompleted)%22%2C%22outStatisticFieldName%22%3A%22AvgDays%22%7D%5D
 &orderByFields=AvgDays
 
-### Q46 — For each Channel, count of distinct categories reported  [standard]
+### Q16 — For each Channel, count of distinct categories reported  [standard]
 # client-side transform: groupCount
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
@@ -176,7 +176,7 @@ f=pjson
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Count%22%7D%5D
 &orderByFields=Channel%2C%20Category
 
-### Q48 — Distribution of resolution days (buckets of 5)  [native]
+### Q17 — Distribution of resolution days (buckets of 5)  [native]
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
@@ -187,7 +187,7 @@ f=pjson
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Count%22%7D%5D
 &orderByFields=BucketStart
 
-### Q52 — Share of completed requests that took longer than 5 days  [native]
+### Q18 — Share of completed requests that took longer than 5 days  [native]
 # client-side transform: ratio
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
@@ -197,7 +197,7 @@ f=pjson
 &sqlFormat=native
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22TotalCompleted%22%7D%2C%7B%22statisticType%22%3A%22sum%22%2C%22onStatisticField%22%3A%22CASE%20WHEN%20DATEDIFF(day%2C%20DtLogged%2C%20DtCompleted)%20%3E%205%20THEN%201%20ELSE%200%20END%22%2C%22outStatisticFieldName%22%3A%22Over5Days%22%7D%5D
 
-### Q53 — 90th percentile resolution time  [native]
+### Q19 — 90th percentile resolution time  [native]
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
@@ -206,7 +206,7 @@ f=pjson
 &sqlFormat=native
 &outStatistics=%5B%7B%22statisticType%22%3A%22percentile_cont%22%2C%22onStatisticField%22%3A%22DATEDIFF(day%2C%20DtLogged%2C%20DtCompleted)%22%2C%22outStatisticFieldName%22%3A%22P90_Days%22%2C%22statisticParameters%22%3A%7B%22value%22%3A0.9%7D%7D%5D
 
-### Q54 — Thematic grouping of categories (Three Waters, Transport, Waste, …)  [native]
+### Q20 — Thematic grouping of categories (Three Waters, Transport, Waste, …)  [native]
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
@@ -217,7 +217,7 @@ f=pjson
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Count%22%7D%2C%7B%22statisticType%22%3A%22avg%22%2C%22onStatisticField%22%3A%22DATEDIFF(day%2C%20DtLogged%2C%20DtCompleted)%22%2C%22outStatisticFieldName%22%3A%22AvgResolutionDays%22%7D%5D
 &orderByFields=Count%20DESC
 
-### Q55 — Top 10 suburb hotspots (volume, variety, first and last report)  [extension]
+### Q21 — Top 10 suburb hotspots (volume, variety, first and last report)  [extension]
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
@@ -228,7 +228,7 @@ f=pjson
 &orderByFields=RequestCount%20DESC
 &resultRecordCount=10
 
-### Q56 — Channel efficiency (which channel gets closed fastest?)  [native]
+### Q22 — Channel efficiency (which channel gets closed fastest?)  [native]
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
@@ -239,7 +239,7 @@ f=pjson
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Total%22%7D%2C%7B%22statisticType%22%3A%22avg%22%2C%22onStatisticField%22%3A%22DATEDIFF(day%2C%20DtLogged%2C%20DtCompleted)%22%2C%22outStatisticFieldName%22%3A%22AvgCloseDays%22%7D%2C%7B%22statisticType%22%3A%22sum%22%2C%22onStatisticField%22%3A%22CASE%20WHEN%20Status%20%3C%3E%20'Closed'%20THEN%201%20ELSE%200%20END%22%2C%22outStatisticFieldName%22%3A%22StillOpen%22%7D%5D
 &orderByFields=AvgCloseDays
 
-### Q57 — Invalid dates (completed before logged)  [standard]
+### Q23 — Invalid dates (completed before logged)  [standard]
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
@@ -247,7 +247,7 @@ f=pjson
 &where=DtCompleted%20IS%20NOT%20NULL%20AND%20DtCompleted%20%3C%20DtLogged
 &returnCountOnly=true
 
-### Q59 — Requests with missing fields (Suburb, CategorySub, Description)  [sql-expression]
+### Q24 — Requests with missing fields (Suburb, CategorySub, Description)  [sql-expression]
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
@@ -255,7 +255,7 @@ f=pjson
 &where=1%3D1
 &outStatistics=%5B%7B%22statisticType%22%3A%22sum%22%2C%22onStatisticField%22%3A%22CASE%20WHEN%20Suburb%20IS%20NULL%20THEN%201%20ELSE%200%20END%22%2C%22outStatisticFieldName%22%3A%22MissingSuburb%22%7D%2C%7B%22statisticType%22%3A%22sum%22%2C%22onStatisticField%22%3A%22CASE%20WHEN%20CategorySub%20IS%20NULL%20OR%20CategorySub%20%3D%20''%20THEN%201%20ELSE%200%20END%22%2C%22outStatisticFieldName%22%3A%22MissingCategorySub%22%7D%2C%7B%22statisticType%22%3A%22sum%22%2C%22onStatisticField%22%3A%22CASE%20WHEN%20Description%20IS%20NULL%20OR%20Description%20%3D%20''%20THEN%201%20ELSE%200%20END%22%2C%22outStatisticFieldName%22%3A%22MissingDescription%22%7D%5D
 
-### Q62 (logged) — Monthly throughput (logged vs completed side by side)  [sql-expression]
+### Q25 (logged) — Monthly throughput (logged vs completed side by side)  [sql-expression]
 # client-side transform: fullOuterJoin
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
@@ -266,7 +266,7 @@ f=pjson
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Logged%22%7D%5D
 &orderByFields=Year%2C%20Month
 
-### Q62 (completed) — Monthly throughput (logged vs completed side by side)  [sql-expression]
+### Q25 (completed) — Monthly throughput (logged vs completed side by side)  [sql-expression]
 # client-side transform: fullOuterJoin
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
@@ -277,7 +277,7 @@ f=pjson
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Completed%22%7D%5D
 &orderByFields=Year%2C%20Month
 
-### Q64 — Pivot: Channel vs Status (conditional aggregation)  [sql-expression]
+### Q26 — Pivot: Channel vs Status (conditional aggregation)  [sql-expression]
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
@@ -287,7 +287,7 @@ f=pjson
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Total%22%7D%2C%7B%22statisticType%22%3A%22sum%22%2C%22onStatisticField%22%3A%22CASE%20WHEN%20Status%20%3D%20'Open'%20THEN%201%20ELSE%200%20END%22%2C%22outStatisticFieldName%22%3A%22OpenCount%22%7D%2C%7B%22statisticType%22%3A%22sum%22%2C%22onStatisticField%22%3A%22CASE%20WHEN%20Status%20%3D%20'In%20Progress'%20THEN%201%20ELSE%200%20END%22%2C%22outStatisticFieldName%22%3A%22InProgress%22%7D%2C%7B%22statisticType%22%3A%22sum%22%2C%22onStatisticField%22%3A%22CASE%20WHEN%20Status%20%3D%20'Closed'%20THEN%201%20ELSE%200%20END%22%2C%22outStatisticFieldName%22%3A%22Closed%22%7D%5D
 &orderByFields=Channel
 
-### Q65 — Which categories have the most requests stuck open for more than 30 days?  [native]
+### Q27 — Which categories have the most requests stuck open for more than 30 days?  [native]
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
@@ -299,7 +299,7 @@ f=pjson
 &orderByFields=StuckCount%20DESC
 &resultRecordCount=5
 
-### Q66 — Which category dominates each suburb?  [standard]
+### Q28 — Which category dominates each suburb?  [standard]
 # client-side transform: topPerGroup
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
@@ -310,7 +310,7 @@ f=pjson
 &outStatistics=%5B%7B%22statisticType%22%3A%22count%22%2C%22onStatisticField%22%3A%22ObjectID%22%2C%22outStatisticFieldName%22%3A%22Requests%22%7D%5D
 &orderByFields=Suburb%2C%20Requests%20DESC%2C%20Category
 
-### Q68 — Average description length per Category  [sql-expression]
+### Q29 — Average description length per Category  [sql-expression]
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded
 
@@ -321,7 +321,7 @@ f=pjson
 &having=COUNT(ObjectID)%20%3E%2010
 &orderByFields=AvgDescLength%20DESC
 
-### Q70 — Moving 7-day average of new requests (to smooth daily noise)  [sql-expression]
+### Q30 — Moving 7-day average of new requests (to smooth daily noise)  [sql-expression]
 # client-side transform: movingAverage -> sort
 POST {{layer}}/query
 Content-Type: application/x-www-form-urlencoded

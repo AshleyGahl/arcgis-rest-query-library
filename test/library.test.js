@@ -26,26 +26,26 @@ for (const entry of queryLibrary) {
 
 // REST and T-SQL should agree where both are exact equivalents
 const scalar = (rows) => Object.values(rows[0])[0];
-for (const [id, restKey] of [[1, 'count'], [18, 'count'], [30, 'count'], [57, 'count']]) {
+for (const [id, restKey] of [[0, 'count'], [7, 'count'], [10, 'count'], [23, 'count']]) {
   test(`Q${id} REST count == T-SQL count`, async () => {
     const entry = queryLibrary.find((q) => q.id === id);
     const rest = await runEntry(entry, local);
     assert.equal(rest.rows[0][restKey], scalar(svc.sql(entry.tsql).rows));
   });
 }
-test('Q41 top-5 categories match', async () => {
-  const e = queryLibrary.find((q) => q.id === 41);
+test('Q12 top-5 categories match', async () => {
+  const e = queryLibrary.find((q) => q.id === 12);
   const rest = await runEntry(e, local);
   assert.deepEqual(rest.rows.map((r) => r.Count), svc.sql(e.tsql).rows.map((r) => r.Count));
 });
-test('Q44 MoM percentages match T-SQL LAG', async () => {
-  const e = queryLibrary.find((q) => q.id === 44);
+test('Q14 MoM percentages match T-SQL LAG', async () => {
+  const e = queryLibrary.find((q) => q.id === 14);
   const rest = await runEntry(e, local);
   const t = svc.sql(e.tsql).rows;
   rest.rows.forEach((r, i) => assert.equal(r.PctChange, t[i].PctChange == null ? null : +t[i].PctChange.toFixed(2)));
 });
-test('Q26 median matches', async () => {
-  const e = queryLibrary.find((q) => q.id === 26);
+test('Q9 median matches', async () => {
+  const e = queryLibrary.find((q) => q.id === 9);
   assert.equal((await runEntry(e, local)).rows[0].MedianDays, svc.sql(e.tsql).rows[0].MedianDays);
 });
 test('rejects writes and multiple statements', () => {

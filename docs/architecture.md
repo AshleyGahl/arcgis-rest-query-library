@@ -145,13 +145,13 @@ so `…/FeatureServer/1?f=json` describes it exactly as a real published table w
 | Field | Esri type | Length | What it holds |
 |---|---|---|---|
 | `ObjectID` | `esriFieldTypeOID` | — | the query number, reused as the OID |
-| `QueryNumber` | `esriFieldTypeInteger` | — | the stable public identifier; not a position, so the set has gaps |
+| `QueryNumber` | `esriFieldTypeInteger` | — | 0–30, the stable public identifier a client stores and an executor takes |
 | `Category` | `esriFieldTypeString` | 60 | one of the eight library sections |
 | `Question` | `esriFieldTypeString` | 200 | the business question, and the display field |
 | `Dimension` | `esriFieldTypeString` | 10 | `WHO` … `HOW` (see [framework](framework.md)) |
 | `AnalyticLayer` | `esriFieldTypeString` | 4 | `L1`–`L5`, descriptive to advanced |
 | `Portability` | `esriFieldTypeString` | 20 | `standard` · `sql-expression` · `native` · `extension` |
-| `RequestCount` | `esriFieldTypeSmallInteger` | — | REST requests needed (1, or 2 for Q62) |
+| `RequestCount` | `esriFieldTypeSmallInteger` | — | REST requests needed (1, or 2 for Q25) |
 | `Transforms` | `esriFieldTypeString` | 100 | names of the client-side steps, comma-separated |
 | `HasChart` | `esriFieldTypeSmallInteger` | — | 1 when the author says this answer is a chart (23 of 31) |
 | `ChartType` | `esriFieldTypeString` | 20 | `bar` or `line` |
@@ -180,7 +180,7 @@ inferred one are not the same kind of thing.
 
 `ParamSpec` is the extension contract: the parameters a question may be varied by, each with the
 type, the range its author ratified, and where the value lands in the definition. Six questions
-declare one — *"top 5 categories"* is the obvious case, and Q65's *"stuck for more than 30 days"*
+declare one — *"top 5 categories"* is the obvious case, and Q27's *"stuck for more than 30 days"*
 is the interesting one, because 30 is a policy, not a fact:
 
 ```
@@ -248,8 +248,8 @@ An entry is executed by number, through the proc form in the same script — the
 of replaying a row's `RestParams` against layer 0:
 
 ```sql
-EXEC dbo.usp_RunLibraryQuery @QueryNumber = 44;                 -- run it
-EXEC dbo.usp_RunLibraryQuery @QueryNumber = 44, @Execute = 0;    -- return the statement only
+EXEC dbo.usp_RunLibraryQuery @QueryNumber = 14;                 -- run it
+EXEC dbo.usp_RunLibraryQuery @QueryNumber = 14, @Execute = 0;    -- return the statement only
 ```
 
 It resolves `SQLText` from the view and hands it to `sys.sp_executesql`, throwing 50010 for a
@@ -257,7 +257,7 @@ number that is not in the catalogue. The underlying two lines work as well, if a
 rather hold the statement itself:
 
 ```sql
-DECLARE @sql NVARCHAR(MAX) = (SELECT SQLText FROM dbo.vw_QueryLibrary WHERE QueryNumber = 44);
+DECLARE @sql NVARCHAR(MAX) = (SELECT SQLText FROM dbo.vw_QueryLibrary WHERE QueryNumber = 14);
 EXEC sp_executesql @sql;
 ```
 
@@ -270,8 +270,8 @@ projections of one source, each carrying the columns its own execution path can 
 
 The `Chart*` columns and `ParamSpec` are the exceptions that show the rule: they appear in both,
 because they describe the *question and its answer* rather than the route taken to it. Whichever
-way a client resolves query 44 — replaying `RestParams` against layer 0, or
-`EXEC dbo.usp_RunLibraryQuery @QueryNumber = 44` — it gets the same rows, the same instruction for
+way a client resolves query 14 — replaying `RestParams` against layer 0, or
+`EXEC dbo.usp_RunLibraryQuery @QueryNumber = 14` — it gets the same rows, the same instruction for
 drawing them, and the same statement of what a user is allowed to change. The proc runs `SQLText`
 as published; binding a parameter means rendering the declared template over the declared text,
 which the REST side does on the trusted side at `/FeatureServer/1/execute`.
@@ -294,7 +294,7 @@ sequenceDiagram
   Note over V: runner.js applies the TransformSpec,<br/>result-chart.js draws it per the Chart* columns
 ```
 
-Both hops are the standard ArcGIS `query` operation, and nothing about Q44 exists in the client.
+Both hops are the standard ArcGIS `query` operation, and nothing about Q14 exists in the client.
 
 ### And one hop that is deliberately not generic
 
@@ -304,8 +304,8 @@ sequenceDiagram
   participant C as client
   participant X as /1/execute
   participant E as featureService.js
-  C->>X: GET ?q=65&top=3&days=90
-  X->>E: svc.query(where QueryNumber = 65, layer 1)
+  C->>X: GET ?q=27&top=3&days=90
+  X->>E: svc.query(where QueryNumber = 27, layer 1)
   E-->>X: the catalog row
   Note over X: bindEntry validates 3 and 90<br/>against the row's ParamSpec
   X->>E: svc.query(the bound RestParams, layer 0)
